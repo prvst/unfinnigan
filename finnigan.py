@@ -58,17 +58,19 @@ class Finnigan(Parser):
 
     def createFields(self):
         yield FinniganHeader(self, "file header", "The root file header (magic 1)")
-        if VERSION[-1] < 57:
+        if VERSION[-1] == 8: # OldLCQ
             # OnConvertOldLCQ -> 127044 (0x0001F044)
             yield RunHeader(self, "run header", "The run header with information about the number of scans")
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- meaning unknown")
-            yield IcisStatusLog(self, "icis status log", "IcisStatusLog -- meaning unknown; can be a null string")
+            yield IcisStatusLog(self, "icis status log", "IcisStatusLog -- meaning unknown; can have 0 records")
             yield Instfile(self, "inst file", "Embedded instrument file")
-            yield UInt32(self, "unknown long", "Uknown number")
-            yield TuneData(self, "tune data", "TuneData")
-            yield LCQScanHeader(self, "lcq scan header", "LCQScanHeader (if that is it)")
-            yield ScanData(self, "scan data", "ScbanData")
+            yield UInt32(self, "nsegs", "Number of scan segments -- possibly (a conjecture)")
+            for index in range(1, self["nsegs"].value + 1): # this loop may actually include all of the following objects
+                yield TuneData(self, "tune data", "TuneData")
+            # yield LCQScanHeader(self, "lcq scan header", "LCQScanHeader (if that is it)")
+            yield PeakData(self, "peak data", "PeakData")
+            yield ScanData(self, "scan data", "ScanData")
 
             nrecords = self["/run header/sample info/inst log size"].value
             for n in range(1, nrecords + 1):
@@ -251,17 +253,17 @@ class FinniganHeader(FieldSet):
     def createFields(self):
         yield RawBytes(self, "magic", 2, r'File signature ("\1\xA1")')
         yield CString(self, "signature", "Finnigan signature: \"Finnigan\" (wide string)", charset="UTF-16-LE") #, strip="\0")
-        yield UInt32(self, "unknown long[1]", "Uknown long in the file header")
-        yield UInt32(self, "unknown long[2]", "Uknown long in the file header")
-        yield UInt32(self, "unknown long[3]", "Uknown long in the file header")
-        yield UInt32(self, "unknown long[4]", "Uknown long in the file header")
+        yield UInt32(self, "unknown long[1]", "Unknown long; seems to be the same in all files")
+        yield UInt32(self, "unknown long[2]", "Unknown long; seems to be the same in all files")
+        yield UInt32(self, "unknown long[3]", "Unknown long; seems to be the same in all files")
+        yield UInt32(self, "unknown long[4]", "Unknown long; seems to be the same in all files")
         yield UInt32(self, "version", "File format version")
 
         yield AuditTag(self, "audit start", "Start Audit Tag")
         yield AuditTag(self, "audit end", "End Audit Tag")
 
-        yield UInt32(self, "unknown long[5]", "Uknown long in the file header, file-specific")
-        yield RawBytes(self, "unknown area", 60, "Uknown zero-padded area")
+        yield UInt32(self, "unknown long[5]", "Unknown long, file-specific")
+        yield RawBytes(self, "unknown area", 60, "Unknown zero-padded area")
         yield String(self, "tag", 1028, charset="UTF-16-LE", truncate="\0")
         # Read rest of the header
         if self.current_size < self._size:
@@ -278,15 +280,15 @@ class ThermoFinniganHeader(FieldSet):
         if VERSION[-1] == 62:
             yield RawBytes(self, "magic", 2, r'File signature ("\5\xA1")')
             yield CString(self, "signature", "Thermo Finnigan signature: \"Thermo Finnigan LTQ\" (wide string)", charset="UTF-16-LE")
-            yield RawBytes(self, "unknown area", 24, "Uknown zero-padded area")
-            yield UInt16(self, "unknown int[1]", "Uknown int")
-            yield UInt16(self, "unknown int[2]", "Uknown int")
-            yield UInt16(self, "unknown int[3]", "Uknown int")
+            yield RawBytes(self, "unknown area", 24, "Unknown zero-padded area")
+            yield UInt16(self, "unknown int[1]", "Unknown int")
+            yield UInt16(self, "unknown int[2]", "Unknown int")
+            yield UInt16(self, "unknown int[3]", "Unknown int")
             yield AuditTag(self, "audit start", "Start Audit Tag")
             yield AuditTag(self, "audit end", "End Audit Tag")
-            yield UInt16(self, "unknown int[4]", "Uknown int")
-            yield UInt16(self, "unknown int[5]", "Uknown int")
-            yield UInt16(self, "unknown int[6]", "Uknown int")
+            yield UInt16(self, "unknown int[4]", "Unknown int")
+            yield UInt16(self, "unknown int[5]", "Unknown int")
+            yield UInt16(self, "unknown int[6]", "Unknown int")
         else:
             pass # this whole area may be a nonsens leftover even
                  # V.62, where it contains some reasonable objects
@@ -342,18 +344,18 @@ class SampleInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]", "Uknown long in SampleInfo")
-        yield UInt32(self, "unknown long[2]", "Uknown long in SampleInfo")
+        yield UInt32(self, "unknown long[1]", "Unknown long in SampleInfo")
+        yield UInt32(self, "unknown long[2]", "Unknown long in SampleInfo")
         yield UInt32(self, "first scan number", "The number of the first scan")
         yield UInt32(self, "last scan number", "The number of the last scan")
         yield UInt32(self, "inst log size", "The number of status records logged")
-        yield UInt32(self, "unknown long[3]", "Uknown long in SampleInfo")
-        yield UInt32(self, "unknown long[4]", "Uknown long in SampleInfo")
+        yield UInt32(self, "unknown long[3]", "Unknown long in SampleInfo")
+        yield UInt32(self, "unknown long[4]", "Unknown long in SampleInfo")
         yield UInt32(self, "scan list addr", "Absolute seek address of ShortScanHeader stream")
         yield UInt32(self, "raw data addr", "Absolute seek address of raw scan data")
         yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
         yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
-        yield UInt32(self, "unknown long[6]", "Uknown long in SampleInfo")
+        yield UInt32(self, "unknown long[6]", "Unknown long in SampleInfo")
         yield Float64(self, "ion current", "Max ion current? It does co-incide with the total current in one of the scans")
         yield Float64(self, "low mz", "Low m/z; meaning uncertain")
         yield Float64(self, "high mz", "High m/z; meaning uncertain")
@@ -390,7 +392,7 @@ class SeqRow(FieldSet):
             for index in "cdefg":
                 yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
 
-            yield UInt32(self, "unknown long", "Uknown long in SeqRow")
+            yield UInt32(self, "unknown long", "Unknown long in SeqRow")
 
             if VERSION[-1] == 57:
                 pass
@@ -410,9 +412,9 @@ class SeqRowHeader(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]", "Uknown long in SeqRowHeader")
+        yield UInt32(self, "unknown long[1]", "Unknown long in SeqRowHeader")
         yield UInt32(self, "n", "Row Number")
-        yield UInt32(self, "unknown long[2]", "Uknown long in SeqRowHeader")
+        yield UInt32(self, "unknown long[2]", "Unknown long in SeqRowHeader")
         yield String(self, "vial", 12, "Vial ID; assigned to InstConfig::MSSerialNum at the end of SeqRow parsing", charset="UTF-16-LE", truncate="\0")
         yield Float64(self, "inj volume", "Injection Volume (ul)")
         yield Float64(self, "weight", "Sample Weight")
@@ -433,7 +435,7 @@ class CASInfoHeader(FieldSet):
 
     def createFields(self):
         yield RawBytes(self, "padding", 20, "strange FF padding")
-        yield UInt32(self, "unknown_long", "Uknown long in CASInfo")
+        yield UInt32(self, "unknown_long", "Unknown long in CASInfo")
 
 
 class RawFileInfo(FieldSet):
@@ -491,7 +493,7 @@ class IcisStatusLog(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-         yield PascalStringWin32(self, "text", "IcisStatusLog data")
+         yield UInt32(self, "n", "Number of IcisStatusLog records")
         
 
 class InstID(FieldSet):
@@ -525,7 +527,9 @@ class InstConfig(FieldSet):
 
     def createFields(self):
         yield RawBytes(self, "unknown data", 28, "Instrument Configuration preamble")
-        for index in "123456789abcdefghij":
+        yield PascalStringWin32(self, "ion source", "Unknown Pascal string")
+        yield PascalStringWin32(self, "analyzer", "Unknown Pascal string")
+        for index in "123456789abcdefgh":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             
 class StatusLogFile1(FieldSet):
@@ -628,7 +632,7 @@ class LCTable(FieldSet):
 
     def createFields(self):
         yield RawBytes(self, "preamble", 24, "LC Table preamble")
-        yield RawBytes(self, "unknown data", 4, "Uknown data")
+        yield RawBytes(self, "unknown data", 4, "Unknown data")
         for index in "1234":
             yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
 
@@ -662,7 +666,7 @@ class DisplayOptions(FieldSet):
     def createFields(self):
         for index in "12":
             yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
-        yield Float64(self, "unknown double[1]", "Uknown prameter")
+        yield Float64(self, "unknown double[1]", "Unknown prameter")
         for index in "34":
             yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
 
@@ -1067,7 +1071,7 @@ class TuneData(FieldSet):
                                      # header (10 + 3)?
             yield FractionCollector(self, "fraction collector[%s]" % index, "Fraction Collector")
             # There are also 13 SlopeInt's read from the same
-            # file. The number could have been known earlier, because
+            # file. The number must have been known earlier, because
             # the 13 SlopeInt's are created before TuneDataHeader is read.
 
         yield UInt32(self, "n", "The number of Doubles read")
@@ -1116,8 +1120,16 @@ class LCQScanHeader(FieldSet):
 
     def createFields(self):
         info = self["/run header/sample info"]
-        header_size = info["scan data addr"].value - info["lcq scan header addr"].value
+        header_size = 1092 # info["raw data addr"].value - info["lcq scan heade addr"].value
         yield RawBytes(self, "unknown data", header_size, "Real Time Chro label data")
+
+class PeakData(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        info = self["/run header/sample info"]
+        header_size =  info["scan list addr"].value - info["raw data addr"].value
+        yield RawBytes(self, "unknown data", header_size, "UnknownData")
 
 class ScanData(FieldSet):
     endian = LITTLE_ENDIAN
@@ -1164,7 +1176,7 @@ class LogRecord(FieldSet):
         yield AutosamplerStatus(self, "autosampler", "Autosampler Status")
         yield LCPump(self, "lc pump", "LC Pump")
 
-        yield RawBytes(self, "reserved", 36, "Uknown zero-padded area; may be reserved for additional devices")
+        yield RawBytes(self, "reserved", 36, "Unknown zero-padded area; may be reserved for additional devices")
 
         yield SyringePump(self, "syringe pump", "Syringe Pump")
         yield TurboPump(self, "turbo pump", "Turbo Pump")
