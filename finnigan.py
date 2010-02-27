@@ -29,7 +29,7 @@ from hachoir_core.endian import LITTLE_ENDIAN, BIG_ENDIAN
 
 VERSION = []
 ABBREVIATE_LISTS = True
-VERBOSE_GENERIC_RECORDS = False
+VERBOSE_GENERIC_RECORDS = True
 
 class Finnigan(Parser):
     MAGIC = "\1\xa1"
@@ -68,7 +68,6 @@ class Finnigan(Parser):
             yield UInt32(self, "nsegs", "Number of scan segments -- possibly (a conjecture)")
             for index in range(1, self["nsegs"].value + 1): # this loop may actually include all of the following objects
                 yield TuneData(self, "tune data", "TuneData")
-            # yield LCQScanHeader(self, "lcq scan header", "LCQScanHeader (if that is it)")
             yield PeakData(self, "peak data", "PeakData")
             yield ScanData(self, "scan data", "ScanData")
 
@@ -76,7 +75,7 @@ class Finnigan(Parser):
             for n in range(1, nrecords + 1):
                 yield LogRecord(self, "log[%s]" % n, "LogRecord %s" % n)
 
-        elif VERSION[-1] == 57 or VERSION[-1] == 62:
+        elif VERSION[-1] >= 57: #  or VERSION[-1] == 62:
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield CASInfo(self, "CAS info", "Something called CASInfo -- meaning unknown")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- meaning unknown")
@@ -84,7 +83,7 @@ class Finnigan(Parser):
 
             run_header_addr = self["raw file info/header/run header addr"].value
 
-            nrecords = 20
+            nrecords = 1
             for n in range(1, nrecords + 1):
                 yield Spectrum(self, "spectrum %s" % n)
                 print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nrecords),
@@ -92,10 +91,10 @@ class Finnigan(Parser):
             yield RawBytes(self, "unparsed spectra", run_header_addr - self.current_size/8, "This is where the spectra are found")
             yield RunHeader(self, "run header", "The run header with information about the number of scans")
             yield InstID(self, "inst id", "Instrument ID")
-            yield StatusLogFile1(self, "inst log", "Instrument status log")
+            yield InstrumentLog(self, "inst log", "Instrument status log")
             yield ErrorLog(self, "error log", "Error Log File")
             yield MSScanEvents(self, "ms scan events", "MS Scan Events")
-            yield StatusLogFile2(self, "status log", "Status log")
+            yield StatusLog(self, "status log", "Status log")
         else:
             exit("unknown file version: %s" % VERSION[-1])
 
@@ -129,7 +128,7 @@ class Spectrum(FieldSet):
     def createFields(self):
         yield SpectrumHeader(self, "header")
         if self["header/unknown long[2]"].value: # MS1
-            yield DetectorSignal(self, "frequency spectrum", "Raw or filtered frequency spectrum (depending on scan mode)")
+            yield DetectorSignal(self, "detector signal", "Raw or filtered spectrum (depending on scan mode)")
             yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
             yield RawBytes(self, "unknown ladder", self["header/peak count"].value*4, "A strange ladder pattern")
             yield UnknownStream(self, "unknown stream")
@@ -156,7 +155,9 @@ class DetectorSignal(FieldSet):
             yield UInt32(self, "first bin[%s]" % n, "Starting bin number in peak")
             yield UInt32(self, "nbins[%s]" % n, "Peak width in bins")
             if VERSION[-1] > 57: # this should actually be analyzer type
-                yield Float32(self, "lock mass error[%s]" % n, "Lock mass correction")
+                # this test must be more sensible; must get through somehow just for now
+                if self["../header/unknown long[5]"].value and self["../header/unknown long[6]"].value:
+                    yield Float32(self, "lock mass error[%s]" % n, "Lock mass correction")
             for index in range(1, self["nbins[%s]" % n].value + 1):
                  yield Float32(self, "peak[%s][%s]" % (n, index))
 
@@ -183,7 +184,6 @@ class UnknownTriplets(FieldSet):
             yield Float32(self, "unknown value[1][%s]" % n)
             yield Float32(self, "unknown value[2][%s]" % n)
 
-
 class GenericRecord(FieldSet):
     def __init__(self, parent, header, name, description=None):
         FieldSet.__init__(self, parent, name, description)
@@ -191,58 +191,64 @@ class GenericRecord(FieldSet):
  
     def createFields(self):
         for item in self.header:
-            if isinstance(item, DilBaseAmount):
+            if isinstance(item, GenericDataDescriptor):
                 if item["type"].value:
                     if VERBOSE_GENERIC_RECORDS:
-                        print >> sys.stderr, "matching " + item.ascii_label + " (" + str(item["type"].value) + ") ... ",
+                        print >> sys.stderr, "matching " \
+                        + item.ascii_label \
+                        + " (" + str(item["type"].value) \
+                        + ", " + str(item["length"].value) + ") ... ",
                     if item["type"].value == 0xD:
-                        yield String(self, item.ascii_label, item["size"].value * 2, charset="UTF-16-LE", truncate="\0")
+                        yield String(self, item.ascii_label, item["length"].value * 2, charset="UTF-16-LE", truncate="\0")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "string: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0xC:
-                        yield String(self, item.ascii_label, item["size"].value,
-                                     "(" + str(item["type"].value) + ", " + str(item["size"]) + ")",
-                                     charset="ASCII", truncate="\0")
+                        # yield String(self, item.ascii_label, item["length"].value,
+                        #              "(" + str(item["type"].value) + ", " + str(item["length"]) + ")",
+                        #              charset="ASCII", truncate="\0")
+                        yield String(self, item.ascii_label, item["length"].value,
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")",
+                                    truncate="\0")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "asciiz: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0xB:
                         yield Float64(self, item.ascii_label,
-                                      "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                      "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "double: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0xA:
                         yield Float32(self, item.ascii_label,
-                                      "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                      "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "float: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0x9:
                         yield UInt32(self, item.ascii_label,
-                                     "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "long: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0x6:
                         yield UInt16(self, item.ascii_label,
-                                     "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "short: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0x4:
                         yield UInt8(self, item.ascii_label,
-                                    "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "byte (type 4): %s" % self[item.ascii_label].value
                     elif item["type"].value == 0x3:
                         yield UInt8(self, item.ascii_label,
-                                    "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "bool: %s" % self[item.ascii_label].value
                     elif item["type"].value == 0x1:
                         yield UInt8(self, item.ascii_label,
-                                    "(" + str(item["type"].value) + ", " + str(item["size"]) + ")")
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "byte (type 1): %s" % self[item.ascii_label].value
                     else:
                         exit( "unkown data type ("
-                              + str(item["type"]) + " at %x" % self.absolute_address + ", " + str(item["size"].value) + "): "
+                              + str(item["type"]) + " at %x" % (self.absolute_address/8) + ", " + str(item["length"].value) + "): "
                               + item.ascii_label + " in " + str(item) )
 
 
@@ -277,7 +283,7 @@ class ThermoFinniganHeader(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        if VERSION[-1] == 62:
+        if VERSION[-1] >= 62:
             yield RawBytes(self, "magic", 2, r'File signature ("\5\xA1")')
             yield CString(self, "signature", "Thermo Finnigan signature: \"Thermo Finnigan LTQ\" (wide string)", charset="UTF-16-LE")
             yield RawBytes(self, "unknown area", 24, "Unknown zero-padded area")
@@ -396,7 +402,7 @@ class SeqRow(FieldSet):
 
             if VERSION[-1] == 57:
                 pass
-            elif VERSION[-1] == 62:
+            elif VERSION[-1] >= 62:
                 for index in "hijklmnopqrstuv":
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
@@ -532,7 +538,7 @@ class InstConfig(FieldSet):
         for index in "123456789abcdefgh":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             
-class StatusLogFile1(FieldSet):
+class InstrumentLog(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -548,7 +554,7 @@ class StatusLogFile1(FieldSet):
         else:
             for n in range(1, nrecords + 1):
                 yield StatusLogRecord(self, self["header"], "log[%s]" % n, "LogRecord %s" % n)
-                print >> sys.stderr, "\rread %s of %s instrument log records ... " % (index, nrecords),
+                print >> sys.stderr, "\rread %s of %s instrument log records ... " % (n, nrecords),
             print >> sys.stderr, "done"
 
 class StatusLogRecord(GenericRecord):
@@ -728,13 +734,22 @@ class MSScanEvent(FieldSet):
             yield MSReaction(self, "ms reaction", "MS Reaction")
             yield UInt32(self, "unknown long[2]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
-        else:
-            yield UInt32(self, "unknown long[1]", "Unknown long")
+        elif VERSION[-1] <= 62:
+            yield UInt32(self, "unknown long[1]", "Unknown long (or two shorts)")
             yield UInt32(self, "unknown long[2]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
             yield UInt32(self, "unknown long[3]", "Unknown long")
             yield UInt32(self, "unknown long[4]", "Unknown long")
             yield UInt32(self, "unknown long[5]", "Unknown long")
+        else: # 63
+            yield UInt32(self, "unknown long[1]", "Unknown long (or two shorts)")
+            yield UInt32(self, "unknown long[2]", "Unknown long")
+            yield UInt32(self, "unknown long[3]", "Unknown long")
+            yield UInt32(self, "unknown long[4]", "Unknown long")
+            yield FractionCollector(self, "fraction collector", "Fraction Collector")
+            yield UInt32(self, "unknown long[5]", "Unknown long")
+            yield UInt32(self, "unknown long[6]", "Unknown long")
+            yield UInt32(self, "unknown long[7]", "Unknown long")
 
 
 class MSScanEventPreamble(FieldSet):
@@ -749,9 +764,18 @@ class MSScanEventPreamble(FieldSet):
         elif VERSION[-1] == 57:
             yield RawBytes(self, "unknown data", 80, "MS Scan Event preamble")
         else:
-            # be careful detailing this, as it is used in two different objects:
-            # MSScanEevnt and ScanEvent
             yield RawBytes(self, "unknown data", 120, "MS Scan Event preamble")
+
+class ScanEventPreamble(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        if VERSION[-1] <= 57:
+            yield RawBytes(self, "unknown data", 80, "Scan Event preamble")
+        elif VERSION[-1] <= 62:
+            yield RawBytes(self, "unknown data", 120, "Scan Event preamble")
+        else:
+            yield RawBytes(self, "unknown data", 128, "Scan Event preamble")
 
 class MSDependentData(FieldSet):
     endian = LITTLE_ENDIAN
@@ -794,11 +818,11 @@ class TrailerScanEvent(FieldSet):
         # cannot only show the first few records because they are of
         # variable size and the last record's position will not be
         # known without reading them all
-        if 0 and ABBREVIATE_LISTS and nrecords > 100:
+        if 0: # and ABBREVIATE_LISTS and nrecords > 100:
             ## this is likely to break the following items because the
             ## size to skip depends on the file!
-            yield ScanEvent(self, "scan event[1]", "Scan Event")
-            yield ScanEvent(self, "scan event[2]", "Scan Event")
+            for n in range(1, 33+1):
+                yield ScanEvent(self, "scan event[%s]" % n, "Scan Event")
             yield RawBytes(self, ". . .", 3634072 - 2*212 - 4, "records skipped for speed")
         else:
             for index in range(1, nrecords + 1):
@@ -811,7 +835,7 @@ class ScanEvent(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield MSScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+        yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
         yield UInt32(self, "type flag", "Indicates event type")
         if self["type flag"].value == 0:
             yield UInt32(self, "unknown long[1]", "Unknown long")
@@ -832,15 +856,17 @@ class ScanEvent(FieldSet):
             for index in "234":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
         else:
-            exit("unknown event type")
+            exit( "unknown event type (" + str(self["type flag"]) + " at %x" % (self.absolute_address/8) + ")")
 
 
 
-class StatusLogFile2(FieldSet):  # was: StatusLogHeader (why?)
+class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
     endian = LITTLE_ENDIAN
 
     def createFields(self):
         yield GenericDataHeader(self, "scan header", "Generic Data Header")
+        if self.current_size < self._size:
+            yield self.seekBit(self._size, "trailer")
         yield GenericDataHeader(self, "tune file header", "Generic Data Header")
         nsegs = self["/run header/nsegs"].value # this is a conjecture
         for n in range(1, nsegs + 1):
@@ -888,7 +914,7 @@ class ScanHeaderFile(FieldSet):
         else:
             for n in range(1, nrecords + 1):
                 yield ScanHeader(self, self["../scan header"], "log[%s]" % n, "ScanHeader %s" % n)
-                print >> sys.stderr, "\rread %s of %s scan headers ... " % (index, nrecords),
+                print >> sys.stderr, "\rread %s of %s scan headers ... " % (n, nrecords),
             print >> sys.stderr, "done"
 
 
@@ -908,7 +934,7 @@ class GenericDataHeader(FieldSet):
         group = None
         for index in range(1, self["n"].value + 1):
             key = "entry[%s]" % index
-            yield DilBaseAmount(self, key)
+            yield GenericDataDescriptor(self, key)
 
             old_label = self[key].ascii_label
             if self[key]["type"].value:
@@ -932,18 +958,17 @@ class GenericDataHeader(FieldSet):
                     group = old_label
 
 
-class DilBaseAmount(FieldSet):
+class GenericDataDescriptor(FieldSet):
     endian = LITTLE_ENDIAN
     ascii_label = None
 
     def createFields(self):
-        yield UInt32(self, "type", "Generic Data Type")
-        yield UInt32(self, "size", "size (where applicable)")
-        yield PascalStringWin32(self, "label", "Parameter label", charset="UTF-16-LE")
+        yield UInt32(self, "type", "Finnigan data type")
+        yield UInt32(self, "length", "object length (where it varies)")
+        yield PascalStringWin32(self, "label", "Descriptor label", charset="UTF-16-LE")
         if self["label"].value:
             self.ascii_label = unicodedata.normalize('NFKD', self["label"].value).encode('ascii','ignore')
             self.ascii_label = self.ascii_label.replace("/", "<sl>")
-            'FT POWER SUPPLIES|FT RF1 Amp. Temp. (C):'
 
 class RealTimeSpec(FieldSet):
     endian = LITTLE_ENDIAN
@@ -1138,9 +1163,9 @@ class ScanData(FieldSet):
         info = self["/run header/sample info"]
         nscans = info["last scan number"].value - info["first scan number"].value + 1
         for n in range(1, nscans + 1):
-            yield Scan(self, "scan[%s]" % n, "Scan %s" % n)
+            yield OldLCQScan(self, "scan[%s]" % n, "OldLCQScan %s" % n)
 
-class Scan(FieldSet):
+class OldLCQScan(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -1173,7 +1198,7 @@ class Scan(FieldSet):
         yield RawBytes(self, "unknown data[3]", 32, "Unknown Data")
         yield Float32(self, "unknown float[7]", "Unknown float")
         yield Float32(self, "unknown float[8]", "Unknown float")
-        yield RawBytes(self, "unknown data[4]", 64, "Uknown data")
+        yield RawBytes(self, "unknown data[4]", 64, "Unknown data")
         yield UInt32(self, "unknown accumulator", "grows every time the number of peaks changes between consecutive scans")
         yield UInt32(self, "peak count", "The number of peaks in this scan")
 
