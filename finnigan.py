@@ -103,7 +103,8 @@ class Finnigan(Parser):
                 yield Spectrum(self, "spectrum %s" % n)
                 print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nscans),
 
-            yield RawBytes(self, "unparsed spectra", run_header_addr - self.current_size/8, "This is where the spectra are found")
+            if run_header_addr > self.current_size/8:
+                yield RawBytes(self, "unparsed spectra", run_header_addr - self.current_size/8, "This is where the spectra are found")
             yield RunHeader(self, "run header", "The run header with information about the number of scans")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
