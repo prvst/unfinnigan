@@ -3,6 +3,7 @@ Thermo Finnigan raw data parser
 """
 
 import sys
+import struct
 import unicodedata
 
 from hachoir_parser import Parser
@@ -29,7 +30,18 @@ from hachoir_core.endian import LITTLE_ENDIAN, BIG_ENDIAN
 
 VERSION = []
 ABBREVIATE_LISTS = True
-VERBOSE_GENERIC_RECORDS = True
+VERBOSE_GENERIC_RECORDS = False
+
+FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
+
+def dump(src, length=8):
+    result=[]
+    for i in xrange(0, len(src), length):
+       s = src[i:i+length]
+       hexa = ' '.join(["%02X"%ord(x) for x in s])
+       printable = s.translate(FILTER)
+       result.append("%04X   %-*s   %s\n" % (i, length*3, hexa, printable))
+    return ''.join(result)
 
 class Finnigan(Parser):
     MAGIC = "\1\xa1"
@@ -83,10 +95,13 @@ class Finnigan(Parser):
 
             run_header_addr = self["raw file info/header/run header addr"].value
 
-            nrecords = 1
-            for n in range(1, nrecords + 1):
+            [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
+            [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
+            nscans = last_scan_number - first_scan_number + 1
+            # for n in range(1, nscans + 1):
+            for n in range(1, min(nscans, 50) + 1):
                 yield Spectrum(self, "spectrum %s" % n)
-                print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nrecords),
+                print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nscans),
 
             yield RawBytes(self, "unparsed spectra", run_header_addr - self.current_size/8, "This is where the spectra are found")
             yield RunHeader(self, "run header", "The run header with information about the number of scans")
@@ -127,12 +142,15 @@ class Finnigan(Parser):
 class Spectrum(FieldSet):
     def createFields(self):
         yield SpectrumHeader(self, "header")
-        if self["header/unknown long[2]"].value: # MS1
+        if self["header/unknown long[2]"].value: # don't know what this value is but is only set when there is raw data
             yield DetectorSignal(self, "detector signal", "Raw or filtered spectrum (depending on scan mode)")
-            yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
-            yield RawBytes(self, "unknown ladder", self["header/peak count"].value*4, "A strange ladder pattern")
-            yield UnknownStream(self, "unknown stream")
-            yield UnknownTriplets(self, "unknown triplets")
+            if self["header/unknown long[7]"].value: # don't know what  this value is
+                                                     # but it is zero in raw MS2 profiles
+                                                     # (as well as most values adjacent to it)
+                yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
+                yield RawBytes(self, "unknown ladder", self["header/peak count"].value*4, "A strange ladder pattern. See \"scan function\" in Qualbrowser help file")
+                yield UnknownStream(self, "unknown stream")
+                yield UnknownTriplets(self, "unknown triplets")
         else:
             yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
 
@@ -143,7 +161,7 @@ class SpectrumHeader(FieldSet):
         yield Float32(self, "low mz", "Scan low M/z; appears in filterLine in mzXML")
         yield Float32(self, "high mz", "Scan high M/z; appears in filterLine in mzXML")
 
-        if self["unknown long[2]"].value: # MS1
+        if self["unknown long[2]"].value: # don't know what this value is but is only set when there is raw data
             for index in "12":
                 yield Float64(self, "unknown double[%s]" % index)
             yield UInt32(self, "peak count")
@@ -262,7 +280,7 @@ class FinniganHeader(FieldSet):
         yield UInt32(self, "unknown long[1]", "Unknown long; seems to be the same in all files")
         yield UInt32(self, "unknown long[2]", "Unknown long; seems to be the same in all files")
         yield UInt32(self, "unknown long[3]", "Unknown long; seems to be the same in all files")
-        yield UInt32(self, "unknown long[4]", "Unknown long; seems to be the same in all files")
+        yield UInt32(self, "unknown long[4]", "Unknown long; seems to be the same in all files, expept embedded ones, where it is 0")
         yield UInt32(self, "version", "File format version")
 
         yield AuditTag(self, "audit start", "Start Audit Tag")
