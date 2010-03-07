@@ -281,7 +281,7 @@ class FinniganHeader(FieldSet):
         yield UInt32(self, "unknown long[1]", "Unknown long; seems to be the same in all files")
         yield UInt32(self, "unknown long[2]", "Unknown long; seems to be the same in all files")
         yield UInt32(self, "unknown long[3]", "Unknown long; seems to be the same in all files")
-        yield UInt32(self, "unknown long[4]", "Unknown long; seems to be the same in all files, expept embedded ones, where it is 0")
+        yield UInt32(self, "unknown long[4]", "Unknown long; seems to be the same in all files, except embedded ones, where it is 0")
         yield UInt32(self, "version", "File format version")
 
         yield AuditTag(self, "audit start", "Start Audit Tag")
