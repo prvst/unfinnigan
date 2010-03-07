@@ -15,12 +15,17 @@ use Finnigan;
 my $option_help = 0;
 my $option_man = 0;
 my $option_dump = 0;
+my $option_html = 0;
+my $option_wiki = 0;
 my $option_size = 0;
+Getopt::Long::Configure ("bundling");
 GetOptions(
 	   'help|?' => \$option_help,
 	   'man' => \$option_man,
 	   'dump|d' => \$option_dump,
 	   'size|s' => \$option_size,
+	   'html|h' => \$option_html,
+	   'wiki|w' => \$option_wiki,
 	  ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
@@ -43,7 +48,15 @@ if ( $option_size ) {
   say "size: " . $header->size;
 }
 if ( $option_dump ) {
-  $header->dump;
+  if ( $option_html ) {
+    $header->dump(style => 'html');
+  }
+  if ( $option_wiki ) {
+    $header->dump(style => 'wiki');
+  }
+  else {
+    $header->dump;
+  }
 }
 else {
   say "$file: version "
@@ -67,6 +80,7 @@ uf-header [options] file
    -help            brief help message
    -man             full documentation
    -dump            dump all header fields as a table
+   -html            requet html formatting of the output of -dump 
    -size            tell header size
 
 =head1 OPTIONS
@@ -85,6 +99,10 @@ Prints the manual page and exits.
 
 Prints the table listing all header fields with their seek addresses,
 sizes, acess keys and values.
+
+=item B<-html>
+
+Changes the output style of -dump to html.
 
 =item B<-size>
 

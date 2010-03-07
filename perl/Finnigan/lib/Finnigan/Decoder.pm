@@ -90,18 +90,47 @@ sub item {
 }
 
 sub dump {
-  my ( $self ) = @_;
+  my ( $self, %arg ) = @_;
   my @keys = sort {
     $self->data->{$a}->{seq} <=> $self->data->{$b}->{seq}
   } keys %{$self->{data}};
-  foreach my $key ( @keys ) {
-    my $value = $self->item($key)->{value};
-    say join("\t",
-	     $self->item($key)->{addr},
-	     $self->item($key)->{size},
-	     $key,
-	     ref($value) ? ref($value) : $value,
-	    );
+  if ($arg{style} and $arg{style} eq 'html') {
+    say "<table>";
+    say "  <tr> <td>offset</td> <td>size</td> <td>key</td> <td>value</td> </tr>";
+    foreach my $key ( @keys ) {
+      my $value = $self->item($key)->{value};
+      say "  <tr>"
+	. " <td>" . $self->item($key)->{addr} . "</td>"
+	  . " <td>" . $self->item($key)->{size} . "</td>"
+	    . " <td>" . $key . "</td>"
+	      . " <td>" . (ref($value) ? ref($value) : $value) . "</td>"
+		. " </tr>"
+		;
+    }
+    say "</table>";
+  }
+  elsif ($arg{style} and $arg{style} eq 'wiki') {
+    say "|| " . join(" || ", qw/offset size key value/) . " ||";
+    foreach my $key ( @keys ) {
+      my $value = $self->item($key)->{value};
+      say "|| " . join(" || ",
+		       $self->item($key)->{addr},
+		       $self->item($key)->{size},
+		       "\`$key\`",
+		       ref($value) ? ref($value) : $value,
+		      ). " ||";
+    }
+  }
+  else {
+    foreach my $key ( @keys ) {
+      my $value = $self->item($key)->{value};
+      say join("\t",
+	       $self->item($key)->{addr},
+	       $self->item($key)->{size},
+	       $key,
+	       ref($value) ? ref($value) : $value,
+	      );
+    }
   }
 }
 
