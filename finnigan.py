@@ -400,7 +400,7 @@ class SeqRow(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield SeqRowHeader(self, "header", "this seems to be a header for SeqRow (Sequence Table Row)")
+        yield InjectionData(self, "injection", "Injection Parameters")
         for index in "12":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
         yield PascalStringWin32(self, "id", "ID")
@@ -432,19 +432,19 @@ class SeqRow(FieldSet):
             
  
 
-class SeqRowHeader(FieldSet):
+class InjectionData(FieldSet):
 #    static_size = 64
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]", "Unknown long in SeqRowHeader")
+        yield UInt32(self, "unknown long[1]", "Unknown Long")
         yield UInt32(self, "n", "Row Number")
-        yield UInt32(self, "unknown long[2]", "Unknown long in SeqRowHeader")
+        yield UInt32(self, "unknown long[2]", "Unknown Long")
         yield String(self, "vial", 12, "Vial ID; assigned to InstConfig::MSSerialNum at the end of SeqRow parsing", charset="UTF-16-LE", truncate="\0")
         yield Float64(self, "inj volume", "Injection Volume (ul)")
         yield Float64(self, "weight", "Sample Weight")
         yield Float64(self, "volume", "Sample Volume (ul)")
-        yield Float64(self, "istd amount", "ISTD Amount")
+        yield Float64(self, "istd amount", "Internal Standard Amount")
         yield Float64(self, "df", "Dilution Factor")
 
 

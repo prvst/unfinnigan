@@ -40,9 +40,22 @@ sub read {
       $value = eval{$type}->decode($stream);
       $nbytes = $value->size();
     }
+    elsif ( $template eq 'varstr' ) {
+      my $bytes_to_read = 4;
+      $nbytes = read $stream, $rec, $bytes_to_read;
+      $nbytes == $bytes_to_read
+	or die "could not read all $bytes_to_read bytes of string size in $name at $current_addr";
+      my $nchars = unpack "V", $rec;
+      $bytes_to_read = 2*$nchars;
+      $nbytes = read $stream, $rec, $bytes_to_read;
+      $nbytes == $bytes_to_read
+	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+      $value = pack "C*", unpack "U0C*", $rec;
+      $nbytes += 4;
+    }
     elsif ( $template eq 'windows_time' ) {
       my $bytes_to_read = 8;
-      $nbytes = read $stream, $rec, 8;
+      $nbytes = read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
 	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
       $value = windows_datetime_in_bytes(unpack "W*", $rec);
