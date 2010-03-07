@@ -46,8 +46,6 @@ if ( $option_dump ) {
   $header->dump;
 }
 else {
-  # use Data::Dumper;
-  # print Dumper($header->audit_start);
   say "$file: version "
     . $header->version . "; "
       . $header->audit_start->time
