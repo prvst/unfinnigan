@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use Finnigan;
+use base 'Finnigan::Decoder';
 
-sub read {
+sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
@@ -23,6 +24,11 @@ sub read {
 sub time {
   my ( $self ) = @_;
   $self->{data}->{time}->{value};
+}
+
+sub tag1 {
+  my ( $self ) = @_;
+  $self->{data}->{"tag[1]"}->{value};
 }
 
 1;

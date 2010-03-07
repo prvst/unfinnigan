@@ -8,10 +8,24 @@ use warnings;
 use feature qw/state say/;
 use 5.010;
 
+use Getopt::Long;
+use Pod::Usage;
 use Finnigan;
 
+my $option_help = 0;
+my $option_man = 0;
+my $option_dump = 0;
+my $option_size = 0;
+GetOptions(
+	   'help|?' => \$option_help,
+	   'man' => \$option_man,
+	   'dump|d' => \$option_dump,
+	   'size|s' => \$option_size,
+	  ) or pod2usage(2);
+pod2usage(1) if $option_help;
+pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
 
-@ARGV == 1 or do { say STDERR "usage: $0 <input_file>"; exit -1 };
+@ARGV == 1 or do{ say STDERR "Expecting a single input file\n"; pod2usage(2) };
 
 my $file = shift @ARGV;
 
@@ -19,10 +33,74 @@ my $file = shift @ARGV;
 -f $file or die "'$file' is not a plain file";
 -s $file or die "'$file' has zero size";
 
+# -----------------------------------------------------------------------------
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
-my $header = Finnigan::FileHeader->read(\*INPUT);
-use Data::Dumper;
+my $header = Finnigan::FileHeader->decode(\*INPUT);
 
-say "$file: version " . $header->version . "; " . $header->audit_start->time;
+if ( $option_size ) {
+  say "size: " . $header->size;
+}
+if ( $option_dump ) {
+  $header->dump;
+}
+else {
+  # use Data::Dumper;
+  # print Dumper($header->audit_start);
+  say "$file: version "
+    . $header->version . "; "
+      . $header->audit_start->time
+	. ($header->audit_start->tag1 ? "; " . $header->audit_start->tag1 : "")
+	  . ($header->tag ? "; " . $header->tag : "")
+	  ;
+}
+
+__END__
+=head1 NAME
+
+uf-header - decode the file header in a Finnigan raw file
+
+=head1 SYNOPSIS
+
+uf-header [options] file
+
+ Options:
+   -help            brief help message
+   -man             full documentation
+   -dump            dump all header fields as a table
+   -size            tell header size
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-man>
+
+Prints the manual page and exits.
+
+=item B<-dump>
+
+Prints the table listing all header fields with their seek addresses,
+sizes, acess keys and values.
+
+=item B<-size>
+
+Prints the size of the header in bytes.
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will display the read the given input file and display
+the contents of its header. It will return an error message if the
+file is not a Finnigan raw file.
+
+By default, it prints the several header items (version number and
+parts of its AuditTag) on a single line.
+
+=cut

@@ -23,15 +23,21 @@ sub read {
   my $self = {};
   my ( $rec, $nbytes );  
 
+  bless $self, $class;
+
   my $addr = my $current_addr = tell $stream;
   my $size = 0;
 
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
     my ($name, $template) = ($fields->[2*$i], $fields->[2*$i+1]);
     my $value;
+
+    die qq(key "$name" already exists) if $self->item($name);
+
     if ( $template =~ /^object=/ ) {
       my $class = (split /=/, $template)[-1];
-      $value = eval{$class}->read($stream);
+      $value = eval{$class}->decode($stream);
+      $nbytes = $value->size();
     }
     elsif ( $template eq 'windows_time' ) {
       my $bytes_to_read = 8;
@@ -54,7 +60,12 @@ sub read {
       }
     }
 
-    $self->{data}->{$name} = {addr => $current_addr, value => $value};
+    $self->{data}->{$name} = {
+			      seq => $i,
+			      addr => $current_addr,
+			      size => $nbytes,
+			      value => $value
+			     };
     $current_addr = tell $stream;
     $size += $nbytes;
   }
@@ -62,50 +73,88 @@ sub read {
   $self->{addr} = $addr;
   $self->{size} = $size;
 
-  return bless $self, $class;
+  return $self;
+}
+
+sub size {
+  shift->{size};
+}
+
+sub data {
+  shift->{data};
+}
+
+sub item {
+  my ($self, $key) = @_;
+  $self->{data}->{$key};
+}
+
+sub dump {
+  my ( $self ) = @_;
+  my @keys = sort {
+    $self->data->{$a}->{seq} <=> $self->data->{$b}->{seq}
+  } keys %{$self->{data}};
+  foreach my $key ( @keys ) {
+    my $value = $self->item($key)->{value};
+    say join("\t",
+	     $self->item($key)->{addr},
+	     $self->item($key)->{size},
+	     $key,
+	     ref($value) ? ref($value) : $value,
+	    );
+  }
 }
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
-
 =head1 NAME
 
-Finnigan::Decoder - Perl extension for blah blah blah
+Finnigan::Decoder - a generic binary structure decoder
 
 =head1 SYNOPSIS
 
-  use Finnigan::Decoder;
-  blah blah blah
+  use Finnigan;
+
+  my $fields = [
+		short_int => 'v',
+		long_int => 'V',
+		ascii_string => 'C60',
+		wide_string => 'U0C18',
+		audit_tag => 'object=Finnigan::AuditTag',
+		time => 'windows_time',
+	       ];
+
+  my $data = Finnigan::Decoder->read(\*STREAM, $fields);
+
 
 =head1 DESCRIPTION
 
-Stub documentation for Finnigan::Decoder, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
+This class is not inteded to be used directly; it is a parent class
+for all Finnigan decoders. The fields to decode are passed to
+the decoder's read() method in a list reference, where every even item
+specifies the key the item will be known as in the resulting hash, and
+every odd item specifies the unpack template.
 
-Blah blah blah.
+The templates starting with 'object=' instruct the current decoder to
+call another Finnigan decoder at that location. A special template
+'windows_time' instructs the current decoders parent class,
+Finingan::Decoder, to call its own Windows timestamp routine.
 
 =head2 EXPORT
 
-None by default.
-
+None
 
 
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
+Use this command to list all available Finnigan decoders:
 
-If you have a mailing list set up for your module, mention it here.
+ perl -MFinnigan -e 'Finnigan::list_modules'
 
-If you have a web site set up for your module, mention it here.
 
 =head1 AUTHOR
 
-Gene Selkov, E<lt>selkovjr@E<gt>
+Gene Selkov, E<lt>selkovjr@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

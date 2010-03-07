@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use Finnigan;
+use base 'Finnigan::Decoder';
 
-sub read {
+sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
@@ -18,9 +19,9 @@ sub read {
 		version => 'V',
 		audit_start => 'object=Finnigan::AuditTag',
 		audit_end => 'object=Finnigan::AuditTag',
-		"unknown_long[4]" => 'V',
+		"unknown_long[5]" => 'V',
 		unknown_area => 'C60',
-		tag => 'U0C514',
+		tag => 'U0C1028',
 	       ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
@@ -45,6 +46,11 @@ sub audit_start {
 sub audit_end {
   my ( $self ) = @_;
   $self->{data}->{audit_end}->{value};
+}
+
+sub tag {
+  my ( $self ) = @_;
+  $self->{data}->{tag}->{value};
 }
 
 1;
