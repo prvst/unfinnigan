@@ -1,0 +1,6 @@
+Revision history for Perl extension Finnigan.
+
+0.01  Sat Mar  6 23:58:43 2010
+	- original version; created by h2xs 1.23 with options
+		-X -n Finnigan
+

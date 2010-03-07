@@ -1,0 +1,10 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Finnigan.t
+lib/Finnigan.pm
+lib/Finnigan/AuditTag.pm
+lib/Finnigan/Decoder.pm
+lib/Finnigan/FileHeader.pm
+bin/uf-header

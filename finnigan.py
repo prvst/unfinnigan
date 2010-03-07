@@ -29,7 +29,7 @@ from hachoir_parser.common.win32 import PascalStringWin32
 from hachoir_core.endian import LITTLE_ENDIAN, BIG_ENDIAN
 
 VERSION = []
-ABBREVIATE_LISTS = True
+ABBREVIATE_LISTS = False
 VERBOSE_GENERIC_RECORDS = False
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
@@ -98,8 +98,8 @@ class Finnigan(Parser):
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
             nscans = last_scan_number - first_scan_number + 1
-            # for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 50) + 1):
+            #for n in range(1, nscans + 1):
+            for n in range(1, min(nscans, 120) + 1):
                 yield Spectrum(self, "spectrum %s" % n)
                 print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nscans),
 
@@ -910,8 +910,9 @@ class ScanList(FieldSet):
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
         if 0 and ABBREVIATE_LISTS and nrecords > 100:
             yield ShortScanHeader(self, "scan header[1]", "Short ScanHeader 1")
+            yield ShortScanHeader(self, "scan header[2]", "Short ScanHeader 2")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
-            yield RawBytes(self, ". . .", (nrecords - 2) * record_sz, "records skipped for speed")
+            yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
             yield ShortScanHeader(self, "scan header[%s]" % nrecords, "ShortScanHeader %s" % nrecords)
         else:
             for n in range(1, nrecords + 1):
@@ -927,8 +928,9 @@ class ScanHeaderFile(FieldSet):
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
         if ABBREVIATE_LISTS and nrecords > 100:
             yield ScanHeader(self, self["../scan header"], "scan header[1]", "ScanHeader 1")
+            yield ScanHeader(self, self["../scan header"], "scan header[2]", "ScanHeader 2")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
-            yield RawBytes(self, ". . .", (nrecords - 2) * record_sz, "records skipped for speed")
+            yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
             yield ScanHeader(self, self["../scan header"], "scan header[%s]" % nrecords, "ScanHeader %s" % nrecords)
         else:
             for n in range(1, nrecords + 1):
