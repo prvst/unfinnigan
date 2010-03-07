@@ -7,6 +7,7 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Finnigan.pm', # finds $VERSION
     PREREQ_PM         => {
 			  Module::Find => '0.10',
+			  DateTime::Format::WindowsFileTime => '0.02',
 			 },
     EXE_FILES         => [
 			  'bin/uf-header',

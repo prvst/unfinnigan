@@ -10,18 +10,18 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		magic => 'v',
-		signature => 'U0C18',
-		"unknown_long[1]" => 'V',
-		"unknown_long[2]" => 'V',
-		"unknown_long[3]" => 'V',
-		"unknown_long[4]" => 'V',
-		version => 'V',
-		audit_start => 'object=Finnigan::AuditTag',
-		audit_end => 'object=Finnigan::AuditTag',
-		"unknown_long[5]" => 'V',
-		unknown_area => 'C60',
-		tag => 'U0C1028',
+		magic             => ['v',       'UInt16'],
+		signature         => ['U0C18',   'UTF16LE'],
+		"unknown_long[1]" => ['V',       'UInt32'],
+		"unknown_long[2]" => ['V',       'UInt32'],
+		"unknown_long[3]" => ['V',       'UInt32'],
+		"unknown_long[4]" => ['V',       'UInt32'],
+		version           => ['V',       'UInt32'],
+		audit_start       => ['object',  'Finnigan::AuditTag'],
+		audit_end         => ['object',  'Finnigan::AuditTag'],
+		"unknown_long[5]" => ['V',       'UInt32'],
+		unknown_area      => ['C60',     'RawBytes'],
+		tag               => ['U0C1028', 'UTF16LE'],
 	       ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);

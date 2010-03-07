@@ -29,14 +29,15 @@ sub read {
   my $size = 0;
 
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
-    my ($name, $template) = ($fields->[2*$i], $fields->[2*$i+1]);
+    my ($name, $desc) = ($fields->[2*$i], $fields->[2*$i+1]);
+    my ($template, $type) = @$desc;
     my $value;
 
+    say "unpacking $name($template, $type)";
     die qq(key "$name" already exists) if $self->item($name);
 
-    if ( $template =~ /^object=/ ) {
-      my $class = (split /=/, $template)[-1];
-      $value = eval{$class}->decode($stream);
+    if ( $template eq 'object' ) {
+      $value = eval{$type}->decode($stream);
       $nbytes = $value->size();
     }
     elsif ( $template eq 'windows_time' ) {
@@ -64,7 +65,8 @@ sub read {
 			      seq => $i,
 			      addr => $current_addr,
 			      size => $nbytes,
-			      value => $value
+			      type => $type,
+			      value => $value,
 			     };
     $current_addr = tell $stream;
     $size += $nbytes;
@@ -96,26 +98,28 @@ sub dump {
   } keys %{$self->{data}};
   if ($arg{style} and $arg{style} eq 'html') {
     say "<table>";
-    say "  <tr> <td>offset</td> <td>size</td> <td>key</td> <td>value</td> </tr>";
+    say "  <tr> <td>offset</td> <td>size</td> <td>type</td> <td>key</td> <td>value</td> </tr>";
     foreach my $key ( @keys ) {
       my $value = $self->item($key)->{value};
       say "  <tr>"
 	. " <td>" . $self->item($key)->{addr} . "</td>"
 	  . " <td>" . $self->item($key)->{size} . "</td>"
-	    . " <td>" . $key . "</td>"
-	      . " <td>" . (ref($value) ? ref($value) : $value) . "</td>"
-		. " </tr>"
-		;
+	    . " <td>" . $self->item($key)->{type} . "</td>"
+	      . " <td>" . $key . "</td>"
+		. " <td>" . (ref($value) ? ref($value) : $value) . "</td>"
+		  . " </tr>"
+		    ;
     }
     say "</table>";
   }
   elsif ($arg{style} and $arg{style} eq 'wiki') {
-    say "|| " . join(" || ", qw/offset size key value/) . " ||";
+    say "|| " . join(" || ", qw/offset size type key value/) . " ||";
     foreach my $key ( @keys ) {
       my $value = $self->item($key)->{value};
       say "|| " . join(" || ",
 		       $self->item($key)->{addr},
 		       $self->item($key)->{size},
+		       $self->item($key)->{type},
 		       "\`$key\`",
 		       ref($value) ? ref($value) : $value,
 		      ). " ||";
@@ -127,6 +131,7 @@ sub dump {
       say join("\t",
 	       $self->item($key)->{addr},
 	       $self->item($key)->{size},
+	       $self->item($key)->{type},
 	       $key,
 	       ref($value) ? ref($value) : $value,
 	      );

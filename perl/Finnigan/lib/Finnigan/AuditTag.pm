@@ -10,10 +10,10 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		time => 'windows_time',
-		"tag[1]" => 'U0C50',
-		"tag[2]" => 'U0C50',
-		unknown_long => 'V',
+		time =>         ['windows_time', 'TimestampWin64'],
+		"tag[1]" =>     ['U0C50',        'UTF16LE'],
+		"tag[2]" =>     ['U0C50',        'UTF16LE'],
+		unknown_long => ['V',            'UInt32'],
 	       ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
