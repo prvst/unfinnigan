@@ -328,7 +328,7 @@ class AuditTag(FieldSet):
         yield TimestampWin64(self, "start", "Timestamp")
         yield String(self, "tag[1]", 50, charset="UTF-16-LE", truncate="\0")
         yield String(self, "tag[2]", 50, charset="UTF-16-LE", truncate="\0")
-        yield UInt32(self, "crc32", "CRC-32 sum")
+        yield UInt32(self, "unknown long", "It seems like in some cases it is used to hold a CRC-32 sum")
 
 class RunHeader(FieldSet):
     # this header cannot have static size; it is composed of on Pascal strings

@@ -13,7 +13,7 @@ sub decode {
 		time => 'windows_time',
 		"tag[1]" => 'U0C50',
 		"tag[2]" => 'U0C50',
-		"checksum" => 'V',
+		unknown_long => 'V',
 	       ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);

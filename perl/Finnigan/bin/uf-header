@@ -18,6 +18,7 @@ my $option_dump = 0;
 my $option_html = 0;
 my $option_wiki = 0;
 my $option_size = 0;
+my $option_atag = 0;
 Getopt::Long::Configure ("bundling");
 GetOptions(
 	   'help|?' => \$option_help,
@@ -26,6 +27,7 @@ GetOptions(
 	   'size|s' => \$option_size,
 	   'html|h' => \$option_html,
 	   'wiki|w' => \$option_wiki,
+	   'atag' => \$option_atag,
 	  ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
@@ -49,13 +51,28 @@ if ( $option_size ) {
 }
 if ( $option_dump ) {
   if ( $option_html ) {
-    $header->dump(style => 'html');
+    if ( $option_atag ) {
+      $header->audit_start->dump(style => 'html');
+    }
+    else {
+      $header->dump(style => 'html');
+    }
   }
-  if ( $option_wiki ) {
-    $header->dump(style => 'wiki');
+  elsif ( $option_wiki ) {
+    if ( $option_atag ) {
+      $header->audit_start->dump(style => 'wiki');
+    }
+    else {
+      $header->dump(style => 'wiki');
+    }
   }
   else {
-    $header->dump;
+    if ( $option_atag ) {
+      $header->audit_start->dump;
+    }
+    else {
+      $header->dump;
+    }
   }
 }
 else {
@@ -77,36 +94,41 @@ uf-header - decode the file header in a Finnigan raw file
 uf-header [options] file
 
  Options:
-   -help            brief help message
-   -man             full documentation
-   -dump            dump all header fields as a table
-   -html            requet html formatting of the output of -dump 
-   -size            tell header size
+   --help            brief help message
+   --man             full documentation
+   --dump            dump all header fields as a table
+   --html            requet html formatting of the output of -dump 
+   --size            tell header size
+   --atag            dump the content of AuditTags instead of the header itself
 
 =head1 OPTIONS
 
 =over 8
 
-=item B<-help>
+=item B<--help>
 
 Print a brief help message and exits.
 
-=item B<-man>
+=item B<--man>
 
 Prints the manual page and exits.
 
-=item B<-dump>
+=item B<--dump>
 
 Prints the table listing all header fields with their seek addresses,
 sizes, acess keys and values.
 
-=item B<-html>
+=item B<--html>
 
 Changes the output style of -dump to html.
 
-=item B<-size>
+=item B<--size>
 
 Prints the size of the header in bytes.
+
+=item B<--atag>
+
+Dump the contents of the two AuditTag objects, rather than the header itself.
 
 =back
 
