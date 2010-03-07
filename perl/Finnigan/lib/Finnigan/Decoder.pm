@@ -33,7 +33,6 @@ sub read {
     my ($template, $type) = @$desc;
     my $value;
 
-    say "unpacking $name($template, $type)";
     die qq(key "$name" already exists) if $self->item($name);
 
     if ( $template eq 'object' ) {
@@ -106,16 +105,21 @@ sub item {
 
 sub dump {
   my ( $self, %arg ) = @_;
+
+  my $addr = $self->{addr};
+
   my @keys = sort {
     $self->data->{$a}->{seq} <=> $self->data->{$b}->{seq}
   } keys %{$self->{data}};
+
   if ($arg{style} and $arg{style} eq 'html') {
     say "<table>";
     say "  <tr> <td>offset</td> <td>size</td> <td>type</td> <td>key</td> <td>value</td> </tr>";
     foreach my $key ( @keys ) {
+      my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
       say "  <tr>"
-	. " <td>" . $self->item($key)->{addr} . "</td>"
+	. " <td>" . $offset . "</td>"
 	  . " <td>" . $self->item($key)->{size} . "</td>"
 	    . " <td>" . $self->item($key)->{type} . "</td>"
 	      . " <td>" . $key . "</td>"
@@ -128,9 +132,10 @@ sub dump {
   elsif ($arg{style} and $arg{style} eq 'wiki') {
     say "|| " . join(" || ", qw/offset size type key value/) . " ||";
     foreach my $key ( @keys ) {
+      my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
       say "|| " . join(" || ",
-		       $self->item($key)->{addr},
+		       $offset,
 		       $self->item($key)->{size},
 		       $self->item($key)->{type},
 		       "\`$key\`",
@@ -140,9 +145,10 @@ sub dump {
   }
   else {
     foreach my $key ( @keys ) {
+      my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
       say join("\t",
-	       $self->item($key)->{addr},
+	       $offset,
 	       $self->item($key)->{size},
 	       $self->item($key)->{type},
 	       $key,

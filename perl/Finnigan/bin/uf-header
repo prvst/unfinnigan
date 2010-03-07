@@ -19,6 +19,8 @@ my $option_html = 0;
 my $option_wiki = 0;
 my $option_size = 0;
 my $option_atag = 0;
+my $option_relative = 0;
+
 Getopt::Long::Configure ("bundling");
 GetOptions(
 	   'help|?' => \$option_help,
@@ -28,6 +30,7 @@ GetOptions(
 	   'html|h' => \$option_html,
 	   'wiki|w' => \$option_wiki,
 	   'atag' => \$option_atag,
+	   'relative|r' => \$option_relative,
 	  ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
@@ -52,26 +55,26 @@ if ( $option_size ) {
 if ( $option_dump ) {
   if ( $option_html ) {
     if ( $option_atag ) {
-      $header->audit_start->dump(style => 'html');
+      $header->audit_start->dump(style => 'html', relative => $option_relative);
     }
     else {
-      $header->dump(style => 'html');
+      $header->dump(style => 'html', relative => $option_relative);
     }
   }
   elsif ( $option_wiki ) {
     if ( $option_atag ) {
-      $header->audit_start->dump(style => 'wiki');
+      $header->audit_start->dump(style => 'wiki', relative => $option_relative);
     }
     else {
-      $header->dump(style => 'wiki');
+      $header->dump(style => 'wiki', relative => $option_relative);
     }
   }
   else {
     if ( $option_atag ) {
-      $header->audit_start->dump;
+      $header->audit_start->dump(relative => $option_relative);
     }
     else {
-      $header->dump;
+      $header->dump(relative => $option_relative);
     }
   }
 }
@@ -100,6 +103,7 @@ uf-header [options] file
    --html            requet html formatting of the output of -dump 
    --size            tell header size
    --atag            dump the content of AuditTags instead of the header itself
+   --relative        show relative addresses
 
 =head1 OPTIONS
 
@@ -129,6 +133,11 @@ Prints the size of the header in bytes.
 =item B<--atag>
 
 Dump the contents of the two AuditTag objects, rather than the header itself.
+
+=item B<--relative>
+
+Show relative addresses of all itmes. The default is to show the
+absolute seek address.
 
 =back
 
