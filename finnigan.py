@@ -351,8 +351,7 @@ class RunHeader(FieldSet):
             for index in "789abcd":
                 yield String(self, "file name[%s]" % index, 520, charset="UTF-16-LE", truncate="\0")
 
-            yield UInt16(self, "unknown short[1]", "may be part of a long")
-            yield UInt16(self, "unknown short[2]", "may be part of a long")
+            yield UInt32(self, "scan trailer addr", "Absolute seek address of the TrailerScanEvent stream")
             yield UInt32(self, "scan header list addr", "Absolute seek address of the ScanHeader stream")
             yield UInt32(self, "nscans[1]", "Looks like the number of scans")
             yield UInt32(self, "nscans[2]", "Looks like the number of scans; may be the same as above")
