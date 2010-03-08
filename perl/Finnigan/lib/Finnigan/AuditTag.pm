@@ -41,7 +41,7 @@ Finnigan::AuditTag -- a decoder for AuditTag, a substructure found in the Finnig
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $tag = Finnigan::AuditTag->read(\*INPUT);
+  my $tag = Finnigan::AuditTag->decode(\*INPUT);
   say $tag->time;
 
 =head1 DESCRIPTION
