@@ -75,15 +75,15 @@ class Finnigan(Parser):
             yield RunHeader(self, "run header", "The run header with information about the number of scans")
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- meaning unknown")
-            yield IcisStatusLog(self, "icis status log", "IcisStatusLog -- meaning unknown; can have 0 records")
+            yield IcisStatusLog(self, "icis status log", "Interactive Chemical Information System (ICIS) log -- meaning unknown; can have 0 records")
             yield Instfile(self, "inst file", "Embedded instrument file")
             yield UInt32(self, "nsegs", "Number of scan segments -- possibly (a conjecture)")
             for index in range(1, self["nsegs"].value + 1): # this loop may actually include all of the following objects
                 yield TuneData(self, "tune data", "TuneData")
-            yield PeakData(self, "peak data", "PeakData")
+            yield PeakData(self, "peak data", "Called peaks")
             yield ScanData(self, "scan data", "ScanData")
 
-            nrecords = self["/run header/sample info/inst log size"].value
+            nrecords = self["/run header/sample info/inst log length"].value
             for n in range(1, nrecords + 1):
                 yield LogRecord(self, "log[%s]" % n, "LogRecord %s" % n)
 
@@ -371,16 +371,16 @@ class SampleInfo(FieldSet):
     def createFields(self):
         yield UInt32(self, "unknown long[1]", "Unknown long in SampleInfo")
         yield UInt32(self, "unknown long[2]", "Unknown long in SampleInfo")
-        yield UInt32(self, "first scan number", "The number of the first scan")
-        yield UInt32(self, "last scan number", "The number of the last scan")
-        yield UInt32(self, "inst log size", "The number of status records logged")
+        yield UInt32(self, "first scan number", "The number of the first scan in the file")
+        yield UInt32(self, "last scan number", "The number of the last scan in the file")
+        yield UInt32(self, "inst log length", "The number of instrument status samples logged")
         yield UInt32(self, "unknown long[3]", "Unknown long in SampleInfo")
         yield UInt32(self, "unknown long[4]", "Unknown long in SampleInfo")
-        yield UInt32(self, "scan list addr", "Absolute seek address of ShortScanHeader stream")
-        yield UInt32(self, "raw data addr", "Absolute seek address of raw scan data")
+        yield UInt32(self, "scan index addr", "Absolute seek address of ShortScanHeader stream")
+        yield UInt32(self, "data addr", "Absolute seek address of raw scan data")
         yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
         yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
-        yield UInt32(self, "unknown long[6]", "Unknown long in SampleInfo")
+        yield UInt32(self, "unknown long[5]", "Unknown long in SampleInfo")
         yield Float64(self, "ion current", "Max ion current? It does co-incide with the total current in one of the scans")
         yield Float64(self, "low mz", "Low m/z; meaning uncertain")
         yield Float64(self, "high mz", "High m/z; meaning uncertain")
@@ -562,7 +562,7 @@ class InstrumentLog(FieldSet):
     def createFields(self):
         yield GenericDataHeader(self, "header", "Generic Data Header")
 
-        nrecords = self["/run header/sample info/inst log size"].value
+        nrecords = self["/run header/sample info/inst log length"].value
         if ABBREVIATE_LISTS and nrecords > 100:
             yield StatusLogRecord(self, self["header"], "log[1]", "LogRecord 1")
             yield StatusLogRecord(self, self["header"], "log[2]", "LogRecord 1")
@@ -889,7 +889,7 @@ class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
         nsegs = self["/run header/nsegs"].value # this is a conjecture
         for n in range(1, nsegs + 1):
             yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
-        yield ScanList(self, "scan list", "A set of ShortScanHeader records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
+        yield ScanList(self, "scan index", "A set of ShortScanHeader records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
         yield TrailerScanEvent(self, "trailer scan event", "Something called TrailerScanEvent")
         yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
@@ -1160,21 +1160,18 @@ class TuneDataHeader(FieldSet):
         for index in "12":
             yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
 
-class LCQScanHeader(FieldSet):
-    endian = LITTLE_ENDIAN
-
-    def createFields(self):
-        info = self["/run header/sample info"]
-        header_size = 1092 # info["raw data addr"].value - info["lcq scan heade addr"].value
-        yield RawBytes(self, "unknown data", header_size, "Real Time Chro label data")
-
 class PeakData(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
         info = self["/run header/sample info"]
-        header_size =  info["scan list addr"].value - info["raw data addr"].value
-        yield RawBytes(self, "unknown data", header_size, "UnknownData")
+        data_size =  info["scan index addr"].value - info["data addr"].value
+        nrecords = data_size/8
+        for index in range(1, nrecords + 1):
+            yield UInt32(self, "abundance[%s]" % index)
+            yield UInt16(self, "mz_whole[%s]" % index, "Whole part of M/z")
+            yield UInt16(self, "mz_frac[%s]" % index, "Fractional part of M/z")
+
 
 class ScanData(FieldSet):
     endian = LITTLE_ENDIAN
