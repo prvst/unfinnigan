@@ -10,7 +10,7 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		preamble =>  ['object', 'CASInfoPreamble'],
+		preamble =>  ['object', 'Finnigan::CASInfoPreamble'],
 		text     =>  ['varstr', 'PascalStringWin32'],
 	       ];
 
