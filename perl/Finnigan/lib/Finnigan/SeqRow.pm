@@ -27,6 +27,7 @@ sub decode {
 		      );
 
   my %specific_fields;
+  $specific_fields{8} = [],
   $specific_fields{57} = [
 			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
