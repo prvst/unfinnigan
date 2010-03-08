@@ -475,16 +475,16 @@ class RawFileInfoPreamble(FieldSet):
 
     def createFields(self):
         yield UInt32(self, "unknown long")
-        yield UInt16(self, "year", "Year")
-        yield UInt16(self, "month", "Month")
+        yield UInt16(self, "year")
+        yield UInt16(self, "month")
+        yield UInt16(self, "day of the week")
+        yield UInt16(self, "day")
+        yield UInt16(self, "hour")
+        yield UInt16(self, "minute")
+        yield UInt16(self, "second")
         yield UInt16(self, "unknown short[1]")
-        yield UInt16(self, "day", "Day")
-        yield UInt16(self, "hour", "Hour (sometimes does not make sense)")
-        yield UInt16(self, "minute", "Minute")
-        yield UInt16(self, "second", "Second")
-        yield UInt16(self, "unknown short[2]")
         if VERSION[-1] >= 57:
-            for index in range(3, 14 + 1):
+            for index in range(2, 13 + 1):
                 yield UInt16(self, "unknown short[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
