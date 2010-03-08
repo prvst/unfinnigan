@@ -99,7 +99,7 @@ class Finnigan(Parser):
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
             nscans = last_scan_number - first_scan_number + 1
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 120) + 1):
+            for n in range(1, min(nscans, 20) + 1):
                 yield Spectrum(self, "spectrum %s" % n)
                 print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nscans),
 
@@ -401,7 +401,7 @@ class SeqRow(FieldSet):
 
     def createFields(self):
         yield InjectionData(self, "injection", "Injection Parameters")
-        for index in "12":
+        for index in "ab":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
         yield PascalStringWin32(self, "id", "ID")
         yield PascalStringWin32(self, "remark", "Remark")
@@ -413,8 +413,11 @@ class SeqRow(FieldSet):
         yield PascalStringWin32(self, "inst method", "Instrument Method")
         yield PascalStringWin32(self, "proc method", "Processing Method")
 
+        for index in "12":
+            yield PascalStringWin32(self, "file name[%s]" % index, "Unknown file name")
+
         if VERSION[-1] >= 57:
-            for index in "cdefg":
+            for index in "cde":
                 yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
 
             yield UInt32(self, "unknown long", "Unknown long in SeqRow")
@@ -426,14 +429,10 @@ class SeqRow(FieldSet):
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
                 exit("unknown file version: %s" % VERSION[-1])
-        else:
-            for index in "12":
-                yield PascalStringWin32(self, "file name[%s]" % index, "Unknown file name")
             
  
 
 class InjectionData(FieldSet):
-#    static_size = 64
     endian = LITTLE_ENDIAN
 
     def createFields(self):
