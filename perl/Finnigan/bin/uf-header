@@ -1,8 +1,5 @@
 #!/usr/bin/env perl
 
-# This tool decodes the called peaks in the PeakData section of the "Old LCQ" data file.
-# It expects to read the extracted binary chunk containing PeakData.
-
 use strict;
 use warnings;
 use feature qw/state say/;
