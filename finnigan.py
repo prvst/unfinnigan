@@ -459,7 +459,7 @@ class CASInfoPreamble(FieldSet):
 
     def createFields(self):
         yield RawBytes(self, "padding", 20, "strange FF padding")
-        yield UInt32(self, "unknown_long", "Unknown long in CASInfo")
+        yield UInt32(self, "unknown long", "Unknown long")
 
 
 class RawFileInfo(FieldSet):
