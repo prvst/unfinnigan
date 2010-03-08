@@ -191,10 +191,15 @@ the decoder's read() method in a list reference, where every even item
 specifies the key the item will be known as in the resulting hash, and
 every odd item specifies the unpack template.
 
-The templates starting with 'object=' instruct the current decoder to
-call another Finnigan decoder at that location. A special template
-'windows_time' instructs the current decoders parent class,
-Finingan::Decoder, to call its own Windows timestamp routine.
+The templates of type 'object' instruct the current decoder to
+call another Finnigan decoder at that location.
+
+A special template 'windows_time' invokes the Windows timestamp
+routine defined in Finnigan::Decoder.
+
+Likewise, another special (non-perl) template, 'varstr' is decoded as
+a Windows Pascal string in a special case inside the
+Finnigan::Decoder::read() method.
 
 =head2 EXPORT
 
