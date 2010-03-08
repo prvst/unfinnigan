@@ -425,7 +425,7 @@ class SeqRow(FieldSet):
             if VERSION[-1] == 57:
                 pass
             elif VERSION[-1] >= 62:
-                for index in "hijklmnopqrstuv":
+                for index in "fghijklmnopqrst":
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
                 exit("unknown file version: %s" % VERSION[-1])
