@@ -93,7 +93,7 @@ class Finnigan(Parser):
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- meaning unknown")
             yield MethodFile(self, "method file", "Embedded method file")
 
-            run_header_addr = self["raw file info/header/run header addr"].value
+            run_header_addr = self["raw file info/preamble/run header addr"].value
 
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
@@ -466,11 +466,11 @@ class RawFileInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield RawFileInfoHeader(self, "header", "RawFileInfo header")
+        yield RawFileInfoPreamble(self, "preamble", "RawFileInfo preamble, containing address of RunHeader")
         for index in "abcdef":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
 
-class RawFileInfoHeader(FieldSet):
+class RawFileInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -479,12 +479,12 @@ class RawFileInfoHeader(FieldSet):
         yield UInt16(self, "month", "Month")
         yield UInt16(self, "unknown short[1]")
         yield UInt16(self, "day", "Day")
-        yield UInt16(self, "unknown short[2]", "")
+        yield UInt16(self, "hour", "Hour (sometimes does not make sense)")
         yield UInt16(self, "minute", "Minute")
         yield UInt16(self, "second", "Second")
-        yield UInt16(self, "unknown short[3]")
+        yield UInt16(self, "unknown short[2]")
         if VERSION[-1] >= 57:
-            for index in range(4, 15 + 1):
+            for index in range(3, 14 + 1):
                 yield UInt16(self, "unknown short[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
