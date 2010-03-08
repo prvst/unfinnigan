@@ -37,7 +37,7 @@ Finnigan::InjectionData -- a decoder for injection parameters in a sequence tabl
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $param = Finnigan::InjectionData->read(\*INPUT);
+  my $param = Finnigan::InjectionData->decode(\*INPUT);
   $param->dump;
 
 =head1 DESCRIPTION
