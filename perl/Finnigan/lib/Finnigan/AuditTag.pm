@@ -48,9 +48,9 @@ Finnigan::AuditTag -- a decoder for AuditTag, a substructure found in the Finnig
 
 AuditTag is a structure with uncertain purpose that contains a
 timestamp in Windows format and a pair of text tags. These tags seem
-to carry the user id of the person who created the
+to carry the user ID of the person who created the
 files. Additionally, there is a long integer, possibly carrying the
-CRC32 sum of the data file or a portion of it.
+CRC-32 sum of the data file or a portion of it.
 
 =head2 EXPORT
 
