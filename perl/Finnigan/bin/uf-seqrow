@@ -130,11 +130,11 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<This program> will display the read the given input file and display
-the contents of its header. It will return an error message if the
-file is not a Finnigan raw file.
+B<uf-seqrow> will read the given input file and display the contents
+of its SeqRow structure or its component, InjectionData.
 
-By default, it prints the several header items (version number and
-parts of its AuditTag) on a single line.
+It will return an error message if its input is not a Finnigan raw
+file.
 
+By default, it dumps the object in tabular format.
 =cut

@@ -140,11 +140,13 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<This program> will display the read the given input file and display
-the contents of its header. It will return an error message if the
-file is not a Finnigan raw file.
+B<uf-header> will read the given input file and display the contents
+of its header or the AuditTag structures embedded into it.
 
-By default, it prints the several header items (version number and
+It will return an error message if the file is not a Finnigan raw
+file.
+
+By default, it prints a few header items (version number and
 parts of its AuditTag) on a single line.
 
 =cut
