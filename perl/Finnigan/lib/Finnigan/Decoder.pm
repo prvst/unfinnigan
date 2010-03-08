@@ -40,15 +40,18 @@ sub read {
       $nbytes = $value->size();
     }
     elsif ( $template eq 'varstr' ) {
+      # read the prefix counter into $nchars
       my $bytes_to_read = 4;
       $nbytes = read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
-	or die "could not read all $bytes_to_read bytes of string size in $name at $current_addr";
+	or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
       my $nchars = unpack "V", $rec;
+
+      # read the 2-byte characters
       $bytes_to_read = 2*$nchars;
       $nbytes = read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
-	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+	or die "could not read all $nchars 2-byte characters of $name at $current_addr";
       $value = pack "C*", unpack "U0C*", $rec;
       $nbytes += 4;
     }
@@ -139,7 +142,7 @@ sub dump {
 		       $self->item($key)->{size},
 		       $self->item($key)->{type},
 		       "\`$key\`",
-		       ref($value) ? ref($value) : $value,
+		       length($value) ? (ref($value) ? ref($value) : "\`$value\`") : "",
 		      ). " ||";
     }
   }
