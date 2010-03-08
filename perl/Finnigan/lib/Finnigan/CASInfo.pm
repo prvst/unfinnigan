@@ -19,14 +19,9 @@ sub decode {
   return bless $self, $class;
 }
 
-sub time {
+sub preamble {
   my ( $self ) = @_;
-  $self->{data}->{time}->{value};
-}
-
-sub tag1 {
-  my ( $self ) = @_;
-  $self->{data}->{"tag[1]"}->{value};
+  $self->{data}->{preamble}->{value};
 }
 
 1;

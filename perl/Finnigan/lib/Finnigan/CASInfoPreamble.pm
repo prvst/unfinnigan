@@ -6,6 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+
 sub decode {
   my ($class, $stream) = @_;
 
@@ -17,16 +18,6 @@ sub decode {
   my $self = Finnigan::Decoder->read($stream, $fields);
 
   return bless $self, $class;
-}
-
-sub time {
-  my ( $self ) = @_;
-  $self->{data}->{time}->{value};
-}
-
-sub tag1 {
-  my ( $self ) = @_;
-  $self->{data}->{"tag[1]"}->{value};
 }
 
 1;
