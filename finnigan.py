@@ -451,10 +451,10 @@ class CASInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield CASInfoHeader(self, "header", "CASInfo header")
-        yield PascalStringWin32(self, "unknown text", "Unknown Pascal string")
+        yield CASInfoPreamble(self, "preamble", "CASInfo preamble")
+        yield PascalStringWin32(self, "text", "Unknown text")
 
-class CASInfoHeader(FieldSet):
+class CASInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
