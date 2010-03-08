@@ -32,19 +32,21 @@ __END__
 
 =head1 NAME
 
-Finnigan::InjectionData -- a decoder for Finnigan file headers
+Finnigan::InjectionData -- a decoder for injection parameters in a sequence table row
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $header = Finnigan::InjectionData->read(\*INPUT);
-  say "$file: version " . $header->version . "; " . $header->audit_start->time;
+  my $param = Finnigan::InjectionData->read(\*INPUT);
+  $param->dump;
 
 =head1 DESCRIPTION
 
-The key information contained in the Finnigan header is the file
-version number. Since the file structure may vary, the parsers better
-know the version number, so they can adapt themselves.
+Specifies parameters of injection, which delivered the sample for
+analysis to the mass specrometer. The parameters include vial label,
+sample volume, weight, internal standard amount, and dilution factor.
+
+Finnigan::InjectionData is a component of Finnigan::SeqRow
 
 =head2 EXPORT
 
@@ -53,6 +55,7 @@ None
 
 =head1 SEE ALSO
 
+Finnigan::SeqRow
 
 =head1 AUTHOR
 
