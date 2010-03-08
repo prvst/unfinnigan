@@ -10,7 +10,7 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @common_fields = (
-		       injection          => ['object',  'Finnigan::InjectionData'],
+		       injection          => ['object', 'Finnigan::InjectionData'],
 		       "unknown text[a]"  => ['varstr', 'PascalStringWin32'],
 		       "unknown text[b]"  => ['varstr', 'PascalStringWin32'],
 		       "id"               => ['varstr', 'PascalStringWin32'],
@@ -31,14 +31,14 @@ sub decode {
 			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown long"     => ['V',            'UInt32'],
+			  "unknown long"     => ['V',      'UInt32'],
 			 ];
   
   $specific_fields{62} = [
 			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown long"     => ['V',            'UInt32'],
+			  "unknown long"     => ['V',      'UInt32'],
 			  "unknown text[f]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[g]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[h]"  => ['varstr', 'PascalStringWin32'],
@@ -76,19 +76,30 @@ __END__
 
 =head1 NAME
 
-Finnigan::SeqRow -- a decoder for Finnigan file headers
+Finnigan::SeqRow -- a decoder for Finnigan injection sequencer data
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $header = Finnigan::SeqRow->read(\*INPUT);
-  say "$file: version " . $header->version . "; " . $header->audit_start->time;
+  my $seq_row = Finnigan::SeqRow->read(\*INPUT, $version);
+  $seq_row->dump(relative => 1); # show relative addresses
 
 =head1 DESCRIPTION
 
-The key information contained in the Finnigan header is the file
-version number. Since the file structure may vary, the parsers better
-know the version number, so they can adapt themselves.
+This structure contains an instance of Finnigan::InjectionData and a
+bunch of text strings, with one long integer buried among them. Those
+strings whose meaning is obvious identify the sample and its
+provenance, and some strings are file and directory names.
+
+Finnigan::InjectionData contains injection parameters (vial ID,
+volume, weight, etc.)
+
+The file-related strings seem to have the following meaning:
+
+  "inst method":  instrument method file
+  "proc method":  processing method file
+  "file_name[1]": original raw file name (can be basename or full path)
+  "file_name[2]": directory path where raw file was located
 
 =head2 EXPORT
 
@@ -97,6 +108,7 @@ None
 
 =head1 SEE ALSO
 
+Finnigan::IjectionData
 
 =head1 AUTHOR
 
