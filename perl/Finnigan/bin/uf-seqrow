@@ -88,7 +88,7 @@ uf-header [options] file
    --help            brief help message
    --man             full documentation
    --html            requet html formatting of the output of -dump 
-   --size            tell header size
+   --size            tell object size
    --injection       dump the content of InjectionData instead of the SeqRow itself
    --relative        show relative addresses
 
