@@ -134,7 +134,7 @@ absolute seek address.
 B<uf-casinfo> will read the given input file and display the contents
 of its CASInfo structure, or its component CASInfoPreamble.
 
-It will return an error message if the file is not a Finnigan raw
+It will return an error message if its input is not a Finnigan raw
 file.
 
 By default, it dumps the object in a tabular format.
