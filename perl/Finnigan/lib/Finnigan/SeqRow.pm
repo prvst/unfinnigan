@@ -58,8 +58,6 @@ sub decode {
 			 ];
   $specific_fields{63} = $specific_fields{62};
 
-  use Data::Dumper;
-  print Dumper($specific_fields{63});
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
 
