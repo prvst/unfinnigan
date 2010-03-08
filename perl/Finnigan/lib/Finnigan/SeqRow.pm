@@ -7,12 +7,12 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 sub decode {
-  my ($class, $stream) = @_;
+  my ($class, $stream, $version) = @_;
 
   my @common_fields = (
 		       injection          => ['object',  'Finnigan::InjectionData'],
-		       "unknown text[1]"  => ['varstr', 'PascalStringWin32'],
-		       "unknown text[2]"  => ['varstr', 'PascalStringWin32'],
+		       "unknown text[a]"  => ['varstr', 'PascalStringWin32'],
+		       "unknown text[b]"  => ['varstr', 'PascalStringWin32'],
 		       "id"               => ['varstr', 'PascalStringWin32'],
 		       "remark"           => ['varstr', 'PascalStringWin32'],
 		       "study"            => ['varstr', 'PascalStringWin32'],
@@ -22,9 +22,46 @@ sub decode {
 		       "phone"            => ['varstr', 'PascalStringWin32'],
 		       "inst method"      => ['varstr', 'PascalStringWin32'],
 		       "proc method"      => ['varstr', 'PascalStringWin32'],
+		       "file name[1]"     => ['varstr', 'PascalStringWin32'],
+		       "file Name[2]"     => ['varstr', 'PascalStringWin32'],
 		      );
 
-  my $self = Finnigan::Decoder->read($stream, \@common_fields);
+  my %specific_fields;
+  $specific_fields{57} = [
+			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown long"     => ['V',            'UInt32'],
+			 ];
+  
+  $specific_fields{62} = [
+			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown long"     => ['V',            'UInt32'],
+			  "unknown text[f]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[g]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[h]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[i]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[j]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[k]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[l]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[m]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[n]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[o]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[p]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[q]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[r]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[s]"  => ['varstr', 'PascalStringWin32'],
+			  "unknown text[t]"  => ['varstr', 'PascalStringWin32'],
+
+			 ];
+  $specific_fields{63} = $specific_fields{62};
+
+  use Data::Dumper;
+  print Dumper($specific_fields{63});
+  die "don't know how to parse version $version" unless $specific_fields{$version};
+  my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
 
   return bless $self, $class;
 }
