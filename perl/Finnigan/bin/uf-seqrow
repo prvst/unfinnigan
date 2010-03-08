@@ -117,9 +117,9 @@ Changes the output style of -dump to html.
 
 Prints the size of the header in bytes.
 
-=item B<--atag>
+=item B<--injection>
 
-Dump the contents of the two AuditTag objects, rather than the header itself.
+Dump the contents of InectionData, instead of the parent object.
 
 =item B<--relative>
 
