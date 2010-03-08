@@ -345,8 +345,8 @@ class RunHeader(FieldSet):
             for index in "123456":
                 yield String(self, "file name[%s]" % index, 520, charset="UTF-16-LE", truncate="\0")
 
-            yield Float64(self, "unknown float[1]")
-            yield Float64(self, "unknown float[2]")
+            yield Float64(self, "unknown double[1]")
+            yield Float64(self, "unknown double[2]")
 
             for index in "789abcd":
                 yield String(self, "file name[%s]" % index, 520, charset="UTF-16-LE", truncate="\0")
@@ -391,12 +391,7 @@ class SampleInfo(FieldSet):
         yield String(self, "tag[2]", 40, charset="UTF-16-LE", truncate="\0")
         yield String(self, "tag[3]", 320, charset="UTF-16-LE", truncate="\0")
 
-        # Read rest of the object, if anything is left
-        if self.current_size < self._size:
-            yield self.seekBit(self._size, "trailer")
-
 class SeqRow(FieldSet):
-#    static_size = 436 # 0x000001B4X1
     endian = LITTLE_ENDIAN
 
     def createFields(self):
