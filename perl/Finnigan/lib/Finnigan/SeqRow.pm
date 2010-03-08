@@ -79,7 +79,7 @@ Finnigan::SeqRow -- a decoder for Finnigan injection sequencer data
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $seq_row = Finnigan::SeqRow->read(\*INPUT, $version);
+  my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $version);
   $seq_row->dump(relative => 1); # show relative addresses
 
 =head1 DESCRIPTION
