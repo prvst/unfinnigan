@@ -191,15 +191,17 @@ the decoder's read() method in a list reference, where every even item
 specifies the key the item will be known as in the resulting hash, and
 every odd item specifies the unpack template.
 
-The templates of type 'object' instruct the current decoder to
-call another Finnigan decoder at that location.
+Perl unpack templates are used to decode most fields. For some fields, non-perl templates are used, such as:
 
-A special template 'windows_time' invokes the Windows timestamp
-routine defined in Finnigan::Decoder.
+=over 2
 
-Likewise, another special (non-perl) template, 'varstr' is decoded as
-a Windows Pascal string in a special case inside the
-Finnigan::Decoder::read() method.
+=item * object: instructs the current decoder to call another Finnigan decoder at that location.
+
+=item * windows_time: instructs Finingan::Decoder to call its own Windows timestamp routine.
+
+=item * varstr: decoded as a Windows Pascal string in a special case in the Finnigan::Decoder::read() method.
+
+=back
 
 =head2 EXPORT
 
