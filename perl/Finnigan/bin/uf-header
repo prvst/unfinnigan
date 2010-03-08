@@ -47,8 +47,14 @@ binmode INPUT;
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 
 if ( $option_size ) {
-  say "size: " . $header->size;
+  if ( $option_atag ) {
+    say "size: " . $header->audit_start->size;
+  }
+  else {
+    say "size: " . $header->size;
+  }
 }
+
 if ( $option_dump ) {
   if ( $option_html ) {
     if ( $option_atag ) {

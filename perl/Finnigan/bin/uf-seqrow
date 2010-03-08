@@ -47,7 +47,12 @@ my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 
 if ( $option_size ) {
-  say "size: " . $seq_row->size;
+  if ( $option_inj ) {
+    say "size: " . $seq_row->injection->size;
+  }
+  else {
+    say "size: " . $seq_row->size;
+  }
 }
 
 if ( $option_html ) {

@@ -48,7 +48,12 @@ my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 
 if ( $option_size ) {
-  say "size: " . $cas_info->size;
+  if ( $option_preamble ) {
+    say "size: " . $cas_info->preamble->size;
+  }
+  else {
+    say "size: " . $cas_info->size;
+  }
 }
 
 if ( $option_html ) {
