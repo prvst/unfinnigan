@@ -64,7 +64,7 @@ Finnigan::FileHeader -- a decoder for Finnigan file headers
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $header = Finnigan::FileHeader->read(\*INPUT);
+  my $header = Finnigan::FileHeader->decode(\*INPUT);
   say "$file: version " . $header->version . "; " . $header->audit_start->time;
 
 =head1 DESCRIPTION
