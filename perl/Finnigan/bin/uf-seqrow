@@ -47,7 +47,7 @@ open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT);
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 
 if ( $option_size ) {
   say "size: " . $seq_row->size;
