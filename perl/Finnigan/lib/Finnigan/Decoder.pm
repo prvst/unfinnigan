@@ -19,7 +19,7 @@ sub windows_datetime_in_bytes {
 }
 
 sub read {
-  my ($class, $stream, $fields) = @_;
+  my ($class, $stream, $fields, $version) = @_;
   my $self = {};
   my ( $rec, $nbytes );  
 
@@ -36,7 +36,7 @@ sub read {
     die qq(key "$name" already exists) if $self->item($name);
 
     if ( $template eq 'object' ) {
-      $value = eval{$type}->decode($stream);
+      $value = eval{$type}->decode($stream, $version);
       $nbytes = $value->size();
     }
     elsif ( $template eq 'varstr' ) {
