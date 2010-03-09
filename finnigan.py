@@ -379,7 +379,7 @@ class SampleInfo(FieldSet):
         yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
         yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
         yield UInt32(self, "unknown long[5]")
-        yield Float64(self, "ion current", "Max ion current? It does co-incide with the total current in one of the scans")
+        yield Float64(self, "max ion current", "The maximum total ion current measured in scans")
         yield Float64(self, "low mz", "Lower end of scan range")
         yield Float64(self, "high mz", "Upper end of scan range")
         yield Float64(self, "start time", "Retention time at first scan (see ScanIndex)")
@@ -1330,10 +1330,10 @@ class ScanIndexEntry(FieldSet):
 
     def createFields(self):
         yield UInt32(self, "offset", "Offset of this scan's data from the start of the scan data stream")
-        yield UInt32(self, "previous", "Previous scan number")
-        yield UInt16(self, "event", "Scan event number")
-        yield UInt16(self, "segment", "Scan segment number")
-        yield UInt32(self, "n", "Scan number")
+        yield UInt32(self, "index", "This scan's index")
+        yield UInt16(self, "scan event", "Scan event number")
+        yield UInt16(self, "scan segment", "Scan segment number")
+        yield UInt32(self, "next", "The next scan's index")
         yield UInt32(self, "unknown long", "Unknown long")
         yield UInt32(self, "size", "Scan data size")
         yield Float64(self, "start time", "Scan Start Time")

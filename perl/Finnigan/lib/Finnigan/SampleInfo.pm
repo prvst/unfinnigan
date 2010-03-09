@@ -23,7 +23,7 @@ sub decode {
 		"inst log addr"      => ['V',      'UInt32'],
 		"error log addr"     => ['V',      'UInt32'],
 		"unknown long[5]"    => ['V',      'UInt32'],
-		"ion current"        => ['d',      'Float64'],
+		"max ion current"    => ['d',      'Float64'],
 		"low mz"             => ['d',      'Float64'],
 		"high mz"            => ['d',      'Float64'],
 		"start time"         => ['d',      'Float64'],
@@ -51,8 +51,8 @@ sub inst_status_samples {
   shift->{data}->{"inst log length"}->{value};
 }
 
-sub abundance {
-  shift->{data}->{"ion current"}->{value};
+sub max_ion_current {
+  shift->{data}->{"max ion current"}->{value};
 }
 
 sub low_mz {
@@ -69,6 +69,10 @@ sub start_time {
 
 sub end_time {
   shift->{data}->{"end time"}->{value};
+}
+
+sub scan_index_addr {
+  shift->{data}->{"scan index addr"}->{value};
 }
 
 1;
