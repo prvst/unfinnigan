@@ -11,18 +11,18 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		"unknown_long[1]"    => ['V',      'UInt32'],
-		"unknown_long[2]"    => ['V',      'UInt32'],
+		"unknown long[1]"    => ['V',      'UInt32'],
+		"unknown long[2]"    => ['V',      'UInt32'],
 		"first scan number"  => ['V',      'UInt32'],
 		"last scan number"   => ['V',      'UInt32'],
 		"inst log length"    => ['V',      'UInt32'],
-		"unknown_long[3]"    => ['V',      'UInt32'],
-		"unknown_long[4]"    => ['V',      'UInt32'],
+		"unknown long[3]"    => ['V',      'UInt32'],
+		"unknown long[4]"    => ['V',      'UInt32'],
 		"scan index addr"    => ['V',      'UInt32'],
 		"data addr"          => ['V',      'UInt32'],
 		"inst log addr"      => ['V',      'UInt32'],
 		"error log addr"     => ['V',      'UInt32'],
-		"unknown_long[5]"    => ['V',      'UInt32'],
+		"unknown long[5]"    => ['V',      'UInt32'],
 		"ion current"        => ['d',      'Float64'],
 		"low mz"             => ['d',      'Float64'],
 		"high mz"            => ['d',      'Float64'],
