@@ -137,12 +137,19 @@ sub dump {
     foreach my $key ( @keys ) {
       my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
+      if ($self->item($key)->{type} eq 'UTF16LE'
+	  and substr($value, 0, 2) eq "\x00\x00") {
+	$value =~ s/\x00/00 /g;
+	if (length($value) > 20) {
+	  $value = substr($value, 0, 30) . "...";
+	}
+      }
       say "|| " . join(" || ",
 		       $offset,
 		       $self->item($key)->{size},
 		       $self->item($key)->{type},
 		       "\`$key\`",
-		       length($value) ? (ref($value) ? ref($value) : "\`$value\`") : "",
+		       length($value) > 0 ? (ref($value) ? ref($value) : "\`$value\`") : "",
 		      ). " ||";
     }
   }
