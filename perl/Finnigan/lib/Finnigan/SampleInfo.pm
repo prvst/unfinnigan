@@ -26,8 +26,8 @@ sub decode {
 		"ion current"        => ['d',      'Float64'],
 		"low mz"             => ['d',      'Float64'],
 		"high mz"            => ['d',      'Float64'],
-		"scan start time"    => ['d',      'Float64'],
-		"scan end time"      => ['d',      'Float64'],
+		"start time"    => ['d',      'Float64'],
+		"end time"      => ['d',      'Float64'],
 		"unknown area"       => ['C56',    'RawBytes'],
 		"tag[1]"             => ['U0C88',  'UTF16LE'],
 		"tag[2]"             => ['U0C40',  'UTF16LE'],
@@ -40,11 +40,35 @@ sub decode {
 }
 
 sub first_scan {
-  shift->{data}->{"first scan"}->{value};
+  shift->{data}->{"first scan number"}->{value};
 }
 
 sub last_scan {
-  shift->{data}->{"first scan"}->{value};
+  shift->{data}->{"last scan number"}->{value};
+}
+
+sub inst_status_samples {
+  shift->{data}->{"inst log length"}->{value};
+}
+
+sub abundance {
+  shift->{data}->{"ion current"}->{value};
+}
+
+sub low_mz {
+  shift->{data}->{"low mz"}->{value};
+}
+
+sub high_mz {
+  shift->{data}->{"high mz"}->{value};
+}
+
+sub start_time {
+  shift->{data}->{"start time"}->{value};
+}
+
+sub end_time {
+  shift->{data}->{"end time"}->{value};
 }
 
 1;

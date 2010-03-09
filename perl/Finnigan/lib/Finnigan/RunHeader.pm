@@ -39,9 +39,9 @@ sub decode {
 			  "file name[c]"          => ['U0C520', 'UTF16LE'],
 			  "file name[d]"          => ['U0C520', 'UTF16LE'],
 			  "scan trailer addr"     => ['V',      'UInt32'],
-			  "scan header list addr" => ['V',      'UInt32'],
-			  "nscans[1]"             => ['V',      'UInt32'],
-			  "nscans[2]"             => ['V',      'UInt32'],
+			  "scan params addr"      => ['V',      'UInt32'],
+			  "unknown length[1]"     => ['V',      'UInt32'],
+			  "unknown length[2]"     => ['V',      'UInt32'],
 			  "nsegs"                 => ['V',      'UInt32'],
 			  "unknown long[1]"       => ['V',      'UInt32'],
 			  "unknown long[2]"       => ['V',      'UInt32'],
@@ -66,6 +66,40 @@ sub self_addr {
   shift->{data}->{"self_addr"}->{value};
 }
 
+sub ntrailer {
+  my $self = shift;
+  my $l1 = $self->{data}->{"unknown length[1]"}->{value};
+  my $l2 = $self->{data}->{"unknown length[2]"}->{value};
+  die "It\'s a happy day! We\'ve run into a case where the two lengths differ: l1 = $l1 and l2 = $l2"
+    unless $l1 = $l2;
+
+  # I am assuming it is the length of TrailerScanEvent
+  return $l1;
+}
+
+sub nparams {
+  my $self = shift;
+  my $l1 = $self->{data}->{"unknown length[1]"}->{value};
+  my $l2 = $self->{data}->{"unknown length[2]"}->{value};
+  die "It\'s a happy day! We\'ve run into a case where the two lengths differ: l1 = $l1 and l2 = $l2"
+    unless $l1 = $l2;
+
+  # I am assuming it is the length of ScanParams
+  return $l2;
+}
+
+sub nsegs {
+  shift->{data}->{"nsegs"}->{value};
+}
+
+sub u1 {
+  shift->{data}->{"unknown double[1]"}->{value};
+}
+
+sub u2 {
+  shift->{data}->{"unknown double[2]"}->{value};
+}
+
 1;
 __END__
 
@@ -85,8 +119,11 @@ Finnigan::RunHeader -- decoder for RunHeader, the primary file index structure
 
 RunHeader is presently a static (fixed-size) structure containing data
 stream lengths and addresses, as well as some unidentified data. Every
-data stream in the file, has its address stored in RunHeader or in its
+data stream in the file has its address stored in RunHeader or in its
 historical antecendent SampleInfo, which it now includes.
+
+The earlier version of RunHeader was much smaller and contained a few
+variable-length strings.
 
 =head2 EXPORT
 
