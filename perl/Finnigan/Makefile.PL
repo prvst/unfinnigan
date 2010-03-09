@@ -15,6 +15,7 @@ WriteMakefile(
 			  'bin/uf-casinfo',
 			  'bin/uf-rfi',
 			  'bin/uf-runheader',
+			  'bin/uf-index',
 			 ],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Finnigan.pm', # retrieve abstract from module
