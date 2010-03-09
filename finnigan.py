@@ -355,11 +355,11 @@ class RunHeader(FieldSet):
             yield UInt32(self, "scan header list addr", "Absolute seek address of the ScanHeader stream")
             yield UInt32(self, "nscans[1]", "Looks like the number of scans")
             yield UInt32(self, "nscans[2]", "Looks like the number of scans; may be the same as above")
-            yield UInt32(self, "nsegs", "Number of segments?")
+            yield UInt32(self, "nsegs", "Number of scan segments?")
+            yield UInt32(self, "unknown long[1]")
             yield UInt32(self, "unknown long[2]")
-            yield UInt32(self, "unknown long[3]")
             yield UInt32(self, "own addr", "RunHeader's own address")
-            for index in "45":
+            for index in "34":
                 yield UInt32(self, "unknown long[%s]" % index)
 
 
@@ -383,8 +383,8 @@ class SampleInfo(FieldSet):
         yield Float64(self, "ion current", "Max ion current? It does co-incide with the total current in one of the scans")
         yield Float64(self, "low mz", "Low m/z; meaning uncertain")
         yield Float64(self, "high mz", "High m/z; meaning uncertain")
-        yield Float64(self, "scan start", "Retention time at first scan (seeScanList)")
-        yield Float64(self, "scan end", "Retention time at last scan (see ScanList)")
+        yield Float64(self, "scan start time", "Retention time at first scan (seeScanList)")
+        yield Float64(self, "scan end time", "Retention time at last scan (see ScanList)")
         yield RawBytes(self, "unknown area", 56, "this may be a space reserved for tags")
         yield String(self, "tag[1]", 88, charset="UTF-16-LE", truncate="\0")
         yield String(self, "tag[2]", 40, charset="UTF-16-LE", truncate="\0")
