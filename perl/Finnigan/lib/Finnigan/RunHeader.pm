@@ -63,7 +63,15 @@ sub sample_info {
 }
 
 sub self_addr {
-  shift->{data}->{"self_addr"}->{value};
+  shift->{data}->{"self addr"}->{value};
+}
+
+sub trailer_addr {
+  shift->{data}->{"scan trailer addr"}->{value};
+}
+
+sub params_addr {
+  shift->{data}->{"scan params addr"}->{value};
 }
 
 sub ntrailer {
