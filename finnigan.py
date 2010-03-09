@@ -105,7 +105,7 @@ class Finnigan(Parser):
 
             if run_header_addr > self.current_size/8:
                 yield RawBytes(self, "unparsed spectra", run_header_addr - self.current_size/8, "This is where the spectra are found")
-            yield RunHeader(self, "run header", "The run header with information about the number of scans")
+            yield RunHeader(self, "run header", "The directory structure for the entire file")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
             yield ErrorLog(self, "error log", "Error Log File")
@@ -331,7 +331,6 @@ class AuditTag(FieldSet):
         yield UInt32(self, "unknown long", "It seems like in some cases it is used to hold a CRC-32 sum")
 
 class RunHeader(FieldSet):
-    # this header cannot have static size; it is composed of on Pascal strings
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -352,10 +351,10 @@ class RunHeader(FieldSet):
                 yield String(self, "file name[%s]" % index, 520, charset="UTF-16-LE", truncate="\0")
 
             yield UInt32(self, "scan trailer addr", "Absolute seek address of the TrailerScanEvent stream")
-            yield UInt32(self, "scan header list addr", "Absolute seek address of the ScanHeader stream")
-            yield UInt32(self, "nscans[1]", "Looks like the number of scans")
-            yield UInt32(self, "nscans[2]", "Looks like the number of scans; may be the same as above")
-            yield UInt32(self, "nsegs", "Number of scan segments?")
+            yield UInt32(self, "scan params addr", "Absolute seek address of the ScanParameters (ScanHeader) stream")
+            yield UInt32(self, "unknown length[1]", "I am guessing it is the length of TrailerScanEvent (although it has its own)")
+            yield UInt32(self, "unknown length[2]", "I am guessing it is the length of the ScanParameters (ScanHeader) stream")
+            yield UInt32(self, "nsegs", "Number of scan segments? -- fairly positive it is")
             yield UInt32(self, "unknown long[1]")
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "own addr", "RunHeader's own address")
@@ -368,23 +367,23 @@ class SampleInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]", "Unknown long in SampleInfo")
-        yield UInt32(self, "unknown long[2]", "Unknown long in SampleInfo")
+        yield UInt32(self, "unknown long[1]")
+        yield UInt32(self, "unknown long[2]")
         yield UInt32(self, "first scan number", "The number of the first scan in the file")
         yield UInt32(self, "last scan number", "The number of the last scan in the file")
         yield UInt32(self, "inst log length", "The number of instrument status samples logged")
-        yield UInt32(self, "unknown long[3]", "Unknown long in SampleInfo")
-        yield UInt32(self, "unknown long[4]", "Unknown long in SampleInfo")
-        yield UInt32(self, "scan index addr", "Absolute seek address of ShortScanHeader stream")
-        yield UInt32(self, "data addr", "Absolute seek address of raw scan data")
+        yield UInt32(self, "unknown long[3]")
+        yield UInt32(self, "unknown long[4]")
+        yield UInt32(self, "scan index addr", "Absolute seek address of ScanIndex (ShortScanHeader stream)")
+        yield UInt32(self, "data addr", "Absolute seek address of scan data")
         yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
         yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
-        yield UInt32(self, "unknown long[5]", "Unknown long in SampleInfo")
+        yield UInt32(self, "unknown long[5]")
         yield Float64(self, "ion current", "Max ion current? It does co-incide with the total current in one of the scans")
         yield Float64(self, "low mz", "Low m/z; meaning uncertain")
         yield Float64(self, "high mz", "High m/z; meaning uncertain")
-        yield Float64(self, "scan start time", "Retention time at first scan (seeScanList)")
-        yield Float64(self, "scan end time", "Retention time at last scan (see ScanList)")
+        yield Float64(self, "scan start time", "Retention time at first scan (see ScanIndex)")
+        yield Float64(self, "scan end time", "Retention time at last scan (see ScanIndex)")
         yield RawBytes(self, "unknown area", 56, "this may be a space reserved for tags")
         yield String(self, "tag[1]", 88, charset="UTF-16-LE", truncate="\0")
         yield String(self, "tag[2]", 40, charset="UTF-16-LE", truncate="\0")
@@ -883,7 +882,7 @@ class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
         nsegs = self["/run header/nsegs"].value # this is a conjecture
         for n in range(1, nsegs + 1):
             yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
-        yield ScanList(self, "scan index", "A set of ShortScanHeader records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
+        yield ScanIndex(self, "scan index", "A set of ShortScanHeader records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
         yield TrailerScanEvent(self, "trailer scan event", "Something called TrailerScanEvent")
         yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
@@ -895,7 +894,7 @@ class TuneFile(GenericRecord):
          for item in GenericRecord.createFields(self):
              yield item
 
-class ScanList(FieldSet):
+class ScanIndex(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -1330,7 +1329,7 @@ class ShortScanHeader(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "offset", "Offset of the scan's raw data from the start of raw data section")
+        yield UInt32(self, "offset", "Offset of this scan's data from the start of the scan data stream")
         yield UInt32(self, "previous", "Previous scan number")
         yield UInt16(self, "event", "Scan event number")
         yield UInt16(self, "segment", "Scan segment number")
