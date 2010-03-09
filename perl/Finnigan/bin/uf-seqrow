@@ -83,16 +83,17 @@ else {
 __END__
 =head1 NAME
 
-uf-header - decode the file header in a Finnigan raw file
+uf-seqrow - decode the file SeqRow structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-header [options] file
+uf-seqrow [options] file
 
  Options:
    --help            brief help message
    --man             full documentation
-   --html            requet html formatting of the output of -dump 
+   --html            requet html formatting of the dump
+   --wiki            format as a wiki table
    --size            tell object size
    --injection       dump the content of InjectionData instead of the SeqRow itself
    --relative        show relative addresses
@@ -103,11 +104,11 @@ uf-header [options] file
 
 =item B<--help>
 
-Print a brief help message and exits.
+Print a brief help message and exit.
 
 =item B<--man>
 
-Prints the manual page and exits.
+Print the manual page and exit.
 
 =item B<--dump>
 
@@ -116,15 +117,19 @@ sizes, acess keys and values.
 
 =item B<--html>
 
-Changes the output style of -dump to html.
+Dump as html table.
+
+=item B<--html>
+
+Dump as a wiki table.
 
 =item B<--size>
 
-Prints the size of the header in bytes.
+Show structure size in bytes.
 
 =item B<--injection>
 
-Dump the contents of InectionData, instead of the parent object.
+Dump the contents of InjectionData, instead of the parent object.
 
 =item B<--relative>
 
@@ -135,11 +140,25 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-seqrow> will read the given input file and display the contents
-of its SeqRow structure or its component, InjectionData.
+B<uf-seqrow> will display the contents of the SeqRow (sequence table
+row) structure or its component, InjectionData.
 
 It will return an error message if its input is not a Finnigan raw
 file.
 
 By default, it dumps the object in tabular format.
+
+=head2 EXAMPLES
+
+uf-seqrow sample.raw
+
+  (dumps the entire SeqRow structure with absolute addresses)
+
+uf-seqrow -sri sample.raw
+
+  (dumps the InjectionData substructure with relative addresses and
+  prints its size)
+
+=cut
+
 =cut

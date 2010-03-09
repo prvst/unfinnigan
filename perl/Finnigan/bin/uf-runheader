@@ -120,16 +120,17 @@ else {
 __END__
 =head1 NAME
 
-uf-header - decode the file header in a Finnigan raw file
+uf-runheader - decode the RunHeader structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-header [options] file
+uf-runheader [options] file
 
  Options:
    --help            brief help message
    --man             full documentation
-   --html            requet html formatting of the output of -dump 
+   --html            requet html formatting of the dump
+   --wiki            format as a wiki table
    --size            tell object size
    --sample_info     dump the content of SampleInfo instead of RunHeader itself
    --relative        show relative addresses
@@ -140,28 +141,32 @@ uf-header [options] file
 
 =item B<--help>
 
-Print a brief help message and exits.
+Print a brief help message and exit.
 
 =item B<--man>
 
-Prints the manual page and exits.
+Prints the manual page and exit.
 
 =item B<--dump>
 
-Prints the table listing all header fields with their seek addresses,
-sizes, acess keys and values.
+Prints the table listing all fields in the structure with their seek
+addresses, sizes, names and values.
 
 =item B<--html>
 
-Changes the output style of -dump to html.
+Dump as html table.
+
+=item B<--wiki>
+
+Dump as a wiki table.
 
 =item B<--size>
 
-Prints the size of the header in bytes.
+Show structure size in bytes.
 
 =item B<--smple_info>
 
-Dump the contents of SampleInfo, instead of the parent object.
+Dump the contents of SampleInfo instead of the parent object.
 
 =item B<--relative>
 
@@ -172,12 +177,29 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-casinfo> will read the given input file and display the contents
-of its RawFileInfo structure, or its component RawFileInfoPreamble.
+B<uf-runheader> will display the contents of RunHeader structure,
+or its component SampleInfo.
 
 It will return an error message if its input is not a Finnigan raw
 file.
 
-By default, it dumps the object in a tabular format.
+By default, it prints a summary of the object's data on a single line.
+
+=head2 EXAMPLES
+
+uf-runheader sample.raw
+
+  (prints a single line listing a few important numbres in RunHeader)
+
+uf-runheader -d sample.raw
+
+  (dumps the entire RunHeader with absolute addresses)
+
+uf-runheader -sdrwi sample.raw
+
+  (dumps the SampleInfo structure with relative addresses in a wiki
+  table format and shows its size)
+
+=cut
 
 =cut

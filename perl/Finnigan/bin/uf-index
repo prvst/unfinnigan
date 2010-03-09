@@ -18,7 +18,7 @@ my $args = new Getopt::Declare q{
   [mutex: -range -n]
   -a[ll]			list all existing index entries
   -n[unmber] <n:0+n>		get one index entry number <n>
-  -range <from:0+n> .. <to:0+n>	get one index entry number <n>
+  -range <from:0+n> .. <to:0+n>	list all entries with numbers between <from> and <to>
   -d[ump]			dump one index entry [requires: -n]
   -s[ize]			print record size [requires: -d]
   -h[tml]			dump as html [requires: -d]
@@ -166,51 +166,67 @@ sub print_as_table_row {
 __END__
 =head1 NAME
 
-uf-header - decode the file header in a Finnigan raw file
+uf-index - decode the ScanIndexEntry structures in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-header [options] file
+uf-index [options] file
 
  Options:
-   --help            brief help message
-   --man             full documentation
-   --html            requet html formatting of the output of -dump 
-   --size            tell object size
-   --relative        show relative addresses
-   --all             print all index existing entries 
+
+  -a[ll]                        list all existing index entries
+  -n[unmber] <n>                get one index entry number <n>
+  -range <from> .. <to>         list all entries with numbers between <from> and <to>
+  -d[ump]                       dump a single index entry 
+  -s[ize]                       print record size 
+  -h[tml]                       dump as html 
+  -w[iki]                       dump in wiki table format 
+  -r[elative]                   show relative addersess in dump 
+  -f[ormat] <type>              format the unknown long as 'bin', 'hex', or 'ms' (for MS level)
+  <file>                        input file 
 
 =head1 OPTIONS
 
 =over 4
 
-=item B<--help>
+=item B<-help>
 
 Print a brief help message and exits.
 
-=item B<--man>
+=item B<-d[ump]>
 
-Prints the manual page and exits.
+Prints a table listing all fields in a single index entry, with
+their seek addresses, sizes, names and values. The entry is selected
+with the -n[umber] option.
 
-=item B<--dump>
+=item B<-n[umber]>
 
-Prints the table listing all header fields with their seek addresses,
-sizes, acess keys and values.
+Gives the number of the ScanIndexEntry to dump (works with the -d[ump]
+option)
 
-=item B<--html>
+=item B<-r[ange]>
 
-Changes the output style of -dump to html.
+Selects a range of the ScanIndexEntry records to print as a table
+(does not work with the -d[ump] option)
 
-=item B<--size>
+=item B<-h[tml]>
 
-Prints the size of the header in bytes.
+Dump a single entry as html table.
 
-=item B<--relative>
+=item B<-w[iki]>
 
-Show relative addresses of all itmes. The default is to show the
-absolute seek address.
+Dump a single entry as a wiki table.
 
-=item B<--all>
+=item B<-s[ize]>
+
+Show structure size in bytes (works with the -d[ump] option).
+
+=item B<-r[elative]>
+
+Show relative addresses of all itmes in the dump. The default is to
+show the absolute seek address. (works with the -d[ump] option)
+
+=item B<-a[ll]>
 
 Print all existing index entries. It appears as though it may be
 possible to see more index entries in the file than would fit between
@@ -223,12 +239,30 @@ number.
 
 =head1 DESCRIPTION
 
-B<uf-casinfo> will read the given input file and display the contents
-of its RawFileInfo structure, or its component RawFileInfoPreamble.
+B<uf-index> can be used to dump the scan index entries from a Finnigan
+raw file.
 
-It will return an error message if its input is not a Finnigan raw
-file.
+By default, the entries are listed in a tabular format. Use the -n option to re
 
-By default, it dumps the object in a tabular format.
+=head2 EXAMPLES
+
+uf-index  sample.raw 
+
+  (will print all index entries in the file in a tabular form)
+
+uf-index -range 1..5 sample.raw
+
+  (will print the first five records)
+
+uf-index -range 1..5 -format bin sample.raw
+
+  (will show individual bits in the scan type word)
+
+uf-index -rdsn 5 ~/shared/test/sample4.raw 
+
+  (will dump the fifth index entry with relative addresses and will
+   show its size)
+
+=cut
 
 =cut

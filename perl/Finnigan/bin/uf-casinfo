@@ -84,18 +84,19 @@ else {
 __END__
 =head1 NAME
 
-uf-header - decode the file header in a Finnigan raw file
+uf-casinfo - decode the CASInfo structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-header [options] file
+uf-casinfo [options] file
 
  Options:
    --help            brief help message
    --man             full documentation
-   --html            requet html formatting of the output of -dump 
+   --html            requet html formatting of the dump
+   --wiki            format as a wiki table
    --size            tell object size
-   --preamble        dump the content of CASInfoPreamble instead of the CASInfo itself
+   --preamble        dump the content of CASInfoPreamble instead of CASInfo itself
    --relative        show relative addresses
 
 =head1 OPTIONS
@@ -104,24 +105,28 @@ uf-header [options] file
 
 =item B<--help>
 
-Print a brief help message and exits.
+Print a brief help message and exit.
 
 =item B<--man>
 
-Prints the manual page and exits.
+Print the manual page and exit.
 
 =item B<--dump>
 
-Prints the table listing all header fields with their seek addresses,
-sizes, acess keys and values.
+Prints the table listing all fields in the structure with their seek
+addresses, sizes, names and values.
 
 =item B<--html>
 
-Changes the output style of -dump to html.
+Dump as html table.
+
+=item B<--wiki>
+
+Dump as a wiki table.
 
 =item B<--size>
 
-Prints the size of the header in bytes.
+Show structure size in bytes.
 
 =item B<--preamble>
 
@@ -136,12 +141,25 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-casinfo> will read the given input file and display the contents
-of its CASInfo structure, or its component CASInfoPreamble.
+B<uf-casinfo> dumps the CASInfo structure, or its component CASInfoPreamble.
 
-It will return an error message if its input is not a Finnigan raw
+It will return an earror message if its input is not a Finnigan raw
 file.
 
 By default, it dumps the object in a tabular format.
+
+=head2 EXAMPLES
+
+uf-casinfo sample.raw
+
+  (will show the area occupied by the preamble and the text following
+  with absolute addresses)
+
+uf-casinfo sample.raw
+
+  (will dump theh preamble with relative addresses)
+
+
+=cut
 
 =cut

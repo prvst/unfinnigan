@@ -103,7 +103,8 @@ uf-header [options] file
    --help            brief help message
    --man             full documentation
    --dump            dump all header fields as a table
-   --html            requet html formatting of the output of -dump 
+   --html            requet html formatting of the dump
+   --wiki            dump as a wiki table
    --size            tell header size
    --atag            dump the content of AuditTags instead of the header itself
    --relative        show relative addresses
@@ -114,11 +115,11 @@ uf-header [options] file
 
 =item B<--help>
 
-Print a brief help message and exits.
+Print a brief help message and exit.
 
 =item B<--man>
 
-Prints the manual page and exits.
+Print the manual page and exit.
 
 =item B<--dump>
 
@@ -127,15 +128,19 @@ sizes, acess keys and values.
 
 =item B<--html>
 
-Changes the output style of -dump to html.
+Dump as html table
+
+=item B<--wiki>
+
+Dump as a wiki table
 
 =item B<--size>
 
-Prints the size of the header in bytes.
+Show header size in bytes.
 
 =item B<--atag>
 
-Dump the contents of the two AuditTag objects, rather than the header itself.
+Dump the contents of the first AuditTag object, rather than the header itself.
 
 =item B<--relative>
 

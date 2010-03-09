@@ -95,18 +95,19 @@ else {
 __END__
 =head1 NAME
 
-uf-header - decode the file header in a Finnigan raw file
+uf-rfi - decode the RawFileInfo structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-header [options] file
+uf-rfi [options] file
 
  Options:
    --help            brief help message
    --man             full documentation
-   --html            requet html formatting of the output of -dump 
+   --html            requet html formatting of the dump
+   --wiki            format as a wiki table
    --size            tell object size
-   --preamble        dump the content of RawFileInfoPreamble instead of the RawFileInfo itself
+   --preamble        dump the content of RawFileInfoPreamble instead of RawFileInfo itself
    --relative        show relative addresses
 
 =head1 OPTIONS
@@ -115,11 +116,11 @@ uf-header [options] file
 
 =item B<--help>
 
-Print a brief help message and exits.
+Print a brief help message and exit.
 
 =item B<--man>
 
-Prints the manual page and exits.
+Print the manual page and exit.
 
 =item B<--dump>
 
@@ -128,11 +129,15 @@ sizes, acess keys and values.
 
 =item B<--html>
 
-Changes the output style of -dump to html.
+Dump as html table.
+
+=item B<--wiki>
+
+Dump as a wiki table.
 
 =item B<--size>
 
-Prints the size of the header in bytes.
+Show structure size in bytes.
 
 =item B<--preamble>
 
@@ -147,12 +152,29 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-rfi> will read the given input file and display the contents
-of its RawFileInfo structure, or its component RawFileInfoPreamble.
+B<uf-rfi>displays the contents of the RawFileInfo structure, or its
+component RawFileInfoPreamble.
 
 It will return an error message if its input is not a Finnigan raw
 file.
 
-By default, it dumps the object in a tabular format.
+By default, it prints a summary of the object's data on a single line.
+
+=head2 EXAMPLES
+
+uf-rfi sample.raw
+
+  (displays a single line with file creation date and RunHeader address)
+
+uf-rfi -d sample.raw
+
+  (dumps a the entire RunHeader with absolute addresses)
+
+uf-rfi -dpr sample.raw
+
+  (dumps the RunHeaderPreamble with relative addresses)
+
+
+=cut
 
 =cut
