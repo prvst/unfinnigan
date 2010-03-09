@@ -5,40 +5,36 @@ use warnings;
 use feature qw/state say/;
 use 5.010;
 
-use Getopt::Long;
+use Getopt::Declare;
 use Pod::Usage;
 use Finnigan;
 
-my $option_help = 0;
-my $option_man = 0;
-my $option_dump = 0;
-my $option_html = 0;
-my $option_wiki = 0;
-my $option_size = 0;
-my $option_relative = 0;
-my $option_all = 0;
+my $args = new Getopt::Declare q{
+  [strict]
+  [mutex: -h -w]
+  [mutex: -a -d]
+  [mutex: -a -n]
+  [mutex: -a -range]
+  [mutex: -range -n]
+  -a[ll]	list all existing index entries
+  -n[unmber] <n:n>	get one index entry number <n>
+  -range <from:n> .. <to:n>	get one index entry number <n>
+  -d[ump]	dump one index entry [requires: -n]
+  -s[ize]	print record size [requires: -d]
+  -h[tml]	dump as html [requires: -d]
+  -w[iki]	dump in wiki table format [requires: -d]
+  -r[elative]	show relative addersess in dump [requires: -d]
+  <file>	input file [required]
+}
+  or exit(-1);
 
-Getopt::Long::Configure ("bundling");
-GetOptions(
-	   'help|?' => \$option_help,
-	   'man' => \$option_man,
-	   'dump|d' => \$option_dump,
-	   'size|s' => \$option_size,
-	   'html|h' => \$option_html,
-	   'wiki|w' => \$option_wiki,
-	   'relative|r' => \$option_relative,
-	   'all|a' => \$option_all,
-	  ) or pod2usage(2);
-pod2usage(1) if $option_help;
-pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
-
-@ARGV == 1 or do{ say STDERR "Expecting a single input file\n"; pod2usage(2) };
-
-my $file = shift @ARGV;
-
+my $file = $args->{"<file>"};
 -e $file or die "file '$file' does not exist";
 -f $file or die "'$file' is not a plain file";
 -s $file or die "'$file' has zero size";
+
+# pod2usage(1) if $option_help;
+# pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
 
 # -----------------------------------------------------------------------------
 open INPUT, "<$file" or die "can't open '$file': $!";
@@ -58,24 +54,35 @@ my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
 my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 seek INPUT, $scan_index_addr, 0;
 
-if ( $option_dump ) {
-  my $index_entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
-  if ( $option_size ) {
-    say "size: " . $index_entry->size;
+if ( exists $args->{-d} ) {
+  my $n = $args->{-n}{"<n>"};
+  my $first_scan = $run_header->sample_info->first_scan;
+  my $last_scan = $run_header->sample_info->last_scan;
+  die "index $n is not in the range of available scan numbers ($first_scan .. $last_scan)"
+    unless $n >= $first_scan and $n <= $last_scan;
+
+  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  my $size = $entry->size;
+  if ($n > 1) {
+    seek INPUT, $scan_index_addr + ($n - 1)*$size, 0;
+    $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  }
+  if ( exists $args->{-s} ) {
+    say "size: $size";
   }
 
-  if ( $option_html ) {
-    $index_entry->dump(style => 'html', relative => $option_relative);
+  if ( exists $args->{-h} ) {
+    $entry->dump(style => 'html', relative => exists $args->{-r});
   }
-  elsif ( $option_wiki ) {
-    $index_entry->dump(style => 'wiki', relative => $option_relative);
+  elsif ( exists $args->{-w} ) {
+    $entry->dump(style => 'wiki', relative => exists $args->{-r});
   }
   else {
-    $index_entry->dump(relative => $option_relative);
+    $entry->dump(relative => exists $args->{-r});
   }
 }
 else {
-  if ( $option_all ) {
+  if ( $args->{-a} ) {
     # An alternative way to read all entries (assuming there ever are
     # more of them than the number between the first and the last
     # scans specified in SampleInfo) is to read everything between the
@@ -110,7 +117,14 @@ else {
     # indices and links are not checked.
     my $first_scan = $run_header->sample_info->first_scan;
     my $last_scan = $run_header->sample_info->last_scan;
-    foreach my $index ($first_scan - 1 .. $last_scan - 1) {
+    my $from = exists $args->{-range} ? $args->{-range}{"<from>"} : $first_scan;
+    my $to = exists $args->{-range} ? $args->{-range}{"<to>"} : $last_scan;
+
+    if ( $from > $first_scan) {
+      my $size = 72; # this may be wrong!
+      seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
+    }
+    foreach my $index ($from - 1 .. $to - 1) {
       print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
     }
   }
