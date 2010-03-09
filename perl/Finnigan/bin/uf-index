@@ -16,15 +16,16 @@ my $args = new Getopt::Declare q{
   [mutex: -a -n]
   [mutex: -a -range]
   [mutex: -range -n]
-  -a[ll]	list all existing index entries
-  -n[unmber] <n:n>	get one index entry number <n>
-  -range <from:n> .. <to:n>	get one index entry number <n>
-  -d[ump]	dump one index entry [requires: -n]
-  -s[ize]	print record size [requires: -d]
-  -h[tml]	dump as html [requires: -d]
-  -w[iki]	dump in wiki table format [requires: -d]
-  -r[elative]	show relative addersess in dump [requires: -d]
-  <file>	input file [required]
+  -a[ll]			list all existing index entries
+  -n[unmber] <n:0+n>		get one index entry number <n>
+  -range <from:0+n> .. <to:0+n>	get one index entry number <n>
+  -d[ump]			dump one index entry [requires: -n]
+  -s[ize]			print record size [requires: -d]
+  -h[tml]			dump as html [requires: -d]
+  -w[iki]			dump in wiki table format [requires: -d]
+  -r[elative]			show relative addersess in dump [requires: -d]
+  -f[ormat] <type:/bin|hex|ms/>	format the unknown long	as 'bin', 'hex', or 'ms' (for MS level)
+  <file>			input file [required]
 }
   or exit(-1);
 
@@ -132,13 +133,28 @@ else {
 
 sub print_as_table_row {
   my $index_entry = shift;
+  my $unknown = $index_entry->unknown;
+  if ( exists $args->{-f} ) {
+    if ( $args->{-f}->{'<type>'} eq 'bin' ) {
+      $unknown = sprintf "%b", $unknown;
+    }
+    elsif ( $args->{-f}->{'<type>'} eq 'hex' ) {
+      $unknown = sprintf "0x%08x", $unknown;
+    }
+    elsif ( $args->{-f}->{'<type>'} eq 'ms' ) {
+      $unknown = {21 => 'MS1', 18 => 'MS2', 19 => 'MS2*'}->{$unknown};
+    }
+    else {
+      die "unkonwn format: " . $args->{-f}->{'<type>'};
+    }
+  }
   say $index_entry->index . "\t"
     . $index_entry->next . "\t"
       . $index_entry->scan_segment . "\t"
 	. $index_entry->scan_event . "\t"
 	  . $index_entry->offset . "\t"
 	    . $index_entry->data_size . "\t"
-	      . $index_entry->unknown . "\t"
+	      . $unknown . "\t"
 		. $index_entry->start_time . "\t"
 		  . $index_entry->low_mz . "\t"
 		    . $index_entry->high_mz . "\t"
