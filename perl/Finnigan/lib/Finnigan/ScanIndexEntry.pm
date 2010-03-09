@@ -94,10 +94,10 @@ Finnigan::ScanIndexEntry -- decoder for ScanIndexEntry, a linked list item point
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $file_info = Finnigan::ScanIndexEntry->decode(\*INPUT);
-  say $file_info->first_scan;
-  say $file_info->last_scan;
-  $file_info->dump;
+  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  say $entry->offset; # returns an offset from the start of scan data stream 
+  say $entry->data_size;
+  $entry->dump;
 
 =head1 DESCRIPTION
 
@@ -111,13 +111,12 @@ ScanIndexEntry contains the index of the next entry.
 Although in all observed instances the scans were sequential and their
 indices could be ignored, it may not always be the case.
 
-It is not clear whether the scan index number starts at 0 or at 1. In
-the former case, the list link index will points to the next item. In
-the latter, "index" becomes "previos", and "next" becomes "index" --
-the list is linked from tail to head.
-
-At the moment, I am interpreting this as a forward-linked list; that
-is, scan indices start as 0 and the link index points to the next item.
+It is not clear whether scan index numbers start at 0 or at 1. If they
+start at 0, the list link index must point to the next item. If they
+start at 1, then "index" will become "previous" and "next" becomes
+"index" -- the list will be linked from tail to head. Although
+observations are lacking, I am inclined to interpret it as a
+forward-linked list, simply from common sense.
 
 
 =head2 EXPORT
