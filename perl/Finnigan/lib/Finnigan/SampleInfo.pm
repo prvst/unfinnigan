@@ -66,11 +66,15 @@ Finnigan::SampleInfo -- decoder for SampleInfo, the primary file index structure
 
 SampleInfo is a static (fixed-size) binary preamble to RunHeader
 containing data stream lengths and addresses, as well as some
-unidentified data. Every data stream in the file, except for the list
-of ScanHeader records, has its address stored in SampleInfo.
+unidentified data. All data streams in the file, except for the list
+of ScanHeader records and TrailerScanEvent stream have their addresses
+stored in SampleInfo.
 
-The address of the ScanHeader stream is stored in the parent
-structure, RunHeader.
+The addresses of the ScanHeader and TrailerScanEvent streams are
+stored in the parent structure, RunHeader.
+
+It appears as though RunHeader is a recently introduced wrapper around
+the older SampleInfo structure.
 
 =head2 EXPORT
 

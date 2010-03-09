@@ -83,13 +83,10 @@ Finnigan::RunHeader -- decoder for RunHeader, the primary file index structure
 
 =head1 DESCRIPTION
 
-RunHeader is a static (fixed-size) binary preamble to RunHeader
-containing data stream lengths and addresses, as well as some
-unidentified data. Every data stream in the file, except for the list
-of ScanHeader records, has its address stored in RunHeader.
-
-The address of the ScanHeader stream is stored in the parent
-structure, RunHeader.
+RunHeader is presently a static (fixed-size) structure containing data
+stream lengths and addresses, as well as some unidentified data. Every
+data stream in the file, has its address stored in RunHeader or in its
+historical antecendent SampleInfo, which it now includes.
 
 =head2 EXPORT
 
@@ -97,7 +94,7 @@ None
 
 =head1 SEE ALSO
 
-Finnigan::RunHeader
+Finnigan::SampleInfo
 
 =head1 AUTHOR
 
