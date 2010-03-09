@@ -882,7 +882,7 @@ class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
         nsegs = self["/run header/nsegs"].value # this is a conjecture
         for n in range(1, nsegs + 1):
             yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
-        yield ScanIndex(self, "scan index", "A set of ScanIndexEntry records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
+        yield ScanIndex(self, "scan index", "A set of ScanIndexEntry records")
         yield TrailerScanEvent(self, "trailer scan event", "Something called TrailerScanEvent")
         yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
