@@ -1,0 +1,183 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use feature qw/state say/;
+use 5.010;
+
+use Getopt::Long;
+use Pod::Usage;
+use Finnigan;
+
+my $option_help = 0;
+my $option_man = 0;
+my $option_dump = 0;
+my $option_html = 0;
+my $option_wiki = 0;
+my $option_size = 0;
+my $option_si = 0;
+my $option_relative = 0;
+
+Getopt::Long::Configure ("bundling");
+GetOptions(
+	   'help|?' => \$option_help,
+	   'man' => \$option_man,
+	   'dump|d' => \$option_dump,
+	   'size|s' => \$option_size,
+	   'html|h' => \$option_html,
+	   'wiki|w' => \$option_wiki,
+	   'sample_info|i' => \$option_si,
+	   'relative|r' => \$option_relative,
+	  ) or pod2usage(2);
+pod2usage(1) if $option_help;
+pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
+
+@ARGV == 1 or do{ say STDERR "Expecting a single input file\n"; pod2usage(2) };
+
+my $file = shift @ARGV;
+
+-e $file or die "file '$file' does not exist";
+-f $file or die "'$file' is not a plain file";
+-s $file or die "'$file' has zero size";
+
+# -----------------------------------------------------------------------------
+open INPUT, "<$file" or die "can't open '$file': $!";
+binmode INPUT;
+
+my $header = Finnigan::FileHeader->decode(\*INPUT);
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+
+# fast-forward to RunHeader
+my $run_header_addr = $rfi->preamble->run_header_addr;
+seek INPUT, $run_header_addr, 0;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
+
+if ( $option_size ) {
+  if ( $option_si ) {
+    say "size: " . $run_header->sample_info->size;
+  }
+  else {
+    say "size: " . $run_header->size;
+  }
+}
+
+if ( $option_dump ) {
+  if ( $option_html ) {
+    if ( $option_si ) {
+      $run_header->sample_info->dump(style => 'html', relative => $option_relative);
+    }
+    else {
+      $run_header->dump(style => 'html', relative => $option_relative);
+    }
+  }
+  elsif ( $option_wiki ) {
+    if ( $option_si ) {
+      $run_header->sample_info->dump(style => 'wiki', relative => $option_relative);
+    }
+    else {
+      $run_header->dump(style => 'wiki', relative => $option_relative);
+    }
+  }
+  else {
+    if ( $option_si ) {
+      $run_header->sample_info->dump(relative => $option_relative);
+    }
+    else {
+      $run_header->dump(relative => $option_relative);
+    }
+  }
+}
+else {
+  say "$file: "
+    . "scan range: ["
+      . $run_header->sample_info->low_mz . ".."
+	. $run_header->sample_info->high_mz . "]; "
+	  . "scan numbers: ["
+	    . $run_header->sample_info->first_scan . ".."
+	      . $run_header->sample_info->last_scan . "]; "
+		. "number of segments: "
+		  . $run_header->nsegs . "; "
+		    . "inst. status samples: "
+		      . $run_header->sample_info->inst_status_samples . "; "
+			. "abundance: "
+			  . $run_header->sample_info->abundance . "; "
+			    . "retention time: ["
+			      . $run_header->sample_info->start_time . ".."
+				. $run_header->sample_info->end_time . "]; "
+				  . "ntrailer: "
+				    . $run_header->ntrailer . "; "
+				      . "nparams: "
+					. $run_header->nparams . "; "
+					  . "unknown[1]: "
+					    . $run_header->u1 . "; "
+					      . "unknown[2]: "
+						. $run_header->u2 . "; "
+						  ;
+}
+
+__END__
+=head1 NAME
+
+uf-header - decode the file header in a Finnigan raw file
+
+=head1 SYNOPSIS
+
+uf-header [options] file
+
+ Options:
+   --help            brief help message
+   --man             full documentation
+   --html            requet html formatting of the output of -dump 
+   --size            tell object size
+   --sample_info     dump the content of SampleInfo instead of RunHeader itself
+   --relative        show relative addresses
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--help>
+
+Print a brief help message and exits.
+
+=item B<--man>
+
+Prints the manual page and exits.
+
+=item B<--dump>
+
+Prints the table listing all header fields with their seek addresses,
+sizes, acess keys and values.
+
+=item B<--html>
+
+Changes the output style of -dump to html.
+
+=item B<--size>
+
+Prints the size of the header in bytes.
+
+=item B<--smple_info>
+
+Dump the contents of SampleInfo, instead of the parent object.
+
+=item B<--relative>
+
+Show relative addresses of all itmes. The default is to show the
+absolute seek address.
+
+=back
+
+=head1 DESCRIPTION
+
+B<uf-casinfo> will read the given input file and display the contents
+of its RawFileInfo structure, or its component RawFileInfoPreamble.
+
+It will return an error message if its input is not a Finnigan raw
+file.
+
+By default, it dumps the object in a tabular format.
+
+=cut
