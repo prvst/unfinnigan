@@ -374,7 +374,7 @@ class SampleInfo(FieldSet):
         yield UInt32(self, "inst log length", "The number of instrument status samples logged")
         yield UInt32(self, "unknown long[3]")
         yield UInt32(self, "unknown long[4]")
-        yield UInt32(self, "scan index addr", "Absolute seek address of ScanIndex (ShortScanHeader stream)")
+        yield UInt32(self, "scan index addr", "Absolute seek address of ScanIndex (ScanIndexEntry stream)")
         yield UInt32(self, "data addr", "Absolute seek address of scan data")
         yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
         yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
@@ -882,7 +882,7 @@ class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
         nsegs = self["/run header/nsegs"].value # this is a conjecture
         for n in range(1, nsegs + 1):
             yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
-        yield ScanIndex(self, "scan index", "A set of ShortScanHeader records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
+        yield ScanIndex(self, "scan index", "A set of ScanIndexEntry records. There is another thing called ScanHeaderFile below, containing ScanHeader records")
         yield TrailerScanEvent(self, "trailer scan event", "Something called TrailerScanEvent")
         yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
@@ -901,14 +901,14 @@ class ScanIndex(FieldSet):
         info = self["/run header/sample info"]
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
         if 0 and ABBREVIATE_LISTS and nrecords > 100:
-            yield ShortScanHeader(self, "scan header[1]", "Short ScanHeader 1")
-            yield ShortScanHeader(self, "scan header[2]", "Short ScanHeader 2")
+            yield ScanIndexEntry(self, "scan header[1]", "Short ScanHeader 1")
+            yield ScanIndexEntry(self, "scan header[2]", "Short ScanHeader 2")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
             yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
-            yield ShortScanHeader(self, "scan header[%s]" % nrecords, "ShortScanHeader %s" % nrecords)
+            yield ScanIndexEntry(self, "scan header[%s]" % nrecords, "ScanIndexEntry %s" % nrecords)
         else:
             for n in range(1, nrecords + 1):
-                yield ShortScanHeader(self, "log[%s]" % n, "ScanHeader %s" % n)
+                yield ScanIndexEntry(self, "log[%s]" % n, "ScanHeader %s" % n)
                 print >> sys.stderr, "\rread %s of %s short scan headers ... " % (n, nrecords),
             print >> sys.stderr, "done"
 
@@ -1325,7 +1325,7 @@ class IonDetector(FieldSet):
     def createFields(self):
         yield Float32(self, "multiplier actual", "Multiplier Actual (V)")
 
-class ShortScanHeader(FieldSet):
+class ScanIndexEntry(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
