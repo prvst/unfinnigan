@@ -901,14 +901,14 @@ class ScanIndex(FieldSet):
         info = self["/run header/sample info"]
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
         if 0 and ABBREVIATE_LISTS and nrecords > 100:
-            yield ScanIndexEntry(self, "scan header[1]", "Short ScanHeader 1")
-            yield ScanIndexEntry(self, "scan header[2]", "Short ScanHeader 2")
+            yield ScanIndexEntry(self, "scan header[1]", "ScanIndexEntry 1")
+            yield ScanIndexEntry(self, "scan header[2]", "ScanIndexEntry 2")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
             yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
             yield ScanIndexEntry(self, "scan header[%s]" % nrecords, "ScanIndexEntry %s" % nrecords)
         else:
             for n in range(1, nrecords + 1):
-                yield ScanIndexEntry(self, "log[%s]" % n, "ScanHeader %s" % n)
+                yield ScanIndexEntry(self, "log[%s]" % n, "ScanIndexEntry %s" % n)
                 print >> sys.stderr, "\rread %s of %s short scan headers ... " % (n, nrecords),
             print >> sys.stderr, "done"
 
