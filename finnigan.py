@@ -8,6 +8,7 @@ import unicodedata
 
 from hachoir_parser import Parser
 from hachoir_core.field import (
+    Enum,
     ParserError,
     Bits,
     RawBits,
@@ -32,8 +33,83 @@ from hachoir_parser.common.win32 import PascalStringWin32
 from hachoir_core.endian import LITTLE_ENDIAN, BIG_ENDIAN
 
 VERSION = []
-ABBREVIATE_LISTS = False
+ABBREVIATE_LISTS = True
 VERBOSE_GENERIC_RECORDS = False
+
+BOOL = {
+    0: "False",
+    1: "True"
+}
+
+ON_OFF = {
+    0: "off",
+    1: "on",
+    2: "undefined",
+}
+
+DETECTOR = {
+    0: "valid",
+    1: "undefined",
+};
+
+ANALYZER = {
+    0: "ITMS",
+    1: "TQMS",
+    2: "SQMS",
+    3: "TOFMS",
+    4: "FTMS",
+    5: "Sector",
+    6: "undefined"
+}
+
+POLARITY = {
+    0: "negative",
+    1: "positive",
+    2: "undefined",
+};
+
+SCAN_MODE = {
+    0: "centroid",
+    1: "profile",
+    2: "undefined",
+}
+
+SCAN_TYPE = {
+    0: "Full",
+    1: "Zoom",
+    2: "SIM",
+    3: "SRM",
+    4: "CRM",
+    5: "undefined",
+    6: "Q1",
+    7: "Q3",
+}
+
+MS_POWER = {
+    0: "undefined",
+    1: "MS1",
+    2: "MS2",
+    3: "MS3",
+    4: "MS4",
+    5: "MS5",
+    6: "MS6",
+    7: "MS7",
+    8: "MS8",
+}
+
+IONIZATION = {
+    0: "EI",
+    1: "CI",
+    2: "FABI",
+    3: "ESI",
+    4: "APCI",
+    5: "NSI",
+    6: "TSI",
+    7: "FDI",
+    8: "MALDI",
+    9: "GDI",
+    10: "undefined"
+}
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
 
@@ -93,7 +169,7 @@ class Finnigan(Parser):
         elif VERSION[-1] >= 57: #  or VERSION[-1] == 62:
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield CASInfo(self, "CAS info", "Something called CASInfo -- meaning unknown")
-            yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- meaning unknown")
+            yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
             yield MethodFile(self, "method file", "Embedded method file")
 
             run_header_addr = self["raw file info/preamble/run header addr"].value
@@ -525,10 +601,12 @@ class RawFileInfoPreamble(FieldSet):
         yield UInt16(self, "hour")
         yield UInt16(self, "minute")
         yield UInt16(self, "second")
-        yield UInt16(self, "unknown short[1]")
+        yield UInt16(self, "millisecond")
         if VERSION[-1] >= 57:
-            for index in range(2, 13 + 1):
-                yield UInt16(self, "unknown short[%s]" % index)
+            yield UInt32(self, "unknown long[1]")
+            yield UInt32(self, "data addr", "Absolute address of scan data")
+            for index in range(2, 5 + 1):
+                yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
 
@@ -831,12 +909,29 @@ class ScanEventPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
+        yield UInt8(self, "unknown byte[1]")
+        yield UInt8(self, "unknown byte[2]")
+        yield Enum(UInt8(self, "corona"), ON_OFF)
+        yield Enum(UInt8(self, "detector"), DETECTOR)
+        yield Enum(UInt8(self, "polarity"), POLARITY)
+        yield Enum(UInt8(self, "scan mode"), SCAN_MODE)
+        yield Enum(UInt8(self, "ms power"), MS_POWER)
+        yield Enum(UInt8(self, "scan type"), SCAN_TYPE)
+        yield UInt8(self, "unknown byte[3]")
+        yield UInt8(self, "unknown byte[4]")
+        yield Enum(UInt8(self, "dependent"), BOOL)
+        yield Enum(UInt8(self, "ionization"), IONIZATION)
+        yield RawBytes(self, "unknown data[1]", 20)
+        yield Enum(UInt8(self, "wideband"), ON_OFF)
+        yield RawBytes(self, "unknown data[2]", 7)
+        yield Enum(UInt8(self, "analyzer"), ANALYZER)
+
         if VERSION[-1] <= 57:
-            yield RawBytes(self, "unknown data", 80, "Scan Event preamble")
+            yield RawBytes(self, "unknown data", 39, "Scan Event preamble")
         elif VERSION[-1] <= 62:
-            yield RawBytes(self, "unknown data", 120, "Scan Event preamble")
+            yield RawBytes(self, "unknown data", 79, "Scan Event preamble")
         else:
-            yield RawBytes(self, "unknown data", 128, "Scan Event preamble")
+            yield RawBytes(self, "unknown data", 87, "Scan Event preamble")
 
 class MSDependentData(FieldSet):
     endian = LITTLE_ENDIAN
@@ -874,7 +969,7 @@ class TrailerScanEvent(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "n", "Number of ms scans (?)")
+        yield UInt32(self, "n", "Number of trailer events")
         nrecords = self["n"].value
         # cannot only show the first few records because they are of
         # variable size and the last record's position will not be
@@ -901,12 +996,8 @@ class ScanEvent(FieldSet):
         if self["type flag"].value == 0:
             yield UInt32(self, "unknown long[1]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
-            yield UInt32(self, "unknown long[2]", "Unknown long")
-            if VERSION[-1] == 57: # understand what really directs this inclusion; probably the preamble
-                ndouble = 4
-            else:
-                ndouble = 7
-            for index in range(1, ndouble + 1):
+            yield UInt32(self, "nparam", "The number of double-precision parameters following this")
+            for index in range(1, self["nparam"].value + 1):
                 yield Float64(self, "unknown double[%s]" % index, "Unknown double")
             for index in "45":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
