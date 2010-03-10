@@ -11,8 +11,11 @@ from hachoir_core.field import (
     ParserError,
     Bits,
     RawBits,
+    Int8,
     UInt8,
+    Int16,
     UInt16,
+    Int32,
     UInt32,
     UInt64,
     Float32,
@@ -30,7 +33,7 @@ from hachoir_core.endian import LITTLE_ENDIAN, BIG_ENDIAN
 
 VERSION = []
 ABBREVIATE_LISTS = False
-VERBOSE_GENERIC_RECORDS = False
+VERBOSE_GENERIC_RECORDS = True
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
 
@@ -217,10 +220,85 @@ class GenericRecord(FieldSet):
                         + item.ascii_label \
                         + " (" + str(item["type"].value) \
                         + ", " + str(item["length"].value) + ") ... ",
-                    if item["type"].value == 0xD:
-                        yield String(self, item.ascii_label, item["length"].value * 2, charset="UTF-16-LE", truncate="\0")
+
+                    # c char
+                    if item["type"].value == 0x1:
+                        yield Int8(self, item.ascii_label,
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
                         if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "string: %s" % self[item.ascii_label].value
+                            print >> sys.stderr, "signed byte (type 1): %s" % self[item.ascii_label].value
+
+                    # bool (true/false)
+                    elif item["type"].value == 0x2:
+                        yield UInt8(self, item.ascii_label,
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "bool (type 2): %s" % self[item.ascii_label].value
+
+                    # yes/no
+                    elif item["type"].value == 0x3:
+                        yield UInt8(self, item.ascii_label,
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "yes/no (type 3): %s" % self[item.ascii_label].value
+
+                    # on/off
+                    elif item["type"].value == 0x4:
+                        yield UInt8(self, item.ascii_label,
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "on/off (type 4): %s" % self[item.ascii_label].value
+
+                    # c unsigned char
+                    elif item["type"].value == 0x5:
+                        yield UInt8(self, item.ascii_label,
+                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "unsigned byte (type 5): %s" % self[item.ascii_label].value
+
+                    # c short
+                    elif item["type"].value == 0x6:
+                        yield Int16(self, item.ascii_label,
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "short: %s" % self[item.ascii_label].value
+
+                    # c unsigned short
+                    elif item["type"].value == 0x7:
+                        yield UInt16(self, item.ascii_label,
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "unsigned short: %s" % self[item.ascii_label].value
+
+                    # c long
+                    elif item["type"].value == 0x8:
+                        yield Int32(self, item.ascii_label,
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "long: %s" % self[item.ascii_label].value
+
+                    # c unsigned long
+                    elif item["type"].value == 0x9:
+                        yield UInt32(self, item.ascii_label,
+                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "unsigned long: %s" % self[item.ascii_label].value
+
+                    # c float
+                    elif item["type"].value == 0xA:
+                        yield Float32(self, item.ascii_label,
+                                      "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "float: %s" % self[item.ascii_label].value
+
+                    # c double
+                    elif item["type"].value == 0xB:
+                        yield Float64(self, item.ascii_label,
+                                      "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+                        if VERBOSE_GENERIC_RECORDS:
+                            print >> sys.stderr, "double: %s" % self[item.ascii_label].value
+
+                    # asciiz string
                     elif item["type"].value == 0xC:
                         # yield String(self, item.ascii_label, item["length"].value,
                         #              "(" + str(item["type"].value) + ", " + str(item["length"]) + ")",
@@ -230,41 +308,13 @@ class GenericRecord(FieldSet):
                                     truncate="\0")
                         if VERBOSE_GENERIC_RECORDS:
                             print >> sys.stderr, "asciiz: %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0xB:
-                        yield Float64(self, item.ascii_label,
-                                      "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
+
+                    # wide string, zero-terminated
+                    elif item["type"].value == 0xD:
+                        yield String(self, item.ascii_label, item["length"].value * 2, charset="UTF-16-LE", truncate="\0")
                         if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "double: %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0xA:
-                        yield Float32(self, item.ascii_label,
-                                      "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
-                        if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "float: %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0x9:
-                        yield UInt32(self, item.ascii_label,
-                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
-                        if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "long: %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0x6:
-                        yield UInt16(self, item.ascii_label,
-                                     "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
-                        if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "short: %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0x4:
-                        yield UInt8(self, item.ascii_label,
-                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
-                        if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "byte (type 4): %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0x3:
-                        yield UInt8(self, item.ascii_label,
-                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
-                        if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "bool: %s" % self[item.ascii_label].value
-                    elif item["type"].value == 0x1:
-                        yield UInt8(self, item.ascii_label,
-                                    "(" + str(item["type"].value) + ", " + str(item["length"]) + ")")
-                        if VERBOSE_GENERIC_RECORDS:
-                            print >> sys.stderr, "byte (type 1): %s" % self[item.ascii_label].value
+                            print >> sys.stderr, "string: %s" % self[item.ascii_label].value
+
                     else:
                         exit( "unkown data type ("
                               + str(item["type"]) + " at %x" % (self.absolute_address/8) + ", " + str(item["length"].value) + "): "
