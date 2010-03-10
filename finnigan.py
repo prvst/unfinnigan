@@ -179,11 +179,11 @@ class Finnigan(Parser):
             nscans = last_scan_number - first_scan_number + 1
             #for n in range(1, nscans + 1):
             for n in range(1, min(nscans, 20) + 1):
-                yield Spectrum(self, "spectrum %s" % n)
-                print >> sys.stderr, "\rread %s of %s spectra ... " % (n, nscans),
+                yield Packet(self, "packet %s" % n)
+                print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
             if run_header_addr > self.current_size/8:
-                yield RawBytes(self, "unparsed spectra", run_header_addr - self.current_size/8, "This is where the spectra are found")
+                yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "This is where the scand data packets are found")
             yield RunHeader(self, "run header", "The directory structure for the entire file")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
@@ -219,11 +219,11 @@ class Finnigan(Parser):
         visitor.up()
 
 
-class Spectrum(FieldSet):
+class Packet(FieldSet):
     def createFields(self):
-        yield SpectrumHeader(self, "header")
-        if self["header/unknown long[2]"].value: # don't know what this value is but is only set when there is raw data
-            yield DetectorSignal(self, "detector signal", "Raw or filtered spectrum (depending on scan mode)")
+        yield PacketHeader(self, "header")
+        if self["header/unknown long[2]"].value: # don't know what this value is but is only set when there is a profile
+            yield Profile(self, "profile", "Raw or filtered profile (depending on scan mode)")
             if self["header/unknown long[7]"].value: # don't know what  this value is
                                                      # but it is zero in raw MS2 profiles
                                                      # (as well as most values adjacent to it)
@@ -234,20 +234,20 @@ class Spectrum(FieldSet):
         else:
             yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
 
-class SpectrumHeader(FieldSet):
+class PacketHeader(FieldSet):
     def createFields(self):
         for index in "12345678":
             yield UInt32(self, "unknown long[%s]" % index)
         yield Float32(self, "low mz", "Scan low M/z; appears in filterLine in mzXML")
         yield Float32(self, "high mz", "Scan high M/z; appears in filterLine in mzXML")
 
-        if self["unknown long[2]"].value: # don't know what this value is but is only set when there is raw data
+        if self["unknown long[2]"].value: # don't know what this value is but is only set when there is a profile
             for index in "12":
                 yield Float64(self, "unknown double[%s]" % index)
             yield UInt32(self, "peak count")
             yield UInt32(self, "nbins", "Number of bins in scan")
 
-class DetectorSignal(FieldSet):
+class Profile(FieldSet):
     def createFields(self):
         for n in range(1, self["../header/peak count"].value + 1):
             yield UInt32(self, "first bin[%s]" % n, "Starting bin number in peak")
@@ -952,8 +952,9 @@ class Reaction(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        for index in "123":
-            yield Float64(self, "unknown double[%s]" % index, "Parameter %s" % index)
+        yield Float64(self, "precursor mass")
+        yield Float64(self, "unknown double", "seems to be consistently set to 1")
+        yield Float64(self, "ionisation energy")
         yield UInt32(self, "unknown long[1]", "Unknown long")
         yield UInt32(self, "unknown long[2]", "Unknown long")
 
@@ -992,13 +993,41 @@ class ScanEvent(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
-        yield UInt32(self, "type flag", "Indicates event type")
+        yield UInt32(self, "type flag", "Indicates event type (Reaction == 1)")
         if self["type flag"].value == 0:
             yield UInt32(self, "unknown long[1]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
             yield UInt32(self, "nparam", "The number of double-precision parameters following this")
             for index in range(1, self["nparam"].value + 1):
-                yield Float64(self, "unknown double[%s]" % index, "Unknown double")
+                key = "unknown double[%s]" % index
+                label = "Unknown double";
+                if (self["nparam"].value == 4): # LTQ-FT
+                    if (index == 2):
+                        label = "may be Conversion Parameter A"
+                    elif (index == 3):
+                        key = "param b"
+                        label = "Conversion Parameter B"
+                    elif(index == 4):
+                        key = "param c"
+                        label = "Conversion Parameter C"
+                else:
+                    if (index == 2):
+                        label = "may be Conversion Parameter I"
+                    elif (index == 3):
+                        label = "may be Conversion Parameter A"
+                    elif (index == 4):
+                        key = "param b"
+                        label = "Conversion Parameter B"
+                    elif(index == 5):
+                        key = "param c"
+                        label = "Conversion Parameter C"
+                    elif(index == 6):
+                        key = "param d"
+                        label = "Conversion Parameter D"
+                    elif(index == 7):
+                        key = "param e"
+                        label = "Conversion Parameter E"
+                yield Float64(self, key, label)
             for index in "45":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
         elif self["type flag"].value == 1:
