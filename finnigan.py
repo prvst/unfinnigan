@@ -33,7 +33,7 @@ from hachoir_core.endian import LITTLE_ENDIAN, BIG_ENDIAN
 
 VERSION = []
 ABBREVIATE_LISTS = False
-VERBOSE_GENERIC_RECORDS = True
+VERBOSE_GENERIC_RECORDS = False
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
 
