@@ -178,7 +178,7 @@ class Finnigan(Parser):
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
             nscans = last_scan_number - first_scan_number + 1
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 20) + 1):
+            for n in range(1, min(nscans, 33) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
@@ -222,40 +222,46 @@ class Finnigan(Parser):
 class Packet(FieldSet):
     def createFields(self):
         yield PacketHeader(self, "header")
-        if self["header/unknown long[2]"].value: # don't know what this value is but is only set when there is a profile
+        if self["header/profile size"].value:
             yield Profile(self, "profile", "Raw or filtered profile (depending on scan mode)")
-            if self["header/unknown long[7]"].value: # don't know what  this value is
-                                                     # but it is zero in raw MS2 profiles
-                                                     # (as well as most values adjacent to it)
-                yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
-                yield RawBytes(self, "unknown ladder", self["header/peak count"].value*4, "A strange ladder pattern. See \"scan function\" in Qualbrowser help file")
-                yield UnknownStream(self, "unknown stream")
-                yield UnknownTriplets(self, "unknown triplets")
-        else:
-            yield PeakList(self, "peak list", "I suspect this is the list of centroided peaks")
+        if self["header/peak list size"].value:
+            yield PeakList(self, "peak list", "Peak centroids")
+        if self["header/scan function size"].value:
+            yield ScanFunction(self, "scan function", "Voltage(s) in ion optics?");
+        if self["header/size of unknown stream"].value:
+            yield UnknownStream(self, "unknown stream")
+        if self["header/size of unknown triplet stream"].value:
+            yield UnknownTriplets(self, "unknown triplets")
 
 class PacketHeader(FieldSet):
     def createFields(self):
-        for index in "12345678":
-            yield UInt32(self, "unknown long[%s]" % index)
+        yield UInt32(self, "unknown long[1]")
+        yield UInt32(self, "profile size", "Size of the profile object, in 4-byte words")
+        yield UInt32(self, "peak list size", "Size of the peak list, in 4-byte words")
+        yield UInt32(self, "layout", "This is believed to be the packet layout indicator")
+        yield UInt32(self, "scan function size", "Size of the scan function data in 4-byte words")
+        yield UInt32(self, "size of unknown stream", "Size of the unknown stream in 4-byte words")
+        yield UInt32(self, "size of unknown triplet stream", "Size of the stream of unknown triplets in 4-byte words")
+        yield UInt32(self, "unknown long[2]", "Seems to be zero everywhere")
         yield Float32(self, "low mz", "Scan low M/z; appears in filterLine in mzXML")
         yield Float32(self, "high mz", "Scan high M/z; appears in filterLine in mzXML")
 
-        if self["unknown long[2]"].value: # don't know what this value is but is only set when there is a profile
-            for index in "12":
-                yield Float64(self, "unknown double[%s]" % index)
-            yield UInt32(self, "peak count")
-            yield UInt32(self, "nbins", "Number of bins in scan")
-
 class Profile(FieldSet):
     def createFields(self):
-        for n in range(1, self["../header/peak count"].value + 1):
+        yield Float64(self, "first bin value", "in the case of spectra, this will be the highest frequency")
+        yield Float64(self, "bin step", "the amount each bin value differs from the previous one")
+        yield UInt32(self, "peak count")
+        yield UInt32(self, "nbins", "Number of bins in scan")
+
+        for n in range(1, self["peak count"].value + 1):
             yield UInt32(self, "first bin[%s]" % n, "Starting bin number in peak")
             yield UInt32(self, "nbins[%s]" % n, "Peak width in bins")
-            if VERSION[-1] > 57: # this should actually be analyzer type
-                # this test must be more sensible; must get through somehow just for now
-                if self["../header/unknown long[5]"].value and self["../header/unknown long[6]"].value:
-                    yield Float32(self, "lock mass error[%s]" % n, "Lock mass correction")
+#            if VERSION[-1] > 57 and self["../header/profile size"].value:
+            if self["../header/layout"].value > 0:
+                # This is a very risky conjecture, but I must forge
+                # ahead. These values only appear in calibrated
+                # profiles, whose "layout" indicator (if that's what it is) is a non-zero number
+                yield Float32(self, "unknown float[%s]" % n, "Does this have anything to do with lock mass/calibrtion?")
             for index in range(1, self["nbins[%s]" % n].value + 1):
                  yield Float32(self, "peak[%s][%s]" % (n, index))
 
@@ -267,16 +273,20 @@ class PeakList(FieldSet):
             yield Float32(self, "mz[%s]" % n)
             yield Float32(self, "signal[%s]" % n)
 
+class ScanFunction(FieldSet):
+    def createFields(self):
+        yield RawBytes(self, "unparsed data", self["../header/scan function size"].value*4, "A ramp-like pattern. See \"scan function\" in Qualbrowser help file")
 
 class UnknownStream(FieldSet):
     def createFields(self):
         yield UInt32(self, "unknown long")
-        for n in range(1, self["../header/peak count"].value + 1):
+        # read one thing less because we've just read one
+        for n in range(1, (self["../header/size of unknown stream"].value - 1) + 1):
             yield Float32(self, "unknown[%s]" % n)
 
 class UnknownTriplets(FieldSet):
     def createFields(self):
-        ntriplets = self["../header/unknown long[7]"].value / 3
+        ntriplets = self["../header/size of unknown triplet stream"].value / 3
         for n in range(1, ntriplets + 1):
             yield Float32(self, "mz[%s]" % n)
             yield Float32(self, "unknown value[1][%s]" % n)
