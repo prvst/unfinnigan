@@ -175,7 +175,7 @@ class Finnigan(Parser):
 
             data_addr = self["raw file info/preamble/data addr"].value
             if data_addr > self.current_size/8:
-                yield RawBytes(self, "unknown data", data_addr - self.current_size/8)
+                yield RawBytes(self, "unknown data", data_addr - self.current_size/8, "Either part of the method file, or a tail of a buffer with leftover junk")
 
             run_header_addr = self["raw file info/preamble/run header addr"].value
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
@@ -445,8 +445,8 @@ class FinniganHeader(FieldSet):
 
 class ThermoFinniganHeader(FieldSet):
     # this may actually be an accidental leftover in the method
-    # file. It was complete in tow instances of V.62, but in one instance of
-    # V.57, it was missing the magic number -- possible overwritten?
+    # file. It was complete in two instances of V.62, but in one instance of
+    # V.57, it was missing the magic number -- possibly overwritten?
     static_size = 0x0600 * 8
     endian = LITTLE_ENDIAN
 
@@ -464,7 +464,7 @@ class ThermoFinniganHeader(FieldSet):
             yield UInt16(self, "unknown int[5]", "Unknown int")
             yield UInt16(self, "unknown int[6]", "Unknown int")
         else:
-            pass # this whole area may be a nonsens leftover even
+            pass # this whole area may be a nonsense leftover even
                  # V.62, where it contains some reasonable objects
                  # Read rest of the header
         if self.current_size < self._size:
@@ -649,7 +649,8 @@ class MethodFile(FieldSet):
             self["method info/bytes to eof"].value - 0x0600, # the static size of ThermoFinniganHeader that follows
             "Method file data"
             )
-        yield ThermoFinniganHeader(self, "thermo header", "A version of the Finnigan header (magic 5) -- purpose unknown)")
+        # This probably was just the end of the buffer with random junk left over from earlier use
+        # yield ThermoFinniganHeader(self, "thermo header", "A version of the Finnigan header (magic 5) -- purpose unknown)")
 
 class MethodInfo(FieldSet):
      endian = LITTLE_ENDIAN
