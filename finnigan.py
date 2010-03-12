@@ -12,6 +12,8 @@ from hachoir_core.field import (
     ParserError,
     Bits,
     RawBits,
+    Bytes,
+    RawBytes,
     Int8,
     UInt8,
     Int16,
@@ -24,7 +26,6 @@ from hachoir_core.field import (
     TimestampWin64,
     String,
     CString,
-    RawBytes,
     PaddingBytes,
     PascalString8,
     FieldSet
@@ -226,8 +227,8 @@ class Packet(FieldSet):
             yield Profile(self, "profile", "Raw or filtered profile (depending on scan mode)")
         if self["header/peak list size"].value:
             yield PeakList(self, "peak list", "Peak centroids")
-        if self["header/scan function size"].value:
-            yield ScanFunction(self, "scan function", "Voltage(s) in ion optics?");
+        if self["header/descriptor list size"].value:
+            yield PeakDescriptorList(self, "peak descriptors");
         if self["header/size of unknown stream"].value:
             yield UnknownStream(self, "unknown stream")
         if self["header/size of unknown triplet stream"].value:
@@ -239,7 +240,7 @@ class PacketHeader(FieldSet):
         yield UInt32(self, "profile size", "Size of the profile object, in 4-byte words")
         yield UInt32(self, "peak list size", "Size of the peak list, in 4-byte words")
         yield UInt32(self, "layout", "This is believed to be the packet layout indicator")
-        yield UInt32(self, "scan function size", "Size of the scan function data in 4-byte words")
+        yield UInt32(self, "descriptor list size", "Size of the peak descriptor list in 4-byte words (co-incides with the number of peaks)")
         yield UInt32(self, "size of unknown stream", "Size of the unknown stream in 4-byte words")
         yield UInt32(self, "size of unknown triplet stream", "Size of the stream of unknown triplets in 4-byte words")
         yield UInt32(self, "unknown long[2]", "Seems to be zero everywhere")
@@ -273,9 +274,17 @@ class PeakList(FieldSet):
             yield Float32(self, "mz[%s]" % n)
             yield Float32(self, "signal[%s]" % n)
 
-class ScanFunction(FieldSet):
+class PeakDescriptorList(FieldSet):
     def createFields(self):
-        yield RawBytes(self, "unparsed data", self["../header/scan function size"].value*4, "A ramp-like pattern. See \"scan function\" in Qualbrowser help file")
+        for n in range(1, self["../peak list/n"].value + 1):
+            yield PeakDescriptor(self, "descriptor[%s]" % n)
+            #yield Bytes(self, "descriptor[%s]" % n, 4)
+
+class PeakDescriptor(FieldSet):
+    def createFields(self):
+        yield UInt16(self, "index")
+        yield UInt8(self, "flags")
+        yield UInt8(self, "charge")
 
 class UnknownStream(FieldSet):
     def createFields(self):
@@ -412,7 +421,7 @@ class FinniganHeader(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield RawBytes(self, "magic", 2, r'File signature ("\1\xA1")')
+        yield Bytes(self, "magic", 2, r'File signature ("\1\xA1")')
         yield CString(self, "signature", "Finnigan signature: \"Finnigan\" (wide string)", charset="UTF-16-LE") #, strip="\0")
         yield UInt32(self, "unknown long[1]", "Unknown long; seems to be the same in all files")
         yield UInt32(self, "unknown long[2]", "Unknown long; seems to be the same in all files")
