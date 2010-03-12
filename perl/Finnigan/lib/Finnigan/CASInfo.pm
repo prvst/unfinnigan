@@ -29,7 +29,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::CASInfo -- a decoder for CASInfo, a totally obscure structure standing in the way to interesting data
+Finnigan::CASInfo -- a decoder for autosampler data
 
 =head1 SYNOPSIS
 
@@ -40,10 +40,8 @@ Finnigan::CASInfo -- a decoder for CASInfo, a totally obscure structure standing
 =head1 DESCRIPTION
 
 CASInfo is a structure with uncertain purpose that contains a binary
-preamble (CASInfoPreamble) and a text string (which is blank in all known
-cases).
-
-It may have something to do with Chemical Abstracts. What exactly, is not clear.
+preamble with autosampler co-ordinates (CASInfoPreamble), followed by a
+text string.
 
 =head2 EXPORT
 

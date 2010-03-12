@@ -167,17 +167,21 @@ class Finnigan(Parser):
             for n in range(1, nrecords + 1):
                 yield LogRecord(self, "log[%s]" % n, "LogRecord %s" % n)
 
-        elif VERSION[-1] >= 57: #  or VERSION[-1] == 62:
+        elif VERSION[-1] >= 57:
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
-            yield CASInfo(self, "CAS info", "Something called CASInfo -- meaning unknown")
+            yield CASInfo(self, "CAS info", "Autosampler data?")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
             yield MethodFile(self, "method file", "Embedded method file")
 
-            run_header_addr = self["raw file info/preamble/run header addr"].value
+            data_addr = self["raw file info/preamble/data addr"].value
+            if data_addr > self.current_size/8:
+                yield RawBytes(self, "unknown data", data_addr - self.current_size/8)
 
+            run_header_addr = self["raw file info/preamble/run header addr"].value
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
             nscans = last_scan_number - first_scan_number + 1
+
             #for n in range(1, nscans + 1):
             for n in range(1, min(nscans, 33) + 1):
                 yield Packet(self, "packet %s" % n)
@@ -596,8 +600,12 @@ class CASInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield RawBytes(self, "padding", 20, "strange FF padding")
-        yield UInt32(self, "unknown long", "Unknown long")
+        yield Int32(self, "unknown signed long[1]")
+        yield Int32(self, "unknown signed long[2]")
+        yield UInt32(self, "number of wells")
+        yield UInt32(self, "unknown long[4]")
+        yield UInt32(self, "unknown long[5]")
+        yield UInt32(self, "unknown long[6]")
 
 
 class RawFileInfo(FieldSet):
@@ -666,7 +674,11 @@ class InstID(FieldSet):
     def createFields(self):
         yield RawBytes(self, "unknown data", 8)
         yield UInt32(self, "unknown long[1]")
-        for index in range(1, 8 + 1):  # don't know where the number comes from
+        for index in range(1, 2 + 1):
+            yield PascalStringWin32(self, "model[%s]" % index, "Why two model tags?")
+        yield PascalStringWin32(self, "serial number")
+        yield PascalStringWin32(self, "software version")
+        for index in range(1, 4 + 1):
             yield PascalStringWin32(self, "tag[%s]" % index, "Some text")
 
 
@@ -1098,7 +1110,7 @@ class ScanIndex(FieldSet):
         else:
             for n in range(1, nrecords + 1):
                 yield ScanIndexEntry(self, "log[%s]" % n, "ScanIndexEntry %s" % n)
-                print >> sys.stderr, "\rread %s of %s short scan headers ... " % (n, nrecords),
+                print >> sys.stderr, "\rread %s of %s index entries ... " % (n, nrecords),
             print >> sys.stderr, "done"
 
 class ScanHeaderFile(FieldSet):

@@ -11,8 +11,12 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		unknown_area => ['C20',  'RawBytes'],
-		unknown_long => ['V',    'UInt32'],
+		"unknown long[1]" => ['V',    'UInt32'],
+		"unknown long[2]" => ['V',    'UInt32'],
+		"number of wells" => ['V',    'UInt32'],
+		"unknown long[3]" => ['V',    'UInt32'],
+		"unknown long[4]" => ['V',    'UInt32'],
+		"unknown long[5]" => ['V',    'UInt32'],
 	       ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
@@ -25,7 +29,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, a totally obscure structure standing in the way to interesting data
+Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, an autosampler descriptor
 
 =head1 SYNOPSIS
 
@@ -35,8 +39,8 @@ Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, a totally obscure st
 
 =head1 DESCRIPTION
 
-CASInfoPreamble is a structure with uncertain purpose. It is a component of the equally obscure CASInfo.
-It has a strange padded area (0xFF x 8  and 0x00 x 12), followed by an unknown long integer.
+CASInfoPreamble is fixed-length structure with some unknown data about the autosampler. It is a component of [CASInfo], which includes this preamble and a text string following it.
+
 
 =head2 EXPORT
 
