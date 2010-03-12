@@ -21,7 +21,8 @@ __END__
 
 =head1 NAME
 
-Finnigan - A collection of parser modules for decoding structures in the raw files written by Thermo mass spectrometers
+Finnigan - A collection of parser modules for decoding structures in
+the raw files written by Thermo mass spectrometers
 
 =head1 SYNOPSIS
 
@@ -32,7 +33,9 @@ Finnigan - A collection of parser modules for decoding structures in the raw fil
 
 =head1 DESCRIPTION
 
-Finnigan is a dummy parent package whose only purpose is to pull in all all packages in its namespace. It does no work; all work is done in sub-modules.
+Finnigan is a dummy parent package whose only purpose is to pull in
+all all packages in its namespace. It does no work; all work is done
+in sub-modules.
 
 Blah blah blah.
 
@@ -43,7 +46,8 @@ None by default.
 
 =head1 SEE ALSO
 
-All Finnigan sub-modules are described in their own documentation. To see the list of all available modules, run
+All Finnigan sub-modules are described in their own documentation. To
+see the list of all available modules, run
 
   perl -MFinnigan -e 'Finnigan::list_modules'
 
