@@ -659,16 +659,11 @@ class MethodInfo(FieldSet):
      def createFields(self):
          yield UInt32(self, "bytes to eof", "Method data size = file length - header size - method info size")
          yield PascalStringWin32(self, "file name", "Method file name")
-         yield UInt32(self, "unknown long", "Unkown long integer")
-         yield PascalStringWin32(self, "tag[1]", "Unknown tag")
-         yield PascalStringWin32(self, "tag[2]", "Unknown tag")
-         if self["unknown long"].value == 4:  # this is not version-dependent; can be 1 or 4 (or ...?) in v.63
-             yield PascalStringWin32(self, "tag[3]", "Unknown tag")
-             yield PascalStringWin32(self, "tag[4]", "Unknown tag")
-             yield PascalStringWin32(self, "tag[5]", "Unknown tag")
-             yield PascalStringWin32(self, "tag[6]", "Unknown tag")
-             yield PascalStringWin32(self, "tag[7]", "Unknown tag")
-             yield PascalStringWin32(self, "tag[8]", "Unknown tag")
+         yield UInt32(self, "n", "the number of tag pairs")
+         for index in range(1, self["n"].value + 1):
+             yield PascalStringWin32(self, "tag[%s].a" % index, "Unknown tag")
+             yield PascalStringWin32(self, "tag[%s].b" % index, "Unknown tag")
+
 
 class IcisStatusLog(FieldSet):
     endian = LITTLE_ENDIAN
