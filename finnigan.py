@@ -174,8 +174,9 @@ class Finnigan(Parser):
             yield MethodFile(self, "method file", "Embedded method file")
 
             data_addr = self["raw file info/preamble/data addr"].value
+
             if data_addr > self.current_size/8:
-                yield RawBytes(self, "unknown data", data_addr - self.current_size/8, "Either part of the method file, or a tail of a buffer with leftover junk")
+                yield RawBytes(self, "parse error", data_addr - self.current_size/8, "If you see this, it is likely that MethodInfo is missing something")
 
             run_header_addr = self["raw file info/preamble/run header addr"].value
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
@@ -646,7 +647,7 @@ class MethodFile(FieldSet):
         yield RawBytes(
             self,
             "method data",
-            self["method info/bytes to eof"].value - 0x0600, # the static size of ThermoFinniganHeader that follows
+            self["method info/bytes to eof"].value,
             "Method file data"
             )
         # This probably was just the end of the buffer with random junk left over from earlier use
@@ -661,6 +662,13 @@ class MethodInfo(FieldSet):
          yield UInt32(self, "unknown long", "Unkown long integer")
          yield PascalStringWin32(self, "tag[1]", "Unknown tag")
          yield PascalStringWin32(self, "tag[2]", "Unknown tag")
+         if self["unknown long"].value == 4:  # this is not version-dependent; can be 1 or 4 (or ...?) in v.63
+             yield PascalStringWin32(self, "tag[3]", "Unknown tag")
+             yield PascalStringWin32(self, "tag[4]", "Unknown tag")
+             yield PascalStringWin32(self, "tag[5]", "Unknown tag")
+             yield PascalStringWin32(self, "tag[6]", "Unknown tag")
+             yield PascalStringWin32(self, "tag[7]", "Unknown tag")
+             yield PascalStringWin32(self, "tag[8]", "Unknown tag")
 
 class IcisStatusLog(FieldSet):
     endian = LITTLE_ENDIAN
