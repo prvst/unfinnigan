@@ -1414,7 +1414,7 @@ class OldLCQScan(FieldSet):
         yield Float32(self, "unknown float[7]", "Unknown float")
         yield Float32(self, "unknown float[8]", "Unknown float")
         yield RawBytes(self, "unknown data[4]", 64, "Unknown data")
-        yield UInt32(self, "unknown accumulator", "grows every time the number of peaks changes between consecutive scans")
+        yield UInt32(self, "offset", "The byte offset of the first peak in the peak table")
         yield UInt32(self, "peak count", "The number of peaks in this scan")
 
 class LogRecord(FieldSet):
