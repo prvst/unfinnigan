@@ -546,18 +546,17 @@ class SeqRow(FieldSet):
         yield InjectionData(self, "injection", "Injection Parameters")
         for index in "ab":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
-        yield PascalStringWin32(self, "id", "ID")
-        yield PascalStringWin32(self, "remark", "Remark")
-        yield PascalStringWin32(self, "study", "Study")
-        yield PascalStringWin32(self, "client", "Client")
-        yield PascalStringWin32(self, "laboratory", "Laboratory")
-        yield PascalStringWin32(self, "company", "Company")
-        yield PascalStringWin32(self, "phone", "Phone")
+        yield PascalStringWin32(self, "id", "Sample ID")
+        yield PascalStringWin32(self, "comment")
+        yield PascalStringWin32(self, "user label[1]", "Default: \"Study\"")
+        yield PascalStringWin32(self, "user label[2]", "Default: \"Client\"")
+        yield PascalStringWin32(self, "user label[3]", "Default: \"Laboratory\"")
+        yield PascalStringWin32(self, "user label[4]", "Default: \"Company\"")
+        yield PascalStringWin32(self, "user label[5]", "Default: \"Phone\"")
         yield PascalStringWin32(self, "inst method", "Instrument Method")
         yield PascalStringWin32(self, "proc method", "Processing Method")
-
-        for index in "12":
-            yield PascalStringWin32(self, "file name[%s]" % index, "Unknown file name")
+        yield PascalStringWin32(self, "file name")
+        yield PascalStringWin32(self, "path")
 
         if VERSION[-1] >= 57:
             for index in "cde":

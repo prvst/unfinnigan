@@ -14,16 +14,16 @@ sub decode {
 		       "unknown text[a]"  => ['varstr', 'PascalStringWin32'],
 		       "unknown text[b]"  => ['varstr', 'PascalStringWin32'],
 		       "id"               => ['varstr', 'PascalStringWin32'],
-		       "remark"           => ['varstr', 'PascalStringWin32'],
-		       "study"            => ['varstr', 'PascalStringWin32'],
-		       "client"           => ['varstr', 'PascalStringWin32'],
-		       "laboratory"       => ['varstr', 'PascalStringWin32'],
-		       "company"          => ['varstr', 'PascalStringWin32'],
-		       "phone"            => ['varstr', 'PascalStringWin32'],
+		       "comment"          => ['varstr', 'PascalStringWin32'],
+		       "user label[1]"    => ['varstr', 'PascalStringWin32'],
+		       "user label[2]"    => ['varstr', 'PascalStringWin32'],
+		       "user label[3]"    => ['varstr', 'PascalStringWin32'],
+		       "user label[4]"    => ['varstr', 'PascalStringWin32'],
+		       "user label[5]"    => ['varstr', 'PascalStringWin32'],
 		       "inst method"      => ['varstr', 'PascalStringWin32'],
 		       "proc method"      => ['varstr', 'PascalStringWin32'],
-		       "file name[1]"     => ['varstr', 'PascalStringWin32'],
-		       "file Name[2]"     => ['varstr', 'PascalStringWin32'],
+		       "file name"        => ['varstr', 'PascalStringWin32'],
+		       "path"             => ['varstr', 'PascalStringWin32'],
 		      );
 
   my %specific_fields;
@@ -86,19 +86,19 @@ Finnigan::SeqRow -- a decoder for Finnigan injection sequencer data
 =head1 DESCRIPTION
 
 This structure contains an instance of Finnigan::InjectionData and a
-bunch of text strings, with one long integer buried among them. Those
+bunch of text tags, with one long integer buried among them. Those
 strings whose meaning is obvious identify the sample and its
-provenance, and some strings are file and directory names.
+provenance.
 
 Finnigan::InjectionData contains injection parameters (vial ID,
 volume, weight, etc.)
 
-The file-related strings seem to have the following meaning:
+The file-related tags seem to have the following meaning:
 
   "inst method":  instrument method file
   "proc method":  processing method file
-  "file_name[1]": original raw file name (can be basename or full path)
-  "file_name[2]": directory path where raw file was located
+  "file name":    original raw file name (can be basename or full path)
+  "path":         directory path where the raw file was created (can be null if full path is given in "file nam")
 
 =head2 EXPORT
 
