@@ -19,24 +19,18 @@ sub decode {
 		       hour               => ['v',    'UInt16'],
 		       minute             => ['v',    'UInt16'],
 		       second             => ['v',    'UInt16'],
-		       "unknown_short[1]" => ['v',    'UInt16'],
+		       millisecond        => ['v',    'UInt16'],
 		      );
 
   my %specific_fields;
   $specific_fields{8} = [],
   $specific_fields{57} = [
-			  "unknown_short[2]"  => ['v',    'UInt16'],
-			  "unknown_short[3]"  => ['v',    'UInt16'],
-			  "unknown_short[4]"  => ['v',    'UInt16'],
-			  "unknown_short[5]"  => ['v',    'UInt16'],
-			  "unknown_short[6]"  => ['v',    'UInt16'],
-			  "unknown_short[7]"  => ['v',    'UInt16'],
-			  "unknown_short[8]"  => ['v',    'UInt16'],
-			  "unknown_short[9]"  => ['v',    'UInt16'],
-			  "unknown_short[10]" => ['v',    'UInt16'],
-			  "unknown_short[11]" => ['v',    'UInt16'],
-			  "unknown_short[12]" => ['v',    'UInt16'],
-			  "unknown_short[13]" => ['v',    'UInt16'],
+			  "unknown_long[1]"   => ['V',    'UInt32'],
+			  "data addr"         => ['V',    'UInt32'],
+			  "unknown_long[2]"   => ['V',    'UInt32'],
+			  "unknown_long[3]"   => ['V',    'UInt32'],
+			  "unknown_long[4]"   => ['V',    'UInt32'],
+			  "unknown_long[5]"   => ['V',    'UInt32'],
 			  "run header addr"   => ['V',    'UInt32'],
 			  unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (the structure seems to be fixed-size)
 			 ];
@@ -66,11 +60,17 @@ sub timestamp {
 		    . $self->{data}->{minute}->{value}
 		      . ":"
 			. $self->{data}->{second}->{value} 
+			  . "."
+			    . $self->{data}->{millisecond}->{value} 
 			  ;
 }
 
 sub run_header_addr {
   shift->{data}->{"run header addr"}->{value};
+}
+
+sub data_addr {
+  shift->{data}->{"data addr"}->{value};
 }
 
 1;

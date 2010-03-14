@@ -548,11 +548,11 @@ class SeqRow(FieldSet):
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
         yield PascalStringWin32(self, "id", "Sample ID")
         yield PascalStringWin32(self, "comment")
-        yield PascalStringWin32(self, "user label[1]", "Default: \"Study\"")
-        yield PascalStringWin32(self, "user label[2]", "Default: \"Client\"")
-        yield PascalStringWin32(self, "user label[3]", "Default: \"Laboratory\"")
-        yield PascalStringWin32(self, "user label[4]", "Default: \"Company\"")
-        yield PascalStringWin32(self, "user label[5]", "Default: \"Phone\"")
+        yield PascalStringWin32(self, "user label[1]", "Label heading is found in RawFileInfo")
+        yield PascalStringWin32(self, "user label[2]", "Label heading is found in RawFileInfo")
+        yield PascalStringWin32(self, "user label[3]", "Label heading is found in RawFileInfo")
+        yield PascalStringWin32(self, "user label[4]", "Label heading is found in RawFileInfo")
+        yield PascalStringWin32(self, "user label[5]", "Label heading is found in RawFileInfo")
         yield PascalStringWin32(self, "inst method", "Instrument Method")
         yield PascalStringWin32(self, "proc method", "Processing Method")
         yield PascalStringWin32(self, "file name")
@@ -613,8 +613,12 @@ class RawFileInfo(FieldSet):
 
     def createFields(self):
         yield RawFileInfoPreamble(self, "preamble", "RawFileInfo preamble, containing address of RunHeader")
-        for index in "abcdef":
-            yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
+        yield PascalStringWin32(self, "label heading[1]", "User label heading; default: \"Study\"")
+        yield PascalStringWin32(self, "label heading[2]", "User label heading; default: \"Client\"")
+        yield PascalStringWin32(self, "label heading[3]", "User label heading; default: \"Laboratory\"")
+        yield PascalStringWin32(self, "label heading[4]", "User label heading; default: \"Company\"")
+        yield PascalStringWin32(self, "label heading[5]", "User label heading; default: \"Phone\"")
+        yield PascalStringWin32(self, "unknown text")
 
 class RawFileInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN

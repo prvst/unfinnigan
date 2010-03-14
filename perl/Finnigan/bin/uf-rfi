@@ -86,9 +86,11 @@ if ( $option_dump ) {
 }
 else {
   say "$file: "
-    . $rfi->preamble->timestamp . "; "
-      . "RunHeader addr: "
-	. $rfi->preamble->run_header_addr
+    . $rfi->preamble->timestamp
+      . "; "
+	. "data addr: " . $rfi->preamble->data_addr
+	  . "; "
+	    . "RunHeader addr: " . $rfi->preamble->run_header_addr
 	  ;
 }
 
@@ -164,15 +166,15 @@ By default, it prints a summary of the object's data on a single line.
 
 uf-rfi sample.raw
 
-  (displays a single line with file creation date and RunHeader address)
+  (displays a single line with file creation date, followed by the data and  RunHeader addresses)
 
 uf-rfi -d sample.raw
 
-  (dumps a the entire RunHeader with absolute addresses)
+  (dumps a the entire RawFileInfo with absolute addresses)
 
 uf-rfi -dpr sample.raw
 
-  (dumps the RunHeaderPreamble with relative addresses)
+  (dumps the RawFileInfoPreamble with relative addresses)
 
 
 =cut
