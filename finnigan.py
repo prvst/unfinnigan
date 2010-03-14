@@ -559,7 +559,8 @@ class SeqRow(FieldSet):
         yield PascalStringWin32(self, "path")
 
         if VERSION[-1] >= 57:
-            for index in "cde":
+            yield PascalStringWin32(self, "vial")
+            for index in "cd":
                 yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
 
             yield UInt32(self, "unknown long", "Unknown long in SeqRow")
@@ -567,7 +568,7 @@ class SeqRow(FieldSet):
             if VERSION[-1] == 57:
                 pass
             elif VERSION[-1] >= 62:
-                for index in "fghijklmnopqrst":
+                for index in "efghijklmnopqrs":
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
                 exit("unknown file version: %s" % VERSION[-1])
@@ -612,7 +613,7 @@ class RawFileInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield RawFileInfoPreamble(self, "preamble", "RawFileInfo preamble, containing address of RunHeader")
+        yield RawFileInfoPreamble(self, "preamble", "RawFileInfo preamble, containing the address of RunHeader")
         yield PascalStringWin32(self, "label heading[1]", "User label heading; default: \"Study\"")
         yield PascalStringWin32(self, "label heading[2]", "User label heading; default: \"Client\"")
         yield PascalStringWin32(self, "label heading[3]", "User label heading; default: \"Laboratory\"")
@@ -624,7 +625,7 @@ class RawFileInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long")
+        yield UInt32(self, "unknown long[1]")
         yield UInt16(self, "year")
         yield UInt16(self, "month")
         yield UInt16(self, "day of the week")
@@ -634,9 +635,9 @@ class RawFileInfoPreamble(FieldSet):
         yield UInt16(self, "second")
         yield UInt16(self, "millisecond")
         if VERSION[-1] >= 57:
-            yield UInt32(self, "unknown long[1]")
+            yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "data addr", "Absolute address of scan data")
-            for index in range(2, 5 + 1):
+            for index in range(3, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
