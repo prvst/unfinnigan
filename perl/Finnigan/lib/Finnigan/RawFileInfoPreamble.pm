@@ -89,11 +89,15 @@ Finnigan::RawFileInfoPreamble -- a decoder for RawFileInfoPreamble, the binary d
 
 =head1 DESCRIPTION
 
-This structure is a binary preamble to RawFileInfo, and it contains an
-unpacked representation of the UTC date (apparently, file creation
-date), a set of unknown numbers, and most importantly, the more modern
-versions of this structure contain the pointer to RunHeader, which
-stores the pointers to all data streams in the file.
+This fixed-size structure is a binary preamble to RawFileInfo, and it
+contains an unpacked representation of a UTC date (apparently, the
+file creation date), a set of unknown numbers, and most importantly,
+the more modern versions of this structure contain the pointers to
+ScanData? and to RunHeader, which in turn stores pointers to all data
+streams in the file.
+
+The older version of this structure did not extend beyond the date stamp.
+
 
 =head2 EXPORT
 

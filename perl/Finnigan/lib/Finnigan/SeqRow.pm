@@ -29,17 +29,18 @@ sub decode {
   my %specific_fields;
   $specific_fields{8} = [],
   $specific_fields{57} = [
+			  "vial"             => ['varstr', 'PascalStringWin32'],
 			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown long"     => ['V',      'UInt32'],
 			 ];
   
   $specific_fields{62} = [
+			  "vial"             => ['varstr', 'PascalStringWin32'],
 			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown long"     => ['V',      'UInt32'],
+			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[f]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[g]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[h]"  => ['varstr', 'PascalStringWin32'],
@@ -54,8 +55,6 @@ sub decode {
 			  "unknown text[q]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[r]"  => ['varstr', 'PascalStringWin32'],
 			  "unknown text[s]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[t]"  => ['varstr', 'PascalStringWin32'],
-
 			 ];
   $specific_fields{63} = $specific_fields{62};
 

@@ -45,14 +45,21 @@ Finnigan::RawFileInfo -- a decoder for RawFileInfo, the RunHeader address contai
 
 =head1 DESCRIPTION
 
-This structure contains in its binary preamble an unpacked
-representation of the UTC file creation date, and (in the modern
-versions) a pointer to RunHeader, which in turn stores the pointers to
-all data streams in the file.
+This variable-size structure consists of RawFileInfoPreamble followed
+by six text strings. The first five strings contain the headings for
+the user-defined labels stored in SeqRow. The sixth string is probably
+used to store the name of the sample.
 
-There are other data elements in the preamble, whose meaning is unkonwn.
+The older versions of RawFileInfoPreamble contained an unpacked
+rpresentation of the file creation date in the UTC time zone.
 
-The preamble is followed by a few text strings, also of unknown significance.
+The modern versions of the preamble also contain the pointer to
+ScanData? and the pointer to RunHeader, which in turn stores pointers
+to all other data streams in the file.
+
+There are other data elements in the modern preamble, whose meaning is
+unkonwn.
+
 
 =head2 EXPORT
 
@@ -61,6 +68,7 @@ None
 =head1 SEE ALSO
 
 Finnigan::RawFileInfoPreamble
+Finnigan::SeqRow
 Finnigan::Runheader
 
 =head1 AUTHOR
