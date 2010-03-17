@@ -34,13 +34,14 @@ __END__
 
 =head1 NAME
 
-Finnigan::RawFileInfo -- a decoder for RawFileInfo, the RunHeader address container
+Finnigan::RawFileInfo -- a decoder for RawFileInfo, the primary index structure
 
 =head1 SYNOPSIS
 
   use Finnigan;
   my $file_info = Finnigan::RawFileInfo->decode(\*INPUT);
   say $file_info->preamble->run_header_addr;
+  say $file_info->preamble->data_addr;
   $file_info->dump;
 
 =head1 DESCRIPTION
