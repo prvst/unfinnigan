@@ -74,7 +74,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::SeqRow -- a decoder for Finnigan injection sequencer data
+Finnigan::SeqRow -- a decoder for the Finnigan injection sequencer data
 
 =head1 SYNOPSIS
 
