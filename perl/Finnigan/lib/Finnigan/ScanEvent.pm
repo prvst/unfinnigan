@@ -121,7 +121,7 @@ attribute named 'type'. Type 0 corresponds to MS1 scans. Type 1
 corresponds to MS2 (and possibly, higher-power scans).
 
 Both Type 0 and Type 1 layouts contain a structure named
-FractionCollector, which is just a pair of doble-precision numbers
+FractionCollector, which is just a pair of double-precision numbers
 indicating the M/z range of the scan.
 
 In addition to some unknowns that occur in both layouts, Type 0
