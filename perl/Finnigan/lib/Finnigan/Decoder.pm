@@ -21,9 +21,14 @@ sub windows_datetime_in_bytes {
 sub read {
   my ($class, $stream, $fields, $version) = @_;
   my $self = {};
-  my ( $rec, $nbytes );  
 
   bless $self, $class;
+  $self->decode($stream, $fields, $version);
+}
+
+sub decode {
+  my ($self, $stream, $fields, $version) = @_;
+  my ( $rec, $nbytes );  
 
   my $addr = my $current_addr = tell $stream;
   my $size = 0;
@@ -42,14 +47,14 @@ sub read {
     elsif ( $template eq 'varstr' ) {
       # read the prefix counter into $nchars
       my $bytes_to_read = 4;
-      $nbytes = read $stream, $rec, $bytes_to_read;
+      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
 	or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
       my $nchars = unpack "V", $rec;
 
       # read the 2-byte characters
       $bytes_to_read = 2*$nchars;
-      $nbytes = read $stream, $rec, $bytes_to_read;
+      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
 	or die "could not read all $nchars 2-byte characters of $name at $current_addr";
       $value = pack "C*", unpack "U0C*", $rec;
@@ -57,14 +62,14 @@ sub read {
     }
     elsif ( $template eq 'windows_time' ) {
       my $bytes_to_read = 8;
-      $nbytes = read $stream, $rec, $bytes_to_read;
+      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
 	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
       $value = windows_datetime_in_bytes(unpack "W*", $rec);
     }
     else {
       my $bytes_to_read = length(pack($template,()));
-      $nbytes = read $stream, $rec, $bytes_to_read;
+      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
 	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
 
