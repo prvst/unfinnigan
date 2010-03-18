@@ -391,7 +391,6 @@ sub list {
   my @list;
   foreach my $i (0 .. keys(%{$self->{data}}) - 1) {
     my $key = $name{$i} ? $name{$i} : "unknown byte[$i]";
-    print "decode: $decode\n";
     my $value;
     if ( $decode ) {
       $value = $TYPE{$key}
@@ -415,7 +414,18 @@ sub detector {
 }
 
 sub analyzer {
-  shift->{data}->{"analyzer"}->{value};
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
+  my $key = "analyzer";
+  if ( $decode ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+  }
+  else {
+    return $self->{data}->{$key}->{value};
+  }
 }
 
 1;
