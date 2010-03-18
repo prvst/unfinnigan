@@ -20,7 +20,7 @@ sub windows_datetime_in_bytes {
 
 sub read {
   my ($class, $stream, $fields, $version) = @_;
-  my $self = {};
+  my $self = {size => 0};
 
   bless $self, $class;
   $self->decode($stream, $fields, $version);
@@ -30,8 +30,12 @@ sub decode {
   my ($self, $stream, $fields, $version) = @_;
   my ( $rec, $nbytes );  
 
-  my $addr = my $current_addr = tell $stream;
-  my $size = 0;
+  my $current_addr = tell $stream;
+  $self->{addr} ||= $current_addr; # assign the address only if called
+                                   # the first time (because decoding
+                                   # can be done in multiple chunks).
+
+  my $current_element = scalar keys %{$self->{data}};
 
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
     my ($name, $desc) = ($fields->[2*$i], $fields->[2*$i+1]);
@@ -82,18 +86,17 @@ sub decode {
     }
 
     $self->{data}->{$name} = {
-			      seq => $i,
+			      seq => $current_element + $i,
 			      addr => $current_addr,
 			      size => $nbytes,
 			      type => $type,
 			      value => $value,
 			     };
-    $current_addr = tell $stream;
-    $size += $nbytes;
-  }
 
-  $self->{addr} = $addr;
-  $self->{size} = $size;
+    $current_addr = tell $stream;
+    $self->{size} += $nbytes;
+    $self->{current_element} = $i;
+  }
 
   return $self;
 }
