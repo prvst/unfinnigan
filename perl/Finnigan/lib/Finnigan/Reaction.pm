@@ -13,7 +13,7 @@ sub decode {
   my @fields = (
 		"precursor mz"      => ['d', 'Float64'],
 		"unknown double"    => ['d', 'Float64'],
-		"ionization energy" => ['d', 'Float64'],
+		"energy"            => ['d', 'Float64'],
 		"unknown long[1]"   => ['V', 'UInt32'],
 		"unknown long[2]"   => ['V', 'UInt32'],
 	       );
@@ -27,7 +27,7 @@ sub precursor {
 }
 
 sub energy {
-  shift->{data}->{"ionization energy"}->{value};
+  shift->{data}->{"energy"}->{value};
 }
 
 1;

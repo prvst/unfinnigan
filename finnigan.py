@@ -993,7 +993,7 @@ class Reaction(FieldSet):
     def createFields(self):
         yield Float64(self, "precursor mz")
         yield Float64(self, "unknown double", "seems to be consistently set to 1")
-        yield Float64(self, "ionization energy")
+        yield Float64(self, "energy")
         yield UInt32(self, "unknown long[1]", "Unknown long")
         yield UInt32(self, "unknown long[2]", "Unknown long")
 
