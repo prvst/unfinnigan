@@ -1069,14 +1069,14 @@ class ScanEvent(FieldSet):
                 yield Float64(self, key, label)
             for index in "23":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
-        elif self["type flag"].value == 1:
+        elif self["type"].value == 1:
             yield Reaction(self, "reaction", "Reaction")
             yield UInt32(self, "unknown long[1]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
             for index in "234":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
         else:
-            exit( "unknown event type (" + str(self["type flag"]) + " at %x" % (self.absolute_address/8) + ")")
+            exit( "unknown event type (" + str(self["type"]) + " at %x" % (self.absolute_address/8) + ")")
 
 
 
