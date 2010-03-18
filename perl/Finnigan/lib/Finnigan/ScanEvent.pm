@@ -117,8 +117,8 @@ several key details about the scan. Most of those details are
 concentrated in its head element, ScanEventPreamble.
 
 The layout depends on the MS power of the scan and is governed by the
-attribute named 'type'. Type 0 corresponds to the MS1 scans. Type 1
-corresponds to the MS2 (and possibly, higher-power scans).
+attribute named 'type'. Type 0 corresponds to MS1 scans. Type 1
+corresponds to MS2 (and possibly, higher-power scans).
 
 Both Type 0 and Type 1 layouts contain a structure named
 FractionCollector, which is just a pair of doble-precision numbers
