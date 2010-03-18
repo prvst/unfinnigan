@@ -47,7 +47,7 @@ Finnigan::Reaction -- a decoder for Reaction, an object describing ion fragmenta
 =head1 DESCRIPTION
 
 This object contains a couple of double-precision floating point
-numbers that define the precursor ion M/z and, apparently, the enrgy
+numbers that define the precursor ion M/z and, apparently, the energy
 with which it was whacked (both are conjectures at this time, but very
 plausible ones).
 
