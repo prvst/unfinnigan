@@ -106,6 +106,12 @@ sub item {
   $self->{data}->{$key};
 }
 
+sub values {
+  my ($self) = @_;
+  my %values = map { $_ => $self->{data}->{$_}->{value} } keys %{$self->{data}};
+  return \%values;
+}
+
 sub dump {
   my ( $self, %arg ) = @_;
 
