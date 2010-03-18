@@ -391,7 +391,7 @@ sub list {
   my @list;
   foreach my $i (0 .. keys(%{$self->{data}}) - 1) {
     my $key = $name{$i} ? $name{$i} : "unknown byte[$i]";
-    my $value = $TYPE{$key}
+    my $value = $decode and $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
 	: $self->{data}->{$key}->{value};
     $list[$i] = $value;
