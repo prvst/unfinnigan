@@ -1001,8 +1001,8 @@ class FractionCollector(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        for index in "12":
-            yield Float64(self, "unknown double[%s]" % index, "Parameter %s" % index)
+        yield Float64(self, "low mz")
+        yield Float64(self, "high mz")
 
 
 class TrailerScanEvent(FieldSet):
