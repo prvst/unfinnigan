@@ -6,6 +6,95 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+my %SYMBOL = (
+	      bool => {
+		       0 => "False",
+		       1 => "True"
+		      },
+
+	      "on/off" => {
+			   0 => "Off",
+			   1 => "On",
+			   2 => "undefined",
+			  },
+
+	      detector => {
+			   0 => "valid",
+			   1 => "undefined",
+			  },
+
+	      analyzer => {
+			   0 => "ITMS",
+			   1 => "TQMS",
+			   2 => "SQMS",
+			   3 => "TOFMS",
+			   4 => "FTMS",
+			   5 => "Sector",
+			   6 => "undefined"
+			  },
+
+	      polarity => {
+			   0 => "negative",
+			   1 => "positive",
+			   2 => "undefined",
+			  },
+
+	      "scan mode" => {
+			      0 => "centroid",
+			      1 => "profile",
+			      2 => "undefined",
+			     },
+
+	      "scan type" => {
+			      0 => "Full",
+			      1 => "Zoom",
+			      2 => "SIM",
+			      3 => "SRM",
+			      4 => "CRM",
+			      5 => "undefined",
+			      6 => "Q1",
+			      7 => "Q3",
+			     },
+
+	      "ms power" => {
+			     0 => "undefined",
+			     1 => "MS1",
+			     2 => "MS2",
+			     3 => "MS3",
+			     4 => "MS4",
+			     5 => "MS5",
+			     6 => "MS6",
+			     7 => "MS7",
+			     8 => "MS8",
+			    },
+
+	      ionization => {
+			     0 => "EI",
+			     1 => "CI",
+			     2 => "FABI",
+			     3 => "ESI",
+			     4 => "APCI",
+			     5 => "NSI",
+			     6 => "TSI",
+			     7 => "FDI",
+			     8 => "MALDI",
+			     9 => "GDI",
+			     10 => "undefined"
+			    },
+	     );
+
+my %TYPE = (
+	    "corona"            => "on/off",
+	    "detector"          => "detector",
+	    "polarity"          => "polarity",
+	    "scan mode"         => "scan mode",
+	    "ms power"          => "ms power",
+	    "scan type"         => "scan type",
+	    "dependent"         => "bool",
+	    "ionization"        => "ionization",
+	    "wideband"          => "on/off",
+	    "analyzer"          => "analyzer",
+	   );
 
 sub decode {
   my ($class, $stream, $version) = @_;
@@ -280,7 +369,9 @@ sub decode {
 }
 
 sub list {
-  my $self = shift;
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
 
   my %name = (
 	      2 => "corona",
@@ -300,7 +391,10 @@ sub list {
   my @list;
   foreach my $i (0 .. keys(%{$self->{data}}) - 1) {
     my $key = $name{$i} ? $name{$i} : "unknown byte[$i]";
-    $list[$i] = $self->{data}->{$key}->{value};
+    my $value = $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+    $list[$i] = $value;
   }
   return @list;
 }
