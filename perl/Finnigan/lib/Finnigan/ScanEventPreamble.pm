@@ -391,9 +391,16 @@ sub list {
   my @list;
   foreach my $i (0 .. keys(%{$self->{data}}) - 1) {
     my $key = $name{$i} ? $name{$i} : "unknown byte[$i]";
-    my $value = $decode and $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+    print "decode: $decode\n";
+    my $value;
+    if ( $decode ) {
+      $value = $TYPE{$key}
+	? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	  : $self->{data}->{$key}->{value};
+    }
+    else {
+      $value = $self->{data}->{$key}->{value};
+    }
     $list[$i] = $value;
   }
   return @list;
@@ -423,6 +430,7 @@ Finnigan::ScanEventPreamble -- a decoder for ScanEventPreamble, the byte array i
   use Finnigan;
   my $p = Finnigan::ScanEventPreamble->decode(\*INPUT);
   say join(" ", $p->list);
+  say join(" ", $p->list(decode => 1));
   say p->analyzer;
 
 =head1 DESCRIPTION
