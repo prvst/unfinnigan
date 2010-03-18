@@ -1032,8 +1032,8 @@ class ScanEvent(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
-        yield UInt32(self, "type flag", "Indicates event type (Reaction == 1)")
-        if self["type flag"].value == 0:
+        yield UInt32(self, "type", "Indicates event type (Reaction == 1)")
+        if self["type"].value == 0:
             yield UInt32(self, "unknown long[1]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
             yield UInt32(self, "nparam", "The number of double-precision parameters following this")
@@ -1067,7 +1067,7 @@ class ScanEvent(FieldSet):
                         key = "param e"
                         label = "Conversion Parameter E"
                 yield Float64(self, key, label)
-            for index in "45":
+            for index in "23":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
         elif self["type flag"].value == 1:
             yield Reaction(self, "reaction", "Reaction")
