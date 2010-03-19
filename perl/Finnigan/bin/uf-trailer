@@ -12,16 +12,14 @@ use Finnigan;
 my $args = new Getopt::Declare q{
   [strict]
   [mutex: -h -w]
-  [mutex: -e -d]
   [mutex: -a -n]
   [mutex: -a -range]
-  [mutex: -range -n]
-  -e[xtract]			extract all scans in index
-  -a[ll]			extract or print summary of all scans
+  [mutex: -n -range]
+  -a[ll]		        process all ScanEvent objects
   -c[oefficients]		print the table of conversion coefficients
-  -n[unmber] <n:0+n>		extract scan number <n>
-  -range <from:0+n> .. <to:0+n>	extract scans with numbers between <from> and <to>
-  -d[ump]			dump one scan
+  -n[unmber] <n:0+n>		extract ScanEvent number <n>
+  -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
+  -d[ump]			dump all data in each ScanEvent
   -h[tml]			dump as html [requires: -d]
   -w[iki]			dump in wiki table format [requires: -d]
   -r[elative]			show relative addersess in dump [requires: -d]
@@ -43,9 +41,10 @@ my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 
-# fast-forward to RunHeader
 my $data_addr = $rfi->preamble->data_addr;
 my $run_header_addr = $rfi->preamble->run_header_addr;
+
+# fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
 my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
 my $scan_index_addr = $run_header->sample_info->scan_index_addr;
@@ -147,7 +146,15 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   next if $i < $from;
   if ( exists $args->{-d} ) {
     say "\n$n:" if ( $to > $from ); # not a single record
-    $e->dump;
+    if ( exists $args->{-h} ) {
+      $e->dump(style => 'html', relative => exists $args->{-r});
+    }
+    elsif ( exists $args->{-w} ) {
+      $e->dump(style => 'wiki', relative => exists $args->{-r});
+    }
+    else {
+      $e->dump(relative => exists $args->{-r});
+    }
   }
   elsif ( exists $args->{-c} ) {
     if ($e->type == 0) {
@@ -168,24 +175,23 @@ foreach my $i ( 0 .. $trailer_length - 1) {
 __END__
 =head1 NAME
 
-uf-index - decode the ScanIndexEntry structures in a Finnigan raw file
+uf-trailer - decode the ScanEvent structures in a Finnigan raw file "trailer"
 
 =head1 SYNOPSIS
 
-uf-index [options] file
+uf-trailer [options] file
 
  Options:
 
-  -a[ll]                        list all existing index entries
-  -n[unmber] <n>                get one index entry number <n>
-  -range <from> .. <to>         list all entries with numbers between <from> and <to>
-  -d[ump]                       dump a single index entry 
-  -s[ize]                       print record size 
-  -h[tml]                       dump as html 
-  -w[iki]                       dump in wiki table format 
-  -r[elative]                   show relative addersess in dump 
-  -f[ormat] <type>              format the unknown long as 'bin', 'hex', or 'ms' (for MS level)
-  <file>                        input file 
+  -a[ll]		        process all ScanEvent objects
+  -c[oefficients]		print the table of conversion coefficients
+  -n[unmber] <n:0+n>		extract ScanEvent number <n>
+  -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
+  -d[ump]			dump all data in each ScanEvent
+  -h[tml]			dump as html
+  -w[iki]			dump in wiki table format
+  -r[elative]			show relative addersess in dump
+  <file>			input file
 
 =head1 OPTIONS
 
@@ -197,31 +203,26 @@ Print a brief help message and exits.
 
 =item B<-d[ump]>
 
-Prints a table listing all fields in a single index entry, with
-their seek addresses, sizes, names and values. The entry is selected
-with the -n[umber] option.
+Prints a table listing all fields in ScanEvent entries, with their seek
+addresses, sizes, names and values. Individual entries can be selected
+with the B<-n[umber]> option or with the B<-range> option.
 
 =item B<-n[umber]>
 
-Gives the number of the ScanIndexEntry to dump (works with the -d[ump]
-option)
+Gives the number of a single ScanEvent to process
 
 =item B<-r[ange]>
 
-Selects a range of the ScanIndexEntry records to print as a table
-(does not work with the -d[ump] option)
+Selects a range of the ScanEvent records to process
 
 =item B<-h[tml]>
 
-Dump a single entry as html table.
+Format the dump output as an html table. When multiple entries are
+specified, each will be rendered in its own table
 
 =item B<-w[iki]>
 
-Dump a single entry as a wiki table.
-
-=item B<-s[ize]>
-
-Show structure size in bytes (works with the -d[ump] option).
+Format the dump output as a wiki table.
 
 =item B<-r[elative]>
 
@@ -230,40 +231,46 @@ show the absolute seek address. (works with the -d[ump] option)
 
 =item B<-a[ll]>
 
-Print all existing index entries. It appears as though it may be
-possible to see more index entries in the file than would fit between
-the first and the last scan numbers specified in SampleInfo. In that
-case, in the absence of the --all option, ScanIndex will be treated as
-a linked list, starting with the entry whose index matches first scan
-number.
+Process all entries, including those that may lie outside the declared
+range. It appears as though it can be possible to find more index
+entries in the file than would fit between the first and the last scan
+numbers specified in RunHeader/SampleInfo. In that case, in the
+absence of the -all option, the entries will be enumerated according
+to ScanIndex, which will be treated as a linked list -- starting with
+the entry whose index matches the first scan number.
 
 =back
 
 =head1 DESCRIPTION
 
-B<uf-index> can be used to dump the scan index entries from a Finnigan
-raw file.
+B<uf-trailer> can be used to list or dump the ScanEvent records in a
+Finnigan raw file. These records are stored in a stream Thermo calls a
+"trailer", which follows the data stream. Now, the "trailer"
+containing scan event descriptions is not the only stream trailing the
+data; apparently, new ones were added as the format evolved, but the
+name stuck. The code in Thermo libraries refers to this stream as
+"TrailerScanEvent".
 
-By default, the entries are listed in a tabular format. Use the -n option to re
+=head1 SEE ALSO
 
-=head2 EXAMPLES
+Finnigan::ScanEvent
+Finnigan::ScanEventPreamble
+Finnigan::FractionCollector
+Finnigan::Reaction
 
-uf-index  sample.raw 
+=head1 EXAMPLES
 
-  (will print all index entries in the file in a tabular form)
+uf-trailer sample.raw 
 
-uf-index -range 1..5 sample.raw
+  (will list all scan events in the file in Thermo's short-hand notation)
 
-  (will print the first five records)
+uf-trailer -range 1..5 sample.raw
 
-uf-index -range 1..5 -format bin sample.raw
+  (will list the first five records)
 
-  (will show individual bits in the scan type word)
+uf-trailer -drn 5 ~/shared/test/sample4.raw 
 
-uf-index -rdsn 5 ~/shared/test/sample4.raw 
-
-  (will dump the fifth index entry with relative addresses and will
-   show its size)
+  (will dump the fifth ScanEvent with relative addresses)
 
 =cut
 

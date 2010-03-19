@@ -12,13 +12,12 @@ use Finnigan;
 my $args = new Getopt::Declare q{
   [strict]
   [mutex: -h -w]
-  [mutex: -a -d]
   [mutex: -a -n]
   [mutex: -a -range]
-  [mutex: -range -n]
+  [mutex: -n -range]
   -a[ll]			list all existing index entries
-  -n[unmber] <n:0+n>		get one index entry number <n>
-  -range <from:0+n> .. <to:0+n>	list all entries with numbers between <from> and <to>
+  -n[unmber] <n:0+n>		extract the index entry number <n>
+  -range <from:0+n> .. <to:0+n>	extract all entries with numbers between <from> and <to>
   -d[ump]			dump one index entry [requires: -n]
   -s[ize]			print record size [requires: -d]
   -h[tml]			dump as html [requires: -d]
@@ -34,9 +33,6 @@ my $file = $args->{"<file>"};
 -f $file or die "'$file' is not a plain file";
 -s $file or die "'$file' has zero size";
 
-# pod2usage(1) if $option_help;
-# pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
-
 # -----------------------------------------------------------------------------
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
@@ -46,13 +42,14 @@ my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 
-# fast-forward to RunHeader
 my $run_header_addr = $rfi->preamble->run_header_addr;
+
+# fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
 my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
+my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 
 # fast-forward to ScanIndex
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 seek INPUT, $scan_index_addr, 0;
 
 if ( exists $args->{-d} ) {
@@ -174,10 +171,10 @@ uf-index [options] file
 
  Options:
 
-  -a[ll]                        list all existing index entries
+  -a[ll]                        process all existing index entries
   -n[unmber] <n>                get one index entry number <n>
-  -range <from> .. <to>         list all entries with numbers between <from> and <to>
-  -d[ump]                       dump a single index entry 
+  -range <from> .. <to>         extract all entries with numbers between <from> and <to>
+  -d[ump]                       dump all data in each index entry 
   -s[ize]                       print record size 
   -h[tml]                       dump as html 
   -w[iki]                       dump in wiki table format 
@@ -195,27 +192,26 @@ Print a brief help message and exits.
 
 =item B<-d[ump]>
 
-Prints a table listing all fields in a single index entry, with
-their seek addresses, sizes, names and values. The entry is selected
-with the -n[umber] option.
+Prints a table listing all fields in the ScanIndexEntry records, with their seek
+addresses, sizes, names and values. Individual entries can be selected
+with the B<-n[umber]> option or with the B<-range> option.
 
 =item B<-n[umber]>
 
-Gives the number of the ScanIndexEntry to dump (works with the -d[ump]
-option)
+Gives the number of a single ScanIndexEntry to process
 
 =item B<-r[ange]>
 
-Selects a range of the ScanIndexEntry records to print as a table
-(does not work with the -d[ump] option)
+Selects a range of the ScanIndexEntry records to process
 
 =item B<-h[tml]>
 
-Dump a single entry as html table.
+Format the dump output as an html table. When multiple entries are
+specified, each will be rendered in its own table
 
 =item B<-w[iki]>
 
-Dump a single entry as a wiki table.
+Format the dump output as a wiki table.
 
 =item B<-s[ize]>
 
@@ -228,12 +224,13 @@ show the absolute seek address. (works with the -d[ump] option)
 
 =item B<-a[ll]>
 
-Print all existing index entries. It appears as though it may be
-possible to see more index entries in the file than would fit between
-the first and the last scan numbers specified in SampleInfo. In that
-case, in the absence of the --all option, ScanIndex will be treated as
-a linked list, starting with the entry whose index matches first scan
-number.
+Process all entries, including those that may lie outside the declared
+range. It appears as though it can be possible to find more index
+entries in the file than would fit between the first and the last scan
+numbers specified in RunHeader/SampleInfo. In that case, in the
+absence of the -all option, the entries will be enumerated according
+to ScanIndex, which will be treated as a linked list -- starting with
+the entry whose index matches the first scan number.
 
 =back
 
@@ -242,11 +239,14 @@ number.
 B<uf-index> can be used to dump the scan index entries from a Finnigan
 raw file.
 
-By default, the entries are listed in a tabular format. Use the -n option to re
 
-=head2 EXAMPLES
+=head1 SEE ALSO
 
-uf-index  sample.raw 
+Finnigan::ScanIndexRecord
+
+=head1 EXAMPLES
+
+uf-index sample.raw 
 
   (will print all index entries in the file in a tabular form)
 
