@@ -93,6 +93,34 @@ sub nparam {
   shift->{data}->{"nparam"}->{value};
 }
 
+sub unknown_double {
+  shift->{data}->{"unknown double"}->{value};
+}
+
+sub I {
+  shift->{data}->{"I"}->{value};
+}
+
+sub A {
+  shift->{data}->{"A"}->{value};
+}
+
+sub B {
+  shift->{data}->{"B"}->{value};
+}
+
+sub C {
+  shift->{data}->{"C"}->{value};
+}
+
+sub D {
+  shift->{data}->{"D"}->{value};
+}
+
+sub E {
+  shift->{data}->{"E"}->{value};
+}
+
 sub stringify {
   my $self = shift;
 
