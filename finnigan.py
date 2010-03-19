@@ -262,9 +262,8 @@ class Profile(FieldSet):
         for n in range(1, self["peak count"].value + 1):
             yield UInt32(self, "first bin[%s]" % n, "Starting bin number in peak")
             yield UInt32(self, "nbins[%s]" % n, "Peak width in bins")
-#            if VERSION[-1] > 57 and self["../header/profile size"].value:
             if self["../header/layout"].value > 0:
-                # This is a very risky conjecture, but I must forge
+                # This may be a risky conjecture, but I must forge
                 # ahead. These values only appear in calibrated
                 # profiles, whose "layout" indicator (if that's what it is) is a non-zero number
                 yield Float32(self, "unknown float[%s]" % n, "Does this have anything to do with lock mass/calibrtion?")
