@@ -140,7 +140,7 @@ sub dump {
 	  . " <td>" . $self->item($key)->{size} . "</td>"
 	    . " <td>" . $self->item($key)->{type} . "</td>"
 	      . " <td>" . $key . "</td>"
-		. " <td>" . (ref($value) ? ref($value) : $value) . "</td>"
+		. " <td>$value</td>"
 		  . " </tr>"
 		    ;
     }
@@ -163,7 +163,7 @@ sub dump {
 		       $self->item($key)->{size},
 		       $self->item($key)->{type},
 		       "\`$key\`",
-		       length($value) > 0 ? (ref($value) ? ref($value) : "\`$value\`") : "",
+		       "$value"
 		      ). " ||";
     }
   }
