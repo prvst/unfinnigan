@@ -6,6 +6,8 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
+ 
 
 sub decode {
   my ($class, $stream) = @_;
@@ -25,6 +27,13 @@ sub low {
 
 sub high {
   shift->{data}->{"high mz"}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+  my $low = sprintf("%.2f", $self->low);
+  my $high = sprintf("%.2f", $self->high);
+  return "[$low-$high]";
 }
 
 1;

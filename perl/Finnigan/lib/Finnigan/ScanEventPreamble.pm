@@ -6,6 +6,8 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
+
 my %SYMBOL = (
 	      bool => {
 		       0 => "False",
@@ -362,7 +364,7 @@ sub decode {
 		       "unknown byte[127]" => ['C',    'UInt8'],
 			 ];
 
-  die "don't know how to parse version $version" unless $specific_fields{$version};
+  die "don\'t know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
 
   return bless $self, $class;
@@ -409,8 +411,24 @@ sub corona {
   shift->{data}->{"corona"}->{value};
 }
 
+sub polarity {
+  shift->{data}->{"polarity"}->{value};
+}
+
+sub scan_mode {
+  shift->{data}->{"scan mode"}->{value};
+}
+
 sub detector {
   shift->{data}->{"detector"}->{value};
+}
+
+sub dependent {
+  shift->{data}->{"dependent"}->{value};
+}
+
+sub ms_power {
+  shift->{data}->{"ms power"}->{value};
 }
 
 sub analyzer {
@@ -426,6 +444,79 @@ sub analyzer {
   else {
     return $self->{data}->{$key}->{value};
   }
+}
+
+sub scan_type {
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
+  my $key = "scan type";
+  if ( $decode ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+  }
+  else {
+    return $self->{data}->{$key}->{value};
+  }
+}
+
+sub ionization {
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
+  my $key = "ionization";
+  if ( $decode ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+  }
+  else {
+    return $self->{data}->{$key}->{value};
+  }
+}
+
+sub stringify {
+  my $self = shift;
+
+  my %polarity_symbol = (
+			 0 => "-",
+			 1 => "+",
+			 2 => "any",
+			);
+
+  my %scan_mode_symbol = (
+			  0 => "c",
+			  1 => "p",
+			  2 => "?",
+			 );
+
+  my %dependent_symbol = (
+			  0 => "",
+			  1 => " d",
+			 );
+
+  my %ms_power_symbol = (
+			 0 => "?",
+			 1 => "ms",
+			 2 => "ms2",
+			 3 => "ms3",
+			 4 => "ms4",
+			 5 => "ms5",
+			 6 => "ms6",
+			 7 => "ms7",
+			 8 => "ms8",
+			);
+
+  # consider adding {s;e} and "lock" to output, e.g.:
+  #   FTMS {1;1}  + p ESI Full lock ms [60.00-1200.00]" 
+  $self->analyzer(decode => 1)
+    . " " . $polarity_symbol{$self->polarity}
+      . " " . $scan_mode_symbol{$self->scan_mode}
+  	. " " . $self->ionization(decode => 1)
+	  . $dependent_symbol{$self->dependent}
+	    . " " . $self->scan_type(decode => 1)
+	      . " " . $ms_power_symbol{$self->ms_power}
 }
 
 1;

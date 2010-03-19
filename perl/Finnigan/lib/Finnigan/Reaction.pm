@@ -6,6 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
 
 sub decode {
   my ($class, $stream) = @_;
@@ -28,6 +29,13 @@ sub precursor {
 
 sub energy {
   shift->{data}->{"energy"}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+  my $precursor = sprintf("%.2f", $self->precursor);
+  my $energy = sprintf("%.2f", $self->energy);
+  return "$precursor\@cid$energy";
 }
 
 1;

@@ -6,6 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
 
 sub decode {
   my ($class, $stream, $version) = @_;
@@ -91,6 +92,24 @@ sub reaction {
 sub nparam {
   shift->{data}->{"nparam"}->{value};
 }
+
+sub stringify {
+  my $self = shift;
+
+  my $p = $self->preamble;
+  my $f = $self->fraction_collector;
+  if ( $self->type == 0 ) {
+    return "$p $f";
+  }
+  elsif ( $self->type == 1 ) {
+    my $r = $self->reaction;
+    return "$p $r $f";
+  }
+  else {
+    die "don't know how to stringify event type " . $self->type;
+  }
+}
+
 
 1;
 __END__

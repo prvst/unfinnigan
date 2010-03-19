@@ -176,7 +176,7 @@ sub dump {
 	       $self->item($key)->{size},
 	       $self->item($key)->{type},
 	       $key,
-	       ref($value) ? ref($value) : $value,
+	       "$value"
 	      );
     }
   }
