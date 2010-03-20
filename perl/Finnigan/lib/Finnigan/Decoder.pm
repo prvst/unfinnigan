@@ -26,6 +26,79 @@ sub read {
   $self->decode($stream, $fields, $version);
 }
 
+sub iterate_object {
+  my ($self, $stream, $count, $name, $class, $version) = @_;
+
+  my $addr = tell $stream;
+
+  my $current_element = scalar keys(%{$self->{data}}) + 1;
+
+  die qq(key "$name" already exists) if $self->item($name);
+
+  my $size = 0;
+  $self->{data}->{$name} = {};
+  $self->{data}->{$name}->{value} = [];
+  foreach my $i ( 1 .. $count ) {
+    my $value = eval{$class}->decode($stream, $version);
+    $size += $value->size();
+    push @{$self->{data}->{$name}->{value}}, $value;
+  }
+
+  $self->{data}->{$name}->{seq} = $current_element;
+  $self->{data}->{$name}->{addr} = $addr,
+  $self->{data}->{$name}->{size} = $size,
+  $self->{data}->{$name}->{type} = "$class\[\]",
+
+  $self->{size} += $size;
+  $self->{current_element}++;
+
+  return $self;
+}
+
+sub iterate_scalar {
+  my ($self, $stream, $count, $name, $desc) = @_;
+  my ($template, $type) = @$desc;
+
+  my $addr = my $current_addr = tell $stream;
+
+  my $current_element = scalar keys(%{$self->{data}}) + 1;
+
+  die qq(key "$name" already exists) if $self->item($name);
+
+  my $size = 0;
+  $self->{data}->{$name} = {};
+  $self->{data}->{$name}->{value} = [];
+  foreach my $i ( 1 .. $count ) {
+    my $rec;
+    my $bytes_to_read = length(pack($template,()));
+    my $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+    $nbytes == $bytes_to_read
+      or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+
+    my $value;
+    if ($template =~ /^U0C/) {
+      $value = pack "C*", unpack $template, $rec;
+    }
+    else {
+      $value = unpack $template, $rec;
+    }
+    $size += $nbytes;
+    $current_addr += $nbytes;
+
+    push @{$self->{data}->{$name}->{value}}, $value;
+  }
+
+  $self->{data}->{$name}->{seq} = $current_element;
+  $self->{data}->{$name}->{addr} = $addr,
+  $self->{data}->{$name}->{size} = $size,
+  $self->{data}->{$name}->{type} = $type,
+
+  $self->{size} += $size;
+  $self->{current_element}++;
+
+  return $self;
+}
+
 sub decode {
   my ($self, $stream, $fields, $version) = @_;
   my ( $rec, $nbytes );  
