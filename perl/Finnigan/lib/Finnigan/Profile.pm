@@ -49,7 +49,7 @@ sub list {
     my $chunk = $self->chunk->[$i];
     my $x = $start + $self->chunk->[$i]->first_bin * $step;
     foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
-      $x += $j * $step;
+      $x += $step;
       print "$x\t" . $self->chunk->[$i]->signal->[$j] . "\n";
     }
   }
