@@ -19,15 +19,15 @@ sub windows_datetime_in_bytes {
 }
 
 sub read {
-  my ($class, $stream, $fields, $version) = @_;
+  my ($class, $stream, $fields, $any_arg) = @_;
   my $self = {size => 0};
 
   bless $self, $class;
-  $self->decode($stream, $fields, $version);
+  $self->decode($stream, $fields, $any_arg);
 }
 
 sub iterate_object {
-  my ($self, $stream, $count, $name, $class, $version) = @_;
+  my ($self, $stream, $count, $name, $class, $any_arg) = @_;
 
   my $addr = tell $stream;
 
@@ -39,7 +39,7 @@ sub iterate_object {
   $self->{data}->{$name} = {};
   $self->{data}->{$name}->{value} = [];
   foreach my $i ( 1 .. $count ) {
-    my $value = eval{$class}->decode($stream, $version);
+    my $value = eval{$class}->decode($stream, $any_arg);
     $size += $value->size();
     push @{$self->{data}->{$name}->{value}}, $value;
   }
@@ -100,7 +100,7 @@ sub iterate_scalar {
 }
 
 sub decode {
-  my ($self, $stream, $fields, $version) = @_;
+  my ($self, $stream, $fields, $any_arg) = @_;
   my ( $rec, $nbytes );  
 
   my $current_addr = tell $stream;
@@ -118,7 +118,7 @@ sub decode {
     die qq(key "$name" already exists) if $self->item($name);
 
     if ( $template eq 'object' ) {
-      $value = eval{$type}->decode($stream, $version);
+      $value = eval{$type}->decode($stream, $any_arg);
       $nbytes = $value->size();
     }
     elsif ( $template eq 'varstr' ) {
@@ -294,6 +294,68 @@ Perl unpack templates are used to decode most fields. For some fields, non-perl 
 =item * windows_time: instructs Finingan::Decoder to call its own Windows timestamp routine.
 
 =item * varstr: decoded as a Windows Pascal string in a special case in the Finnigan::Decoder::read() method.
+
+=back
+
+=head2 METHODS
+
+=over 4
+
+=item C<read($class, $stream, $fields, $any_arg)>
+
+Returns a new decoder blessed into class C<$class> and initialized
+with the values read from C<$stream> and decoded according to a list
+of templates specified in C<$fields>.
+
+The fourth argument, C<$any_arg> is not used by the Decoder class, but
+may be used by derived classes to pass parse context to their
+component decoders. For example, this can be useful to parse
+structures whose layout is governed by the data they contain; in that
+case if the layout indicator is read by the top-level decoder, it can
+be passed to lower-level decoders whose work depends on it. Also, this
+argument is used by the user program to pass the Finnigan file version
+to version-sensitive decoders.
+
+Here is an example of the template list for a simple decoder:
+
+  my $fields = [
+		"mz"        => ['f', 'Float32'],
+		"abundance" => ['f', 'Float32'],
+	       ];
+
+=item C<sub decode($stream, $fields, $any_arg)>
+
+This method must be called on a blessed, instantiated Decoder. The
+C<read()> method calls it internally, but it can also be used by the
+user code in those cases where not all data can be decoded with a
+plain list of templates. In some cases, it may be necessary to decode
+one part of an object, analyse it, make decisions about the rest
+(calculate sizes, layouts, etc.), and then grow the object under
+construction by decoding more data from the stream.
+
+
+=item C<iterate_scalar($stream, $count, $name, $desc)>
+
+This method is similar to the C<decode> metod, in that it does not
+instantiate a Decoder, but rather adds data to an existing one. Its
+purpose is to decode simple arrays whose elements have neither
+structure, nor behaviour, and can be described by a simple list. The
+list will consist of C<$count> elements read into the current
+Decoder's attribute given in C<$name>, according to the template
+specified in C<$desc>.  For example, to read a list of 4-byte
+integers, the template description must be of the form:
+
+  $desc = ['V', 'Uint32']
+
+
+=item C<iterate_object($stream, $count, $name, $class, $any_arg)>
+
+Similarly to C<iterate_scalar()>, this method can be used to read a
+list of structures into the current decoder's attribute specified in
+the C<$name> argument, but in this case, the list elements can be
+complex structures to be decoded with their own decoder specified in
+C<$class>. The optional argument C<$any_arg> can be used to parse
+context information to that decoder.
 
 =back
 
