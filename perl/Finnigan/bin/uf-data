@@ -11,11 +11,13 @@ use Finnigan;
 
 my $args = new Getopt::Declare q{
   [strict]
+  [mutex: -p -l]
   [mutex: -h -w]
   [mutex: -a -n]
   [mutex: -a -range]
   [mutex: -n -range]
   -a[ll]		        process all ScanEvent objects
+  -l[ist]			list the called peaks [requires: -n]
   -p[rofile]			print the scan profile as a 2-column table [requires: -n]
   -n[unmber] <n:0+n>		extract ScanEvent number <n>
   -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
@@ -151,19 +153,30 @@ foreach my $i ( @ix ) {
 
   seek INPUT, $data_addr + $index{$i}->{offset}, 0;
   my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+  my $profile;
+  $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
   if ( exists $args->{-p} ) {
-    if ( $ph->profile_size ) {
-      my $profile = Finnigan::Profile->decode(\*INPUT);
+    if ( $profile ) {
       $profile->list;
     }
     else {
       say STDERR "this scan has no profile";
-      exit;
+    }
+    exit; # done with the task
+  }
+  my $peaks;
+  $peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
+  if ( exists $args->{-l} ) {
+    if ( $peaks ) {
+      $peaks->list;
+    }
+    else {
+      say STDERR "this scan has no called peaks";
     }
   }
 }
 
-# say "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
 sub get_stat_info {
   my $ref = {};
