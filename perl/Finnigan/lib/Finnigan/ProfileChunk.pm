@@ -8,13 +8,16 @@ use base 'Finnigan::Decoder';
 
 
 sub decode {
-  my ($class, $stream) = @_;
+  my ($class, $stream, $layout) = @_;
 
   my $preamble = [
 		  "first bin"     => ['V', 'UInt32'],
 		  "nbins"         => ['V', 'UInt32'],
-		  "unknown float" => ['f', 'Float32'],
 		 ];
+
+  if ( $layout > 0 ) {
+    push @$preamble, ("unknown float" => ['f', 'Float32']);
+  }
 
   my $self = bless Finnigan::Decoder->read($stream, $preamble), $class;
 
