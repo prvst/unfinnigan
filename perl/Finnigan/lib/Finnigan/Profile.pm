@@ -42,15 +42,19 @@ sub chunk { # a syntactic eye-sore remover
 }
 
 sub list {
-  my $self = shift;
+  my ($self, $converter, $range) = @_;
   my $start = $self->first_value;
   my $step = $self->step;
   foreach my $i ( 0 .. $self->peak_count - 1 ) {
     my $chunk = $self->chunk->[$i];
-    my $x = $start + $self->chunk->[$i]->first_bin * $step;
+    my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
     foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
       $x += $step;
-      print "$x\t" . $self->chunk->[$i]->signal->[$j] . "\n";
+      my $x_conv = $converter ? &$converter($x) : $x;
+      if ($converter and $range) {
+	next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+      }
+      print "$x_conv\t" . $self->chunk->[$i]->signal->[$j] . "\n";
     }
   }
 }
