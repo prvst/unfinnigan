@@ -11,64 +11,67 @@ use overload ('""' => 'stringify');
 sub decode {
   my ($class, $stream, $version) = @_;
 
-  my @common_fields = (
-		       "preamble"   => ['object',  'Finnigan::ScanEventPreamble'],
-		       "type"       => ['V',       'UInt32'],
-		      );
+  my @common_head = (
+		     "preamble" => ['object',  'Finnigan::ScanEventPreamble'],
+		     "type"     => ['V',       'UInt32'],
+		    );
 
-  my %specific_fields;
-  $specific_fields{0} = [
-			 "unknown long[1]"    => ['V',      'UInt32'],
-			 "fraction collector" => ['object', 'Finnigan::FractionCollector'],
-			 "nparam"             => ['V',      'UInt32'],
-			];
+  my %specific;
+  $specific{0} = [];
+  $specific{1} = [
+		  "reaction" => ['object', 'Finnigan::Reaction'],
+		 ];
 
-  $specific_fields{1} = [
-			 "reaction"           => ['object', 'Finnigan::Reaction'],
-			 "unknown long[1]"    => ['V',      'UInt32'],
-			 "fraction collector" => ['object', 'Finnigan::FractionCollector'],
-			 "unknown long[2]"    => ['V',      'UInt32'],
-			 "unknown long[3]"    => ['V',      'UInt32'],
-			 "unknown long[4]"    => ['V',      'UInt32'],
-			];
-
-  my $self = Finnigan::Decoder->read($stream, \@common_fields, $version);
+  my $self = Finnigan::Decoder->read($stream, \@common_head, $version);
   bless $self, $class;
 
-  if ( $self->type == 0 ) {
-    $self->SUPER::decode($stream, $specific_fields{$self->type}, $version);
-    if ( $self->nparam == 4 ) {
-      my $fields = [
-		    "unknown double"  => ['d',      'Float64'],
-		    "A"               => ['d',      'Float64'],
-		    "B"               => ['d',      'Float64'],
-		    "C"               => ['d',      'Float64'],
-		    "unknown long[2]" => ['V',      'UInt32'],
-		    "unknown long[3]" => ['V',      'UInt32'],
-		   ];
-      $self->SUPER::decode($stream, $fields);
-    }
-    elsif ( $self->nparam == 7 ) {
-      my $fields = [
-		    "unknown double"  => ['d',      'Float64'],
-		    "I"               => ['d',      'Float64'],
-		    "A"               => ['d',      'Float64'],
-		    "B"               => ['d',      'Float64'],
-		    "C"               => ['d',      'Float64'],
-		    "D"               => ['d',      'Float64'],
-		    "E"               => ['d',      'Float64'],
-		    "unknown long[2]" => ['V',      'UInt32'],
-		    "unknown long[3]" => ['V',      'UInt32'],
-		   ];
-      $self->SUPER::decode($stream, $fields);
-    }
-  }
-  elsif ( $self->type == 1 ) {
-    $self->SUPER::decode($stream, $specific_fields{$self->type}, $version);
+  if ( $self->type == 0 or $self->type == 1 ) {
+    $self->SUPER::decode($stream, $specific{$self->type}, $version);
   }
   else {
     die "don't know how to parse event type " . $self->type;
   }
+
+  my @common_middle = (
+		       "unknown long[1]"    => ['V',      'UInt32'],
+		       "fraction collector" => ['object', 'Finnigan::FractionCollector'],
+		       "nparam"             => ['V',      'UInt32'],
+		      );
+  $self->SUPER::decode($stream, \@common_middle, $version);
+
+  if ( $self->nparam == 0 ) {
+    # do nothing
+  }
+  elsif ( $self->nparam == 4 ) {
+    my $fields = [
+		  "unknown double"  => ['d',      'Float64'],
+		  "A"               => ['d',      'Float64'],
+		  "B"               => ['d',      'Float64'],
+		  "C"               => ['d',      'Float64'],
+		 ];
+    $self->SUPER::decode($stream, $fields);
+  }
+  elsif ( $self->nparam == 7 ) {
+    my $fields = [
+		  "unknown double"  => ['d',      'Float64'],
+		  "I"               => ['d',      'Float64'],
+		  "A"               => ['d',      'Float64'],
+		  "B"               => ['d',      'Float64'],
+		  "C"               => ['d',      'Float64'],
+		  "D"               => ['d',      'Float64'],
+		  "E"               => ['d',      'Float64'],
+		 ];
+    $self->SUPER::decode($stream, $fields);
+  }
+  else {
+    die "don't know how to interpret the set of " . $self->nparam . " conversion parameters";
+  }
+  
+  my @common_tail = (
+		     "unknown long[2]"    => ['V',      'UInt32'],
+		     "unknown long[3]"    => ['V',      'UInt32'],
+		    );
+  $self->SUPER::decode($stream, \@common_tail, $version);
 
   return $self;
 }
