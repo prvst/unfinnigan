@@ -1032,51 +1032,48 @@ class ScanEvent(FieldSet):
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
         yield UInt32(self, "type", "Indicates event type (Reaction == 1)")
-        if self["type"].value == 0:
-            yield UInt32(self, "unknown long[1]", "Unknown long")
-            yield FractionCollector(self, "fraction collector", "Fraction Collector")
-            yield UInt32(self, "nparam", "The number of double-precision parameters following this")
-            for index in range(1, self["nparam"].value + 1):
-                key = "unknown double[%s]" % index
-                label = "Unknown double";
-                if (self["nparam"].value == 4): # LTQ-FT
-                    if (index == 2):
-                        label = "may be Conversion Parameter A"
-                    elif (index == 3):
-                        key = "param b"
-                        label = "Conversion Parameter B"
-                    elif(index == 4):
-                        key = "param c"
-                        label = "Conversion Parameter C"
-                else:
-                    if (index == 2):
-                        label = "may be Conversion Parameter I"
-                    elif (index == 3):
-                        label = "may be Conversion Parameter A"
-                    elif (index == 4):
-                        key = "param b"
-                        label = "Conversion Parameter B"
-                    elif(index == 5):
-                        key = "param c"
-                        label = "Conversion Parameter C"
-                    elif(index == 6):
-                        key = "param d"
-                        label = "Conversion Parameter D"
-                    elif(index == 7):
-                        key = "param e"
-                        label = "Conversion Parameter E"
-                yield Float64(self, key, label)
-            for index in "23":
-                yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
-        elif self["type"].value == 1:
+        if self["type"].value == 1:
             yield Reaction(self, "reaction", "Reaction")
-            yield UInt32(self, "unknown long[1]", "Unknown long")
-            yield FractionCollector(self, "fraction collector", "Fraction Collector")
-            for index in "234":
-                yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
+        elif self["type"].value == 0:
+            pass
         else:
             exit( "unknown event type (" + str(self["type"]) + " at %x" % (self.absolute_address/8) + ")")
 
+        yield UInt32(self, "unknown long[1]", "Unknown long")
+        yield FractionCollector(self, "fraction collector", "Fraction Collector")
+        yield UInt32(self, "nparam", "The number of double-precision parameters following this")
+        for index in range(1, self["nparam"].value + 1):
+            key = "unknown double[%s]" % index
+            label = "Unknown double";
+            if (self["nparam"].value == 4): # LTQ-FT
+                if (index == 2):
+                    label = "may be Conversion Parameter A"
+                elif (index == 3):
+                    key = "param b"
+                    label = "Conversion Parameter B"
+                elif(index == 4):
+                    key = "param c"
+                    label = "Conversion Parameter C"
+            else:
+                if (index == 2):
+                    label = "may be Conversion Parameter I"
+                elif (index == 3):
+                    label = "may be Conversion Parameter A"
+                elif (index == 4):
+                    key = "param b"
+                    label = "Conversion Parameter B"
+                elif(index == 5):
+                    key = "param c"
+                    label = "Conversion Parameter C"
+                elif(index == 6):
+                    key = "param d"
+                    label = "Conversion Parameter D"
+                elif(index == 7):
+                    key = "param e"
+                    label = "Conversion Parameter E"
+            yield Float64(self, key, label)
+        for index in "23":
+            yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
 
 
 class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
