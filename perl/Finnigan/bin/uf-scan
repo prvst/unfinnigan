@@ -1,0 +1,278 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use feature qw/state say/;
+use 5.010;
+
+use Getopt::Declare;
+use Pod::Usage;
+use Finnigan;
+
+my $args = new Getopt::Declare q{
+  [strict]
+  [mutex: -p -l]
+  [mutex: -p -plot]
+  [mutex: -plot -l]
+  [mutex: -h -w]
+  -l[ist]			list the called peaks
+  -p[rofile]			print the scan profile as a 2-column table
+  -n[unmber] <n:+i>		select scan number <n>
+  -plot				plot the profile (and the called peaks, if available)
+  -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
+  -d[ump]			dump all data in each ScanEvent
+  -h[tml]			dump as html [requires: -d]
+  -w[iki]			dump in wiki table format [requires: -d]
+  -r[elative]			show relative addersess in dump [requires: -d]
+  <file>			input file [required]
+}
+  or exit(-1);
+
+my $file = $args->{"<file>"};
+-e $file or die "file '$file' does not exist";
+-f $file or die "'$file' is not a plain file";
+-s $file or die "'$file' has zero size";
+
+# -----------------------------------------------------------------------------
+open INPUT, "<$file" or die "can't open '$file': $!";
+binmode INPUT;
+
+my $header = Finnigan::FileHeader->decode(\*INPUT);
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+
+my $data_addr = $rfi->preamble->data_addr;
+my $run_header_addr = $rfi->preamble->run_header_addr;
+
+# fast-forward to RunHeader
+seek INPUT, $run_header_addr, 0;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
+my $scan_index_addr = $run_header->sample_info->scan_index_addr;
+my $trailer_addr = $run_header->trailer_addr;
+
+# fast-forward to ScanIndex
+seek INPUT, $scan_index_addr, 0;
+
+my $scan_index;
+
+# this code is not fool-proof and is not finished! It assumes that
+# there are exactly as many entries in ScanIndex as would fit
+# between $first_scan and $last_scan. In other words, the internal
+# indices and links are not checked.
+my $first_scan = $run_header->sample_info->first_scan;
+my $last_scan = $run_header->sample_info->last_scan;
+
+my $n = $args->{-n}{"<n>"};
+die "index $n is not in the range of available scan numbers ($first_scan .. $last_scan)"
+  unless $n >= $first_scan and $n <= $last_scan;
+
+# get the first entry
+my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+my $size = $entry->size;
+if ($n > 1) {
+  seek INPUT, $scan_index_addr + ($n - 1)*$size, 0;
+  $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+}
+
+$scan_index = $entry->values;
+
+# Now go read the trailer. Because the trailer records are of variable
+# size, they are not directly addressable and all of them must be
+# read, up to the highest number in the range.
+seek INPUT, $trailer_addr, 0;
+
+# read the number of ScanEvent records in the file
+my $rec;
+my $bytes_to_read = 4;
+my $nbytes = read INPUT, $rec, $bytes_to_read;
+$nbytes == $bytes_to_read
+  or die "could not read all $bytes_to_read bytes of the trailer scan events count at $trailer_addr";
+my $trailer_length = unpack 'V', $rec;
+
+# read all scan events preceding the desired one (they are variable-size structures)
+my $scan_event;
+foreach my $i ( 1 .. $trailer_length) {
+  $scan_event = Finnigan::ScanEvent->decode(\*INPUT, $header->version);
+  next if $i < $n;
+  last;
+}
+
+seek INPUT, $data_addr + $scan_index->{offset}, 0;
+my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+my $profile;
+$profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
+
+my $peaks;
+$peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
+
+if ( exists $args->{-l} ) {
+  if ( $peaks ) {
+    $peaks->list;
+    exit(0); # the job is done
+  }
+  else {
+    say STDERR "this scan has no called peaks";
+  }
+}
+
+if ( exists $args->{-p} or exists $args->{-plot}) {
+  unless ( $profile ) {
+    say STDERR "this scan has no profile";
+    exit; # done with the task
+  }
+  if ( exists $args->{-p} ) {
+    $profile->list();
+  }
+  else {
+    # must plot, then
+    my $converter;
+    my $range;
+    if ( exists $args->{-mz} ) {
+     $range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
+    }
+    if ( $scan_event->nparam == 0 ) {
+      # this is a (naive) sign that the profile has already been converted
+      say qq{profile_input <- "f\ts};
+      $profile->list(sub{shift}, $range); # the null converter makes sure the M/z range can be applied
+      say q{"};
+      my $peaks_exist = $peaks ? "centroids are present" : "no centroids";
+      say <<END;
+p <- read.table(textConnection(profile_input), header=TRUE)
+postscript(file="", command="cat", paper="special", onefile=F, horizontal=F, width=8, height=6, pointsize=15)
+plot(p, type="l", main="converted profile ($peaks_exist)", xlab=expression(M/z), ylab="abundance")
+END
+      exit(0);
+    }
+    elsif ( $scan_event->nparam == 4 ) {
+      my $B = $scan_event->B;
+      my $C = $scan_event->C;
+      $converter = eval "sub {my \$f = shift; return $B/\$f + $C/\$f/\$f}";
+    }
+    elsif ( $scan_event->nparam == 7 ) {
+      my $B = $scan_event->B;
+      my $C = $scan_event->C;
+      $converter = eval "sub {my \$f = shift; return $B/(\$f**2) + $C/(\$f**4)}";
+    }
+    else {
+      die "don't know how to convert with " . $scan_event->nparam . " conversion parameters";
+    }
+    say qq{profile_input <- "mz\ts};
+    $profile->list($converter, $range);
+    say q{"};
+    say qq{centroid_input <- "mz\ts};
+    $peaks->list();
+    say q{"};
+    say <<END;
+p <- read.table(textConnection(profile_input), header=TRUE)
+c <- read.table(textConnection(centroid_input), header=TRUE)
+postscript(file="", command="cat", paper="special", onefile=F, horizontal=F, width=8, height=6, pointsize=15)
+plot(p, type="l", main="software-converted profile and peak centroids", xlab=expression(M/z), ylab="abundance")
+points(c)
+END
+  }
+}
+
+__END__
+=head1 NAME
+
+uf-data - decode the ScanEvent structures in a Finnigan raw file "trailer"
+
+=head1 SYNOPSIS
+
+uf-data [options] file
+
+ Options:
+
+  -a[ll]		        process all ScanEvent objects
+  -c[oefficients]		print the table of conversion coefficients
+  -n[unmber] <n:0+n>		extract ScanEvent number <n>
+  -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
+  -d[ump]			dump all data in each ScanEvent
+  -h[tml]			dump as html
+  -w[iki]			dump in wiki table format
+  -r[elative]			show relative addersess in dump
+  <file>			input file
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-d[ump]>
+
+Prints a table listing all fields in ScanEvent entries, with their seek
+addresses, sizes, names and values. Individual entries can be selected
+with the B<-n[umber]> option or with the B<-range> option.
+
+=item B<-n[umber]>
+
+Gives the number of a single ScanEvent to process
+
+=item B<-r[ange]>
+
+Selects a range of the ScanEvent records to process
+
+=item B<-h[tml]>
+
+Format the dump output as an html table. When multiple entries are
+specified, each will be rendered in its own table
+
+=item B<-w[iki]>
+
+Format the dump output as a wiki table.
+
+=item B<-r[elative]>
+
+Show relative addresses of all itmes in the dump. The default is to
+show the absolute seek address. (works with the -d[ump] option)
+
+=item B<-a[ll]>
+
+Process all entries, including those that may lie outside the declared
+range. It appears as though it can be possible to find more index
+entries in the file than would fit between the first and the last scan
+numbers specified in RunHeader/SampleInfo. In that case, in the
+absence of the -all option, the entries will be enumerated according
+to ScanIndex, which will be treated as a linked list -- starting with
+the entry whose index matches the first scan number.
+
+=back
+
+=head1 DESCRIPTION
+
+B<uf-data> can be used to list or dump the ScanEvent records in a
+Finnigan raw file. These records are stored in a stream Thermo calls a
+"trailer", which follows the data stream. Now, the "trailer"
+containing scan event descriptions is not the only stream trailing the
+data; apparently, new ones were added as the format evolved, but the
+name stuck. The code in Thermo libraries refers to this stream as
+"TrailerScanEvent".
+
+=head1 SEE ALSO
+
+Finnigan::ScanEvent
+Finnigan::ScanEventPreamble
+Finnigan::FractionCollector
+Finnigan::Reaction
+
+=head1 EXAMPLES
+
+uf-data sample.raw 
+
+  (will list all scan events in the file in Thermo's short-hand notation)
+
+uf-data -range 1..5 sample.raw
+
+  (will list the first five records)
+
+uf-data -drn 5 ~/shared/test/sample4.raw 
+
+  (will dump the fifth ScanEvent with relative addresses)
+
+=cut
+
+=cut
