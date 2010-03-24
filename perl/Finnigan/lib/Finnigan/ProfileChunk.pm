@@ -33,6 +33,10 @@ sub first_bin {
   shift->{data}->{"first bin"}->{value};
 }
 
+sub unknown {
+  shift->{data}->{"unknown float"}->{value};
+}
+
 sub signal {
   shift->{data}->{"signal"}->{value};
 }
