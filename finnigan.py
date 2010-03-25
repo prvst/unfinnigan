@@ -904,7 +904,7 @@ class MSScanEvent(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield MSScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+        yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
         if VERSION[-1] < 57:
             yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
             yield UInt32(self, "unknown long[1]", "Unknown long")
@@ -929,47 +929,38 @@ class MSScanEvent(FieldSet):
             yield UInt32(self, "unknown long[7]", "Unknown long")
 
 
-class MSScanEventPreamble(FieldSet):
-    endian = LITTLE_ENDIAN
-
-    def createFields(self):
-        if VERSION[-1] < 57:
-            for index in range(1, 7):
-                yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
-            for index in "123":
-                yield Float64(self, "unknown double[%s]" % index, "Parameter %s" % index)
-        elif VERSION[-1] == 57:
-            yield RawBytes(self, "unknown data", 80, "MS Scan Event preamble")
-        else:
-            yield RawBytes(self, "unknown data", 120, "MS Scan Event preamble")
-
 class ScanEventPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt8(self, "unknown byte[1]")
-        yield UInt8(self, "unknown byte[2]")
-        yield Enum(UInt8(self, "corona"), ON_OFF)
-        yield Enum(UInt8(self, "detector"), DETECTOR)
-        yield Enum(UInt8(self, "polarity"), POLARITY)
-        yield Enum(UInt8(self, "scan mode"), SCAN_MODE)
-        yield Enum(UInt8(self, "ms power"), MS_POWER)
-        yield Enum(UInt8(self, "scan type"), SCAN_TYPE)
-        yield UInt8(self, "unknown byte[3]")
-        yield UInt8(self, "unknown byte[4]")
-        yield Enum(UInt8(self, "dependent"), BOOL)
-        yield Enum(UInt8(self, "ionization"), IONIZATION)
-        yield RawBytes(self, "unknown data[1]", 20)
-        yield Enum(UInt8(self, "wideband"), ON_OFF)
-        yield RawBytes(self, "unknown data[2]", 7)
-        yield Enum(UInt8(self, "analyzer"), ANALYZER)
-
-        if VERSION[-1] <= 57:
-            yield RawBytes(self, "unknown data", 39, "Scan Event preamble")
-        elif VERSION[-1] <= 62:
-            yield RawBytes(self, "unknown data", 79, "Scan Event preamble")
+        if VERSION[-1] < 57:
+            yield RawBytes(self, "unknown data", 24)
+            for index in "123":
+                yield Float64(self, "unknown double[%s]" % index, "Parameter %s" % index)
         else:
-            yield RawBytes(self, "unknown data", 87, "Scan Event preamble")
+            yield UInt8(self, "unknown byte[1]")
+            yield UInt8(self, "unknown byte[2]")
+            yield Enum(UInt8(self, "corona"), ON_OFF)
+            yield Enum(UInt8(self, "detector"), DETECTOR)
+            yield Enum(UInt8(self, "polarity"), POLARITY)
+            yield Enum(UInt8(self, "scan mode"), SCAN_MODE)
+            yield Enum(UInt8(self, "ms power"), MS_POWER)
+            yield Enum(UInt8(self, "scan type"), SCAN_TYPE)
+            yield UInt8(self, "unknown byte[3]")
+            yield UInt8(self, "unknown byte[4]")
+            yield Enum(UInt8(self, "dependent"), BOOL)
+            yield Enum(UInt8(self, "ionization"), IONIZATION)
+            yield RawBytes(self, "unknown data[1]", 20)
+            yield Enum(UInt8(self, "wideband"), ON_OFF)
+            yield RawBytes(self, "unknown data[2]", 7)
+            yield Enum(UInt8(self, "analyzer"), ANALYZER)
+
+            if VERSION[-1] == 57:
+                yield RawBytes(self, "unknown data", 39)
+            else:
+                yield RawBytes(self, "unknown data", 79)
+                # in v.63, 8 more bytes follow
+
 
 class MSDependentData(FieldSet):
     endian = LITTLE_ENDIAN
@@ -1031,6 +1022,8 @@ class ScanEvent(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+        if VERSION[-1] == 63:
+            yield RawBytes(self, "preamble extension", 8)
         yield UInt32(self, "type", "Indicates event type (Reaction == 1)")
         if self["type"].value == 1:
             yield Reaction(self, "reaction", "Reaction")
