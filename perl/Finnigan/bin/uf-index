@@ -156,7 +156,7 @@ sub print_as_table_row {
 		  . $index_entry->low_mz . "\t"
 		    . $index_entry->high_mz . "\t"
 		      . $index_entry->base_intensity . "\t"
-			. $index_entry->base_mass . "\t"
+			. $index_entry->base_mz . "\t"
 			  . $index_entry->total_current
 }
 
