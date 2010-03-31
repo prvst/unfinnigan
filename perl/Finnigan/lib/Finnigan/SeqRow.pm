@@ -68,6 +68,10 @@ sub injection {
   shift->{data}->{injection}->{value};
 }
 
+sub file_name {
+  shift->{data}->{"file name"}->{value};
+}
+
 1;
 
 __END__
