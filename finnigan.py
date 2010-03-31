@@ -266,7 +266,7 @@ class Profile(FieldSet):
                 # This may be a risky conjecture, but I must forge
                 # ahead. These values only appear in calibrated
                 # profiles, whose "layout" indicator (if that's what it is) is a non-zero number
-                yield Float32(self, "unknown float[%s]" % n, "Does this have anything to do with lock mass/calibrtion?")
+                yield Float32(self, "unknown float[%s]" % n)
             for index in range(1, self["nbins[%s]" % n].value + 1):
                  yield Float32(self, "peak[%s][%s]" % (n, index))
 
@@ -1024,13 +1024,9 @@ class ScanEvent(FieldSet):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
         if VERSION[-1] == 63:
             yield RawBytes(self, "preamble extension", 8)
-        yield UInt32(self, "type", "Indicates event type (Reaction == 1)")
-        if self["type"].value == 1:
-            yield Reaction(self, "reaction", "Reaction")
-        elif self["type"].value == 0:
-            pass
-        else:
-            exit( "unknown event type (" + str(self["type"]) + " at %x" % (self.absolute_address/8) + ")")
+        yield UInt32(self, "np", "The number of precursor ions")
+        for i in range(1,  self["np"].value + 1):
+            yield Reaction(self, "reaction[%s]" % i, "Reaction")
 
         yield UInt32(self, "unknown long[1]", "Unknown long")
         yield FractionCollector(self, "fraction collector", "Fraction Collector")
@@ -1537,6 +1533,6 @@ class ScanIndexEntry(FieldSet):
         yield Float64(self, "start time", "Scan Start Time")
         yield Float64(self, "total current", "Total Ion Current")
         yield Float64(self, "base intensity", "Base Peak Intensity")
-        yield Float64(self, "base mass", "Base Peak Mass")
+        yield Float64(self, "base mz", "Base Peak M/z")
         yield Float64(self, "low mz")
         yield Float64(self, "high mz")
