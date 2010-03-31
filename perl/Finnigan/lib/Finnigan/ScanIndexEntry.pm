@@ -21,7 +21,7 @@ sub decode {
 		"start time"       => ['d',      'Float64'],
 		"total current"    => ['d',      'Float64'],
 		"base intensity"   => ['d',      'Float64'],
-		"base mass"        => ['d',      'Float64'],
+		"base mz"          => ['d',      'Float64'],
 		"low mz"           => ['d',      'Float64'],
 		"high mz"          => ['d',      'Float64'],
 	       ];
@@ -71,8 +71,8 @@ sub base_intensity {
   shift->{data}->{"base intensity"}->{value};
 }
 
-sub base_mass {
-  shift->{data}->{"base mass"}->{value};
+sub base_mz {
+  shift->{data}->{"base mz"}->{value};
 }
 
 sub low_mz {
