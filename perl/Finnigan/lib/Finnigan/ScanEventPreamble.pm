@@ -412,7 +412,18 @@ sub corona {
 }
 
 sub polarity {
-  shift->{data}->{"polarity"}->{value};
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
+  my $key = "polarity";
+  if ( $decode ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+  }
+  else {
+    shift->{data}->{"detector"}->{value};
+  }
 }
 
 sub scan_mode {
@@ -420,7 +431,18 @@ sub scan_mode {
 }
 
 sub detector {
-  shift->{data}->{"detector"}->{value};
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
+  my $key = "detector";
+  if ( $decode ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+  }
+  else {
+    shift->{data}->{"detector"}->{value};
+  }
 }
 
 sub dependent {
@@ -428,7 +450,18 @@ sub dependent {
 }
 
 sub ms_power {
-  shift->{data}->{"ms power"}->{value};
+  my ($self, %arg) = @_;
+
+  my $decode = (exists $arg{decode} and $arg{decode});
+  my $key = "ms power";
+  if ( $decode ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
+	: $self->{data}->{$key}->{value};
+  }
+  else {
+    return $self->{data}->{$key}->{value};
+  }
 }
 
 sub analyzer {
