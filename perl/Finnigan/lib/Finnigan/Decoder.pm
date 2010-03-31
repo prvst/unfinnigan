@@ -208,10 +208,15 @@ sub dump {
     foreach my $key ( @keys ) {
       my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
+      my $type = $self->item($key)->{type};
+      $type =~ s/^Finnigan:://;
+      if ( ref $value eq 'ARRAY' ) {
+        $value = join ", ", map {"$_"} @$value;
+      }
       say "  <tr>"
 	. " <td>" . $offset . "</td>"
 	  . " <td>" . $self->item($key)->{size} . "</td>"
-	    . " <td>" . $self->item($key)->{type} . "</td>"
+	    . " <td>" . $type . "</td>"
 	      . " <td>" . $key . "</td>"
 		. " <td>$value</td>"
 		  . " </tr>"
@@ -224,6 +229,9 @@ sub dump {
     foreach my $key ( @keys ) {
       my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
+      my $type = $self->item($key)->{type};
+      $type =~ s/^Finnigan:://;
+      $type =~ s/\[\]/\`[]\`/;
       if ($self->item($key)->{type} eq 'UTF16LE'
 	  and substr($value, 0, 2) eq "\x00\x00") {
 	$value =~ s/\x00/00 /g;
@@ -231,12 +239,15 @@ sub dump {
 	  $value = substr($value, 0, 30) . "...";
 	}
       }
+      if ( ref $value eq 'ARRAY' ) {
+        $value = join ", ", map {"$_"} @$value;
+      }
       say "|| " . join(" || ",
 		       $offset,
 		       $self->item($key)->{size},
-		       $self->item($key)->{type},
+		       $type,
 		       "\`$key\`",
-		       "$value"
+		       "\`$value\`"
 		      ). " ||";
     }
   }
@@ -244,10 +255,15 @@ sub dump {
     foreach my $key ( @keys ) {
       my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
+      my $type = $self->item($key)->{type};
+      $type =~ s/^Finnigan:://;
+      if ( ref $value eq 'ARRAY' ) {
+        $value = join ", ", map {"$_"} @$value;
+      }
       say join("\t",
 	       $offset,
 	       $self->item($key)->{size},
-	       $self->item($key)->{type},
+	       $type,
 	       $key,
 	       "$value"
 	      );
