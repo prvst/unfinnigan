@@ -13,23 +13,14 @@ sub decode {
 
   my @common_head = (
 		     "preamble" => ['object',  'Finnigan::ScanEventPreamble'],
-		     "type"     => ['V',       'UInt32'],
+		     "np"       => ['V',       'UInt32'],
 		    );
-
-  my %specific;
-  $specific{0} = [];
-  $specific{1} = [
-		  "reaction" => ['object', 'Finnigan::Reaction'],
-		 ];
 
   my $self = Finnigan::Decoder->read($stream, \@common_head, $version);
   bless $self, $class;
 
-  if ( $self->type == 0 or $self->type == 1 ) {
-    $self->SUPER::decode($stream, $specific{$self->type}, $version);
-  }
-  else {
-    die "don't know how to parse event type " . $self->type;
+  if ( $self->np ) {
+    $self->iterate_object($stream, $self->np, reaction => 'Finnigan::Reaction');
   }
 
   my @common_middle = (
@@ -76,8 +67,9 @@ sub decode {
   return $self;
 }
 
-sub type {
-  shift->{data}->{"type"}->{value};
+sub np {
+  # the number of precrusor ions
+  shift->{data}->{"np"}->{value};
 }
 
 sub preamble {
@@ -88,8 +80,12 @@ sub fraction_collector {
   shift->{data}->{"fraction collector"}->{value};
 }
 
-sub reaction {
+sub precursors {
   shift->{data}->{"reaction"}->{value};
+}
+
+sub reaction {
+  shift->{data}->{"reaction"}->{value}->[0];
 }
 
 sub nparam {
@@ -124,20 +120,39 @@ sub E {
   shift->{data}->{"E"}->{value};
 }
 
+# sub_converter {
+#   my $converter = sub{shift};  # the null converter allows the M/z spectra to pass unchanged
+#   if ( $scan_event->{$i}->nparam == 0 ) {
+#     # this is a (naive) sign that the profile has already been
+#     # converted; leave the null converter
+#   }
+#   elsif ( $scan_event->{$i}->nparam == 4 ) {
+#     my $B = $scan_event->{$i}->B;
+#     my $C = $scan_event->{$i}->C;
+#     $converter = eval "sub {my \$f = shift; return $B/\$f + $C/\$f/\$f}";
+#   }
+#   elsif ( $scan_event->{$i}->nparam == 7 ) {
+#     my $B = $scan_event->{$i}->B;
+#     my $C = $scan_event->{$i}->C;
+#     $converter = eval "sub {my \$f = shift; return $B/(\$f**2) + $C/(\$f**4)}";
+#   }
+#   else {
+#     die "don't know how to convert with " . $scan_event->{$i}->nparam . " conversion parameters";
+#   }
+# }
+
 sub stringify {
   my $self = shift;
 
   my $p = $self->preamble;
   my $f = $self->fraction_collector;
-  if ( $self->type == 0 ) {
-    return "$p $f";
-  }
-  elsif ( $self->type == 1 ) {
-    my $r = $self->reaction;
+  if ( $self->np ) {
+    my $pr = $self->precursors;
+    my $r = join ", ", map {"$_"} @$pr;
     return "$p $r $f";
   }
   else {
-    die "don't know how to stringify event type " . $self->type;
+    return "$p $f";
   }
 }
 
