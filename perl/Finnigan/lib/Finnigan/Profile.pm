@@ -26,6 +26,10 @@ sub peak_count {
   shift->{data}->{"peak count"}->{value};
 }
 
+sub nbins {
+  shift->{data}->{"nbins"}->{value};
+}
+
 sub first_value {
   shift->{data}->{"first value"}->{value};
 }
@@ -40,6 +44,27 @@ sub chunks {
 sub chunk { # a syntactic eye-sore remover
   shift->{data}->{"chunks"}->{value};
 }
+
+sub bins {
+  my ($self, $converter, $range) = @_;
+  my @list;
+  my $start = $self->first_value;
+  my $step = $self->step;
+  foreach my $i ( 0 .. $self->peak_count - 1 ) {
+    my $chunk = $self->chunk->[$i];
+    my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
+    foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
+      $x += $step;
+      my $x_conv = $converter ? &$converter($x) : $x;
+      if ($converter and $range) {
+	next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+      }
+      push @list, [$x_conv, $self->chunk->[$i]->signal->[$j]];
+    }
+  }
+  return \@list;
+}
+
 
 sub list {
   my ($self, $converter, $range) = @_;
