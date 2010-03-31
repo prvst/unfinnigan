@@ -19,6 +19,7 @@ WriteMakefile(
 			  'bin/uf-trailer',
 			  'bin/uf-scan',
 			  'bin/uf-data',
+			  'bin/uf-mzxml',
 			 ],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Finnigan.pm', # retrieve abstract from module
