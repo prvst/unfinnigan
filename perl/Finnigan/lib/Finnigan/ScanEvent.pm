@@ -67,6 +67,19 @@ sub decode {
   return $self;
 }
 
+sub purge_unused_data {
+  my $self = shift;
+  $self->SUPER::purge_unused_data;
+  $self->preamble->purge_unused_data;
+  $self->fraction_collector->purge_unused_data;
+  if ($self->precursors) {
+    foreach my $r ( @{$self->precursors} ) {
+      $r->purge_unused_data;
+    }
+  }
+  return $self;
+}
+
 sub np {
   # the number of precrusor ions
   shift->{data}->{"np"}->{value};
@@ -120,26 +133,55 @@ sub E {
   shift->{data}->{"E"}->{value};
 }
 
-# sub_converter {
-#   my $converter = sub{shift};  # the null converter allows the M/z spectra to pass unchanged
-#   if ( $scan_event->{$i}->nparam == 0 ) {
-#     # this is a (naive) sign that the profile has already been
-#     # converted; leave the null converter
-#   }
-#   elsif ( $scan_event->{$i}->nparam == 4 ) {
-#     my $B = $scan_event->{$i}->B;
-#     my $C = $scan_event->{$i}->C;
-#     $converter = eval "sub {my \$f = shift; return $B/\$f + $C/\$f/\$f}";
-#   }
-#   elsif ( $scan_event->{$i}->nparam == 7 ) {
-#     my $B = $scan_event->{$i}->B;
-#     my $C = $scan_event->{$i}->C;
-#     $converter = eval "sub {my \$f = shift; return $B/(\$f**2) + $C/(\$f**4)}";
-#   }
-#   else {
-#     die "don't know how to convert with " . $scan_event->{$i}->nparam . " conversion parameters";
-#   }
-# }
+sub converter {
+  my $self = shift;
+  if ( $self->nparam == 0 ) {
+    # no conversion parameters -- no conversion
+    return sub{shift};  # the null converter allows the M/z spectra to pass unchanged
+  }
+  elsif ( $self->nparam == 4 ) {
+    # LTQ-FT
+    my $A = $self->A;
+    my $B = $self->B;
+    my $C = $self->C;
+    return eval "sub {my \$f = shift; return $A + $B/\$f + $C/\$f/\$f}";
+  }
+  elsif ( $self->nparam == 7 ) {
+    # Orbitrap
+    my $A = $self->A;
+    my $B = $self->B;
+    my $C = $self->C;
+    return eval "sub {my \$f = shift; return $A + $B/(\$f**2) + $C/(\$f**4)}";
+  }
+  else {
+    die "don't know how to convert with " . $self->nparam . " conversion parameters";
+  }
+}
+
+sub inverse_converter {
+  my $self = shift;
+  if ( $self->nparam == 0 ) {
+    # no conversion parameters -- no conversion
+    return sub{shift};  # the null converter allows the M/z spectra to pass unchanged
+  }
+  elsif ( $self->nparam == 4 ) {
+    # LTQ-FT
+    my $A = $self->A;
+    my $B = $self->B;
+    my $C = $self->C;
+    return eval "sub {my \$Mz = shift; return (-$B - sqrt($B**2 - 4*$C*($A - \$Mz)))/(2*($A - \$Mz))}";
+  }
+  elsif ( $self->nparam == 7 ) {
+    # Orbitrap
+    my $A = $self->A;
+    my $B = $self->B;
+    my $C = $self->C;
+    return eval "sub {my \$Mz = shift; return sqrt( (-$B - sqrt($B**2 - 4*$C*($A - \$Mz)))/(2*($A - \$Mz)) )}";
+  }
+  else {
+    die "don't know how to convert with " . $self->nparam . " conversion parameters";
+  }
+}
 
 sub stringify {
   my $self = shift;

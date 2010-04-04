@@ -184,7 +184,7 @@ class Finnigan(Parser):
             nscans = last_scan_number - first_scan_number + 1
 
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 33) + 1):
+            for n in range(1, min(nscans, 110) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 

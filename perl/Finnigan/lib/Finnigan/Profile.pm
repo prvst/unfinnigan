@@ -45,8 +45,26 @@ sub chunk { # a syntactic eye-sore remover
   shift->{data}->{"chunks"}->{value};
 }
 
+sub converter {
+  shift->{converter}
+}
+
+sub set_converter {
+  my ($self, $converter) = @_;
+  $self->{converter} = $converter;
+}
+
+sub inverse_converter {
+  shift->{"inverse converter"}
+}
+
+sub set_inverse_converter {
+  my ($self, $converter) = @_;
+  $self->{"inverse converter"} = $converter;
+}
+
 sub bins {
-  my ($self, $converter, $range) = @_;
+  my ($self, $range) = @_;
   my @list;
   my $start = $self->first_value;
   my $step = $self->step;
@@ -55,8 +73,8 @@ sub bins {
     my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
     foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
       $x += $step;
-      my $x_conv = $converter ? &$converter($x) : $x;
-      if ($converter and $range) {
+      my $x_conv = $self->converter ? &{$self->converter}($x) : $x;
+      if ( $range ) {
 	next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
       }
       push @list, [$x_conv, $self->chunk->[$i]->signal->[$j]];
@@ -71,7 +89,6 @@ sub list {
   my $start = $self->first_value;
   my $step = $self->step;
   foreach my $i ( 0 .. $self->peak_count - 1 ) {
-    my $chunk = $self->chunk->[$i];
     my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
     foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
       $x += $step;
@@ -82,6 +99,47 @@ sub list {
       print "$x_conv\t" . $self->chunk->[$i]->signal->[$j] . "\n";
     }
   }
+}
+
+sub find_precursor_peak {
+  my ($self, $query) = @_;
+
+  my $raw_query = &{$self->inverse_converter}($query);
+
+  my $start = $self->first_value;
+  my $step = $self->step;
+
+  # find the closest point
+  my $closest = my $second_closest = { point => {chunk => 0, n => 0}, dist => 10e6 };
+  foreach my $i ( 0 .. $self->peak_count - 1 ) {
+    my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
+    foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
+      $x += $step;
+      my $dist1 = $raw_query - $x;
+      my $dist2 = $x - $raw_query;
+      if ( $dist1 >= 0 and $dist1 < $closest->{dist}) {
+        $closest = { point => {chunk => $i, n => $j}, dist => $dist1 };
+      }
+      if ( $dist2 >= 0 and $dist2 < $second_closest->{dist}) {
+        $second_closest = { point => {chunk => $i, n => $j}, dist => $dist2 };
+      }
+    }
+  }
+
+  die "could not find the precursor peak for M/z: $query" if $closest->{dist} > 0.1;
+  my $i = $closest->{point}->{chunk};
+  my $j = $closest->{point}->{n};
+  my $point1 = {
+                mz => &{$self->converter}($start + ($self->chunk->[$i]->first_bin + $j - 1) * $step),
+                intensity => $self->chunk->[$i]->signal->[$j]
+               };
+  $i = $second_closest->{point}->{chunk};
+  $j = $second_closest->{point}->{n};
+  my $point2 = {
+                mz => &{$self->converter}($start + ($self->chunk->[$i]->first_bin + $j - 1) * $step),
+                intensity => $self->chunk->[$i]->signal->[$j]
+               };
+  return $point1->{intensity} > $point2->{intensity} ? $point1 : $point2;
 }
 
 1;

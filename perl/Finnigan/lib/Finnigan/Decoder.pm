@@ -271,6 +271,25 @@ sub dump {
   }
 }
 
+sub purge_unused_data {
+  my $self = shift;
+  delete $self->{current_element};
+  delete $self->{addr};
+  delete $self->{size};
+  foreach my $key (keys %{$self->{data}}) {
+    if ( $key =~ /^unknown/ ) {
+      delete $self->{data}->{$key};
+    }
+    else {
+      delete $self->{data}->{$key}->{type};
+      delete $self->{data}->{$key}->{addr};
+      delete $self->{data}->{$key}->{seq};
+      delete $self->{data}->{$key}->{size};
+    }
+  }
+  return $self;
+}
+
 1;
 __END__
 =head1 NAME
