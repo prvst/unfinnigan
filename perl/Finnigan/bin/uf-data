@@ -122,7 +122,7 @@ else {
 
 # Now go read the trailer. Because the trailer records are of variable
 # size, they are not directly addressable and all of them must be
-# read, up to the highest number in range.
+# read, up to the highest number in the range.
 seek INPUT, $trailer_addr, 0;
 
 # read the number of ScanEvent records in the file
@@ -139,10 +139,9 @@ my $from = $ix[0];
 my $to = $ix[-1];
 
 my %scan_event;
-
 foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
-  my $e = Finnigan::ScanEvent->decode(\*INPUT, $header->version);
+  my $e = Finnigan::ScanEvent->decode(\*INPUT, $header->version)->purge_unused_data;
   next if $i < $from;
   $scan_event{$i} = "$e";
   last if $i == $to;
