@@ -84,22 +84,31 @@ sub bins {
 }
 
 
-sub list {
-  my ($self, $converter, $range) = @_;
+sub print_bins {
+  my ($self, $range, $restore_zeroes) = @_;
+  my @list;
   my $start = $self->first_value;
   my $step = $self->step;
+  my $fill_from = 0;
   foreach my $i ( 0 .. $self->peak_count - 1 ) {
-    my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
-    foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
+    my $chunk = $self->chunk->[$i];
+    my $first_bin = $chunk->first_bin - 1;
+    if ( $restore_zeroes ) {
+      
+    }
+    my $x = $start + $first_bin * $step;
+    foreach my $j ( 0 .. $chunk->nbins - 1) {
       $x += $step;
-      my $x_conv = $converter ? &$converter($x) : $x;
-      if ($converter and $range) {
+      my $x_conv = $self->converter ? &{$self->converter}($x) : $x;
+      if ( $range ) {
 	next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
       }
-      print "$x_conv\t" . $self->chunk->[$i]->signal->[$j] . "\n";
+      print "$x_conv\t" . $chunk->signal->[$j] . "\n";
     }
   }
+  return \@list;
 }
+
 
 sub find_precursor_peak {
   my ($self, $query) = @_;
@@ -126,7 +135,7 @@ sub find_precursor_peak {
     }
   }
 
-  die "could not find the precursor peak for M/z: $query" if $closest->{dist} > 0.1;
+  die "could not find the precursor peak for M/z $query; the nearest candidate is $closest->{dist} a.u. away"  if $closest->{dist} > 0.5;
   my $i = $closest->{point}->{chunk};
   my $j = $closest->{point}->{n};
   my $point1 = {
