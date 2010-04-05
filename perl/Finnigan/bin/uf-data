@@ -19,6 +19,7 @@ my $args = new Getopt::Declare q{
   -a[ll]		        process all ScanEvent objects
   -l[ist]			list the called peaks [requires: -n]
   -p[rofile]			print the scan profile as a 2-column table [requires: -n]
+  -z				include empty bins [requires: -p]
   -n[unmber] <n:0+n>		extract ScanEvent number <n>
   -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
   -d[ump]			dump all data in each ScanEvent
@@ -156,7 +157,7 @@ foreach my $i ( @ix ) {
   $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
   if ( exists $args->{-p} ) {
     if ( $profile ) {
-      $profile->list;
+      $profile->print_bins;
     }
     else {
       say STDERR "this scan has no profile";
