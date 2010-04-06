@@ -184,7 +184,7 @@ class Finnigan(Parser):
             nscans = last_scan_number - first_scan_number + 1
 
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 110) + 1):
+            for n in range(1, min(nscans, 33) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
@@ -194,7 +194,7 @@ class Finnigan(Parser):
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
             yield ErrorLog(self, "error log", "Error Log File")
-            yield MSScanEvents(self, "ms scan events", "MS Scan Events")
+            yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
             yield StatusLog(self, "status log", "Status log")
         else:
             exit("unknown file version: %s" % VERSION[-1])
@@ -881,10 +881,10 @@ class MSSegment(FieldSet):
         # the reast are each read in its own transaction
         yield UInt32(self, "n", "Number of scan events")
         for index in range(1, self["n"].value + 1):
-            yield MSScanEvent(self, "ms scan event[%s]" % index, "MS ScanEvent")
+            yield ScanEventTemplate(self, "scan event template[%s]" % index, "ScanEvent template")
         yield PascalStringWin32(self, "file name", "Unknown file name")
 
-class MSScanEvents(FieldSet):
+class ScanHierarchy(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -898,36 +898,28 @@ class ArrMSScanEvents(FieldSet):
     def createFields(self):
         yield UInt32(self, "n", "Number of scan events")
         for index in range(1, self["n"].value + 1):
-            yield MSScanEvent(self, "ms scan event[%s]" % index, "MS ScanEvent")
+            yield ScanEventTemplate(self, "scan event template[%s]" % index, "ScanEvent template")
 
-class MSScanEvent(FieldSet):
+class ScanEventTemplate(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+        if VERSION[-1] == 63:
+            yield RawBytes(self, "preamble extension", 8)
         if VERSION[-1] < 57:
             yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
             yield UInt32(self, "unknown long[1]", "Unknown long")
             yield MSReaction(self, "ms reaction", "MS Reaction")
             yield UInt32(self, "unknown long[2]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
-        elif VERSION[-1] <= 62:
+        else:
             yield UInt32(self, "unknown long[1]", "Unknown long (or two shorts)")
             yield UInt32(self, "unknown long[2]", "Unknown long")
             yield FractionCollector(self, "fraction collector", "Fraction Collector")
             yield UInt32(self, "unknown long[3]", "Unknown long")
             yield UInt32(self, "unknown long[4]", "Unknown long")
             yield UInt32(self, "unknown long[5]", "Unknown long")
-        else: # 63
-            yield UInt32(self, "unknown long[1]", "Unknown long (or two shorts)")
-            yield UInt32(self, "unknown long[2]", "Unknown long")
-            yield UInt32(self, "unknown long[3]", "Unknown long")
-            yield UInt32(self, "unknown long[4]", "Unknown long")
-            yield FractionCollector(self, "fraction collector", "Fraction Collector")
-            yield UInt32(self, "unknown long[5]", "Unknown long")
-            yield UInt32(self, "unknown long[6]", "Unknown long")
-            yield UInt32(self, "unknown long[7]", "Unknown long")
-
 
 class ScanEventPreamble(FieldSet):
     endian = LITTLE_ENDIAN
