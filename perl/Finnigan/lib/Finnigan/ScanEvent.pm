@@ -223,27 +223,19 @@ This is a variable-layout (but otherwise static) structure, contaning
 several key details about the scan. Most of those details are
 concentrated in its head element, ScanEventPreamble.
 
-The layout depends on the MS power of the scan and is governed by the
-attribute named 'type'. Type 0 corresponds to MS1 scans. Type 1
-corresponds to MS2 (and possibly, higher-power scans).
+The layout depends on the number of precursor ions and is governed by
+the attribute named 'np'. The value np = 0 corresponds to an MS1 scan.
 
-Both Type 0 and Type 1 layouts contain a structure named
-FractionCollector, which is just a pair of double-precision numbers
-indicating the M/z range of the scan.
+All variants contain a structure named FractionCollector, which is
+just a pair of double-precision numbers indicating the M/z range of
+the scan.
 
-In addition to some unknowns that occur in both layouts, Type 0
-contains a copy of all conversion coefficients that determine the
-transformation of the spectra from the frequency domain to M/z (the
-other copy of the same coefficients is stored in the corresponding
-ScanParameterSet -- a somewhat overlapping structure in a parallel
-stream).
-
-The Type 1 layout does not have those coefficients. Apparently,
-because it has a subordinate M/z range and is generated at
-approximately the same time as its parent scan, the parent's
-coefficients are used. Instead of the conversion coefficients, the
-Type 1 layout includes an object named Reaction, with data about the
-parent ion mass and its fragmentation energy.
+In addition to some unknowns that occur in all variants, the MS1
+variant (np = 0) contains a copy of all conversion coefficients that
+determine the transformation of the spectra from the frequency domain
+to M/z (the other copy of the same coefficients is stored in the
+corresponding ScanParameterSet -- a somewhat overlapping structure in
+a parallel stream).
 
 =head2 EXPORT
 
