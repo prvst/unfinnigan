@@ -6,6 +6,9 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+sub min($$) { $_[$_[0] > $_[1]] }
+sub max($$) { $_[$_[0] < $_[1]] }
+
 
 sub decode {
   my ($class, $stream, $layout) = @_;
@@ -35,7 +38,10 @@ sub first_value {
 }
 
 sub step {
-  shift->{data}->{"step"}->{value};
+  my $self = shift;
+  use Carp;
+  confess "undefined" unless $self;
+  $self->{data}->{"step"}->{value};
 }
 
 sub chunks {
@@ -70,10 +76,11 @@ sub bins {
   my $step = $self->step;
   foreach my $i ( 0 .. $self->peak_count - 1 ) {
     my $chunk = $self->chunk->[$i];
+    my $shift = $chunk->unknown ? $chunk->unknown : 0;
     my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
     foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
       $x += $step;
-      my $x_conv = $self->converter ? &{$self->converter}($x) : $x;
+      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
       if ( $range ) {
 	next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
       }
@@ -85,30 +92,80 @@ sub bins {
 
 
 sub print_bins {
-  my ($self, $range, $restore_zeroes) = @_;
+  my ($self, $range, $add_zeroes) = @_;
   my @list;
   my $start = $self->first_value;
   my $step = $self->step;
-  my $fill_from = 0;
-  foreach my $i ( 0 .. $self->peak_count - 1 ) {
-    my $chunk = $self->chunk->[$i];
-    my $first_bin = $chunk->first_bin - 1;
-    if ( $restore_zeroes ) {
-      
-    }
-    my $x = $start + $first_bin * $step;
-    foreach my $j ( 0 .. $chunk->nbins - 1) {
-      $x += $step;
-      my $x_conv = $self->converter ? &{$self->converter}($x) : $x;
-      if ( $range ) {
-	next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
-      }
-      print "$x_conv\t" . $chunk->signal->[$j] . "\n";
+
+  unless ( $range ) {
+    unless ($self->converter ) {
+      $range = [$start, $start + $self->nbins * $step];
     }
   }
-  return \@list;
-}
 
+  print "$range->[0]\t0\n" if $add_zeroes;
+  my $last_bin_written = 0;
+
+  my $shift = 0; # this is declared outside the chunk loop to allow
+                 # writing the empty bin following the last chunk with
+                 # the same amount of shift as in the last chunk
+
+  foreach my $i ( 0 .. $self->peak_count - 1 ) { # each chunk
+    my $chunk = $self->chunk->[$i];
+    my $first_bin = $chunk->first_bin;
+    $shift = $chunk->unknown ? $chunk->unknown : 0;
+    my $x = $start + $first_bin * $step;
+
+    if ( $add_zeroes and $last_bin_written < $first_bin - 1) {
+      # add an empty bin ahead of the chunk, unless there is no gap
+      # between this and the previous chunk
+      my $x0 = $x - $step;
+      my $x_conv = $self->converter ? &{$self->converter}($x0) + $shift: $x0;
+      print "$x_conv\t0\n";
+    }
+
+    foreach my $j ( 0 .. $chunk->nbins - 1) {
+      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+      $x += $step;
+      if ( $range ) {
+        if ( $self->converter ) {
+          next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+        }
+        else {
+          # frequencies have the reverse order
+          next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
+        }
+      }
+      my $bin = $first_bin + $j;
+      print "$x_conv\t" . $chunk->signal->[$j] . "\n";
+      $last_bin_written = $first_bin + $j;
+    }
+
+    if ( $add_zeroes
+         and
+         $i < $self->peak_count - 1
+         and
+         $last_bin_written < $self->chunk->[$i+1]->first_bin - 1
+       ) {
+      # add an empty bin following the chunk, unless there is no gap
+      # between this and the next chunk
+      my $bin = $last_bin_written + 1;
+      # $x has been incremented inside the chunk loop
+      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+      print "$x_conv\t0\n";
+      $last_bin_written++;
+    }
+  }
+
+  if ( $add_zeroes and $last_bin_written < $self->nbins - 1 ) {
+    # add an empty bin following the last chunk, unless there is no gap
+    # left between it and the end of the range ($self->nbins - 1)
+    my $x = $start + ($last_bin_written + 1) * $step;
+    my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+    print "$x_conv\t0\n";
+    print "$range->[1]\t0\n";
+  }
+}
 
 sub find_precursor_peak {
   my ($self, $query) = @_;
