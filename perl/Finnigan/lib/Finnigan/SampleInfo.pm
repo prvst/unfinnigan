@@ -75,6 +75,10 @@ sub scan_index_addr {
   shift->{data}->{"scan index addr"}->{value};
 }
 
+sub error_log_addr {
+  shift->{data}->{"error log addr"}->{value};
+}
+
 1;
 __END__
 
