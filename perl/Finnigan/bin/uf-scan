@@ -14,16 +14,13 @@ my $args = new Getopt::Declare q{
   [mutex: -p -l]
   [mutex: -p -plot]
   [mutex: -plot -l]
-  [mutex: -h -w]
-  -l[ist]			list the called peaks
-  -p[rofile]			print the scan profile as a 2-column table
-  -n[unmber] <n:+i>		select scan number <n>
-  -plot				plot the profile (and the called peaks, if available)
+  -l[ist]			list the called peaks [required]
+  -p[rofile]			print the scan profile as a 2-column table [required]
+  -plot				plot the profile (and the called peaks, if available) [required]
+  -v				convert f -> M/z [requires: -p]
+  -z				add empty bins [requires: -p]
+  -n[unmber] <n:+i>		select scan number <n> [required]
   -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
-  -d[ump]			dump all data in each ScanEvent
-  -h[tml]			dump as html [requires: -d]
-  -w[iki]			dump in wiki table format [requires: -d]
-  -r[elative]			show relative addersess in dump [requires: -d]
   <file>			input file [required]
 }
   or exit(-1);
@@ -122,19 +119,27 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
     exit; # done with the task
   }
   if ( exists $args->{-p} ) {
-    $profile->print_bins();
+    my $range = [$ph->low_mz, $ph->high_mz];
+    if ( exists $args->{-v} ) {
+      $profile->set_converter($scan_event->converter);
+      $profile->print_bins($range, $args->{-z});
+    }
+    else {
+      $profile->print_bins(undef, $args->{-z});
+    }
   }
   else {
     # must plot, then
-    my $converter;
-    my $range;
+    my $range = [$ph->low_mz, $ph->high_mz];
     if ( exists $args->{-mz} ) {
      $range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
     }
+
     if ( $scan_event->nparam == 0 ) {
       # this is a (naive) sign that the profile has already been converted
       say qq{profile_input <- "f\ts};
-      $profile->print_bins($range); # no conversion
+      $profile->set_converter(sub{shift});
+      $profile->print_bins($range, $args->{-z}); # no conversion
       say q{"};
       my $peaks_exist = $peaks ? "centroids are present" : "no centroids";
       say <<END;
@@ -146,7 +151,7 @@ END
     else {
       $profile->set_converter($scan_event->converter);
       say qq{profile_input <- "mz\ts};
-      $profile->print_bins($range);
+      $profile->print_bins($range, $args->{-z});
       say q{"};
       say qq{centroid_input <- "mz\ts};
       $peaks->list();
@@ -165,23 +170,22 @@ END
 __END__
 =head1 NAME
 
-uf-data - decode the ScanEvent structures in a Finnigan raw file "trailer"
+uf-scan - extract scan data from a Finnigan raw file "trailer"
 
 =head1 SYNOPSIS
 
-uf-data [options] file
+uf-scan [options] file
 
  Options:
 
-  -a[ll]		        process all ScanEvent objects
-  -c[oefficients]		print the table of conversion coefficients
-  -n[unmber] <n:0+n>		extract ScanEvent number <n>
-  -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
-  -d[ump]			dump all data in each ScanEvent
-  -h[tml]			dump as html
-  -w[iki]			dump in wiki table format
-  -r[elative]			show relative addersess in dump
-  <file>			input file
+  -l[ist]			list the called peaks [required]
+  -p[rofile]			print the scan profile as a 2-column table [required]
+  -plot				plot the profile (and the called peaks, if available) [required]
+  -v				convert f -> M/z [requires: -p]
+  -z				add empty bins [requires: -p]
+  -n[unmber] <n:+i>		select scan number <n> [required]
+  -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
+  <file>			input file [required]
 
 =head1 OPTIONS
 
@@ -191,77 +195,61 @@ uf-data [options] file
 
 Print a brief help message and exits.
 
-=item B<-d[ump]>
+=item B<-l[ist]>
 
-Prints a table listing all fields in ScanEvent entries, with their seek
-addresses, sizes, names and values. Individual entries can be selected
-with the B<-n[umber]> option or with the B<-range> option.
+Lists the called peaks, if they are available in scan number B<-n>. If the called peaks are not present, uf-scan will print a message to that effect and exit.
+
+=item B<-p[rofile]>
+
+Prints the scan profile for scan number B<-n>, if it is available. If the profile is not present, uf-scan will print a message to that effect and exit.
+
+=item B<-plot>
+
+This option generates an R script to plot the profile. Prints the scan profile for scan number B<-n>, if it is available. If the profile is not present, uf-scan will print a message to that effect and exit.
 
 =item B<-n[umber]>
 
-Gives the number of a single ScanEvent to process
+Gives the number of a single scan to process
 
-=item B<-r[ange]>
+=item B<-n[profile]>
 
-Selects a range of the ScanEvent records to process
-
-=item B<-h[tml]>
-
-Format the dump output as an html table. When multiple entries are
-specified, each will be rendered in its own table
-
-=item B<-w[iki]>
-
-Format the dump output as a wiki table.
-
-=item B<-r[elative]>
-
-Show relative addresses of all itmes in the dump. The default is to
-show the absolute seek address. (works with the -d[ump] option)
-
-=item B<-a[ll]>
-
-Process all entries, including those that may lie outside the declared
-range. It appears as though it can be possible to find more index
-entries in the file than would fit between the first and the last scan
-numbers specified in RunHeader/SampleInfo. In that case, in the
-absence of the -all option, the entries will be enumerated according
-to ScanIndex, which will be treated as a linked list -- starting with
-the entry whose index matches the first scan number.
+Gives the number of a single scan to process
 
 =back
 
 =head1 DESCRIPTION
 
-B<uf-data> can be used to list or dump the ScanEvent records in a
-Finnigan raw file. These records are stored in a stream Thermo calls a
-"trailer", which follows the data stream. Now, the "trailer"
-containing scan event descriptions is not the only stream trailing the
-data; apparently, new ones were added as the format evolved, but the
-name stuck. The code in Thermo libraries refers to this stream as
-"TrailerScanEvent".
+B<uf-scan> can be used to list or plot the scan data for a single scan. The B<-p> option instructs B<uf-scan> to output the profile, the B<-l> options lists the peaks, and the B<-plot> option outpuns an R progarm to plot the profile overlaid by peak centroids, if both are present in the raw file, or just the profile if the centroids are not present.
+
+To convert the raw scan data into M/z values, use the B<-v> option.
+
+Option B<-z> adds a pair of empty bins on either side of each peak in the profile.
 
 =head1 SEE ALSO
 
-Finnigan::ScanEvent
-Finnigan::ScanEventPreamble
-Finnigan::FractionCollector
-Finnigan::Reaction
+uf-mzhml
 
 =head1 EXAMPLES
 
-uf-data sample.raw 
+ uf-scan -p -n 1 sample.raw
 
-  (will list all scan events in the file in Thermo's short-hand notation)
+  (will print all raw profile bins in the 1st scan)
 
-uf-data -range 1..5 sample.raw
+ uf-scan -pv -n 1 sample.raw
 
-  (will list the first five records)
+  (same as above, except the bin values will be converted into M/z)
 
-uf-data -drn 5 ~/shared/test/sample4.raw 
+ uf-scan -pvz -n 1 sample.raw
 
-  (will dump the fifth ScanEvent with relative addresses)
+  (same as above, but in addition, each peak will be surrounded by a pair of empty bins)
+
+ uf-scan -l -n 1 sample.raw
+
+  (will print the list of centroids in the 1st scan; note that B<uf-scan> will not calculate the peak centroids from the profile; it will only list the existing centroids, if they are present)
+
+ uf-scan -plot -n 1 -mz 445.0..445.2 sample.raw | R --vanilla --slave > plot.eps
+
+  (This command will call R to plot the profile in a range of the M/z values. If the called peaks are present, they will be shown as dots on the graph)
 
 =cut
 
-=cut
