@@ -157,7 +157,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
     }
   }
   elsif ( exists $args->{-c} ) {
-    if ($e->type == 0) {
+    unless ( $e->precursors ) {
       if ($e->nparam == 4) {
 	say join("\t", $n, $e->unknown_double, $e->A, $e->B, $e->C);
       }
