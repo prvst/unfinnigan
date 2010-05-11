@@ -6,8 +6,10 @@ WriteMakefile(
     NAME              => 'Finnigan',
     VERSION_FROM      => 'lib/Finnigan.pm', # finds $VERSION
     PREREQ_PM         => {
-			  Module::Find => '0.10',
+			  Module::Find => '0.08',
 			  DateTime::Format::WindowsFileTime => '0.02',
+                          Devel::Size => '0.71',
+			  XML::Generator => '1.01',
 			 },
     EXE_FILES         => [
 			  'bin/uf-header',
@@ -19,6 +21,7 @@ WriteMakefile(
 			  'bin/uf-trailer',
 			  'bin/uf-scan',
 			  'bin/uf-mzxml',
+                          'bin/mzxml-unpack',
 			 ],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Finnigan.pm', # retrieve abstract from module
