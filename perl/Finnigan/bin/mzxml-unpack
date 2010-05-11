@@ -1,0 +1,55 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use feature qw/state say/;
+use 5.010;
+
+use Getopt::Declare;
+use MIME::Base64;
+
+my $args = new Getopt::Declare q{
+  [strict]
+  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
+  <file>				input file
+}
+  or exit(-1);
+
+
+if ( my $file = $args->{"<file>"} ) {
+  -e $file or die "file '$file' does not exist";
+  -f $file or die "'$file' is not a plain file";
+  -s $file or die "'$file' has zero size";
+  open STDIN, "<$file" or die "can't open '$file': $!";
+}
+
+my $from = exists $args->{-r} ? $args->{-r}{"<from>"} : 0;
+my $to = exists $args->{-r} ? $args->{-r}{"<to>"} : 2**31 - 1;
+die "inverted range: [$from .. $to]" if $from > $to;
+
+$/ = "</peaks>\n";
+while ( <> ) {
+  if ( s/(<peaks[^>]+>)(.*)$// ) {
+    my ($tag, $data) = ($1, $2);
+    s/\n$//;
+    if ( /scan num="(\d+)"/ ) {
+      next unless $1 >= $from and $1 <= $to;
+    }
+    else {
+      die "cannot determine scan number";
+    }
+
+    say "$_$tag";
+
+    # $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
+    my @spec = map {unpack "f", $_} map {pack "V", $_} unpack("N*", decode_base64($data));
+    foreach my $i (0 .. scalar @spec / 2 - 1) {
+      say join("\t", @spec[2*$i .. 2*$i+1]);
+    }
+
+    say "</peaks>";
+  }
+  else {
+    print;
+  }
+}

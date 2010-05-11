@@ -3,6 +3,8 @@ package Finnigan::Decoder;
 use 5.010000;
 use strict;
 use warnings;
+use Encode qw//;
+use Carp qw/confess/;
 
 our $VERSION = '0.01';
 
@@ -111,7 +113,7 @@ sub decode {
   my $current_element = scalar keys %{$self->{data}};
 
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
-    my ($name, $desc) = ($fields->[2*$i], $fields->[2*$i+1]);
+    my ($name, $desc) = ($fields->[2*$i], $fields->[2*$i+1]); # the slice form is more expensive: @{$fields}[2*$i .. 2*$i+1];
     my ($template, $type) = @$desc;
     my $value;
 
@@ -122,20 +124,40 @@ sub decode {
       $nbytes = $value->size();
     }
     elsif ( $template eq 'varstr' ) {
-      # read the prefix counter into $nchars
-      my $bytes_to_read = 4;
-      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
-      $nbytes == $bytes_to_read
-	or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
-      my $nchars = unpack "V", $rec;
+      if ( $type eq 'PascalStringWin32' ) {
+        # read the prefix counter into $nchars
+        my $bytes_to_read = 4;
+        $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+        $nbytes == $bytes_to_read
+          or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
+        my $nchars = unpack "V", $rec;
 
-      # read the 2-byte characters
-      $bytes_to_read = 2*$nchars;
-      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
-      $nbytes == $bytes_to_read
-	or die "could not read all $nchars 2-byte characters of $name at $current_addr";
-      $value = pack "C*", unpack "U0C*", $rec;
-      $nbytes += 4;
+        # read the 2-byte characters
+        $bytes_to_read = 2*$nchars;
+        $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+        $nbytes == $bytes_to_read
+          or die "could not read all $nchars 2-byte characters of $name at $current_addr";
+        $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
+        $nbytes += 4;
+      }
+      else {
+        confess "unknown varstr type $type";
+      }
+    }
+    elsif ( $template eq 'string' ) {
+      if ( $type =~ /^ASCIIZ/ ) {
+        (undef, my $bytes_to_read) = split ":", $type;
+        $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+        $nbytes == $bytes_to_read
+          or die "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
+        $value = unpack "Z*", $rec;
+      }
+      elsif ( $type =~ /^UTF-16-LE/ ) {
+        confess "utf-16-le not implemented";
+      }
+      else {
+        confess "unknown string type";
+      }
     }
     elsif ( $template eq 'windows_time' ) {
       my $bytes_to_read = 8;

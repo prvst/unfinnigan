@@ -248,7 +248,10 @@ sub find_precursor_peak {
     }
   }
 
-  die "could not find the precursor peak for M/z $query; the nearest candidate is $closest->{dist} a.u. away"  if $closest->{dist} > 0.5;
+  if ( $closest->{dist} > 0.1 ) {
+    print STDERR "could not find the precursor peak for M/z $query; the nearest candidate is $closest->{dist} a.u. away\n";
+    return {mz => $query, intensity => 0};
+  }
   my $i = $closest->{point}->{chunk};
   my $j = $closest->{point}->{n};
   my $point1 = {
