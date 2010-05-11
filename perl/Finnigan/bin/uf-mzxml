@@ -514,11 +514,11 @@ sub get_stat_info {
 __END__
 =head1 NAME
 
-uf-data - decode the ScanEvent structures in a Finnigan raw file "trailer"
+uf-mzxml - decode the ScanEvent structures in a Finnigan raw file "trailer"
 
 =head1 SYNOPSIS
 
-uf-data [options] file
+uf-mzxml [options] file
 
  Options:
 
@@ -582,7 +582,7 @@ the entry whose index matches the first scan number.
 
 =head1 DESCRIPTION
 
-B<uf-data> can be used to list or dump the ScanEvent records in a
+B<uf-mzxml> can be used to list or dump the ScanEvent records in a
 Finnigan raw file. These records are stored in a stream Thermo calls a
 "trailer", which follows the data stream. Now, the "trailer"
 containing scan event descriptions is not the only stream trailing the
@@ -599,15 +599,15 @@ Finnigan::Reaction
 
 =head1 EXAMPLES
 
-uf-data sample.raw 
+uf-mzxml sample.raw 
 
   (will list all scan events in the file in Thermo's short-hand notation)
 
-uf-data -range 1..5 sample.raw
+uf-mzxml -range 1..5 sample.raw
 
   (will list the first five records)
 
-uf-data -drn 5 ~/shared/test/sample4.raw 
+uf-mzxml -drn 5 ~/shared/test/sample4.raw 
 
   (will dump the fifth ScanEvent with relative addresses)
 
