@@ -10,7 +10,6 @@ use Pod::Usage;
 use Finnigan;
 use XML::Generator;
 use Tie::IxHash;
-use TokyoCabinet;
 use Storable qw(freeze thaw);
 use MIME::Base64;
 use Devel::Size qw(size total_size);
@@ -46,7 +45,7 @@ seek INPUT, $run_header_addr, 0;
 my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
 my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 my $trailer_addr = $run_header->trailer_addr;
-my $params_addr = $run_header->trailer_addr;
+my $params_addr = $run_header->params_addr;
 
 # InstID follows immediately
 my $inst = Finnigan::InstID->decode(\*INPUT);
@@ -114,10 +113,12 @@ say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 # the highest number in the range.
 
 # First, the in order to reach the ScanParameters header, the error
-# log and thhe scan event structure must be read.
+# log and the scan hierarchy must be read.
 
+# error log
 my $error_log_addr = $run_header->sample_info->error_log_addr;
 seek INPUT, $error_log_addr, 0;
+
 # read the number of ErrorLog records
 $bytes_to_read = 4;
 $nbytes = read INPUT, $rec, $bytes_to_read;
@@ -130,9 +131,43 @@ foreach my $i ( 0 .. $error_log_length - 1) {
   say STDERR "Error: (time = " . $e->time . "): " . $e->message;
 }
 
-exit;
-say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+# scan hierarchy -- not used at the moment; read to skip the correct number of bytes
+# 1. read the number of scan segments
+my $scan_hierachy_addr = tell INPUT;
+$bytes_to_read = 4;
+$nbytes = read INPUT, $rec, $bytes_to_read;
+$nbytes == $bytes_to_read
+  or die "could not read all $bytes_to_read bytes of the scan_segment count at $scan_hierachy_addr";
+my $nsegs = unpack 'V', $rec;
+foreach my $i ( 0 .. $nsegs - 1) {
+  # 1. read the number of scan events in this segment
+  my $scan_event_addr = tell INPUT;
+  $bytes_to_read = 4;
+  $nbytes = read INPUT, $rec, $bytes_to_read;
+  $nbytes == $bytes_to_read
+    or die "could not read all $bytes_to_read bytes of the log record count at $scan_event_addr";
+  my $n = unpack 'V', $rec;
+  foreach my $j ( 0 .. $n - 1) {
+    my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
+  }
+}
 
+# now the file pointer is at the start of GenericDataHeader for ScanParameters
+my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+
+# with the header on hand, skip to the ScanParameters stream
+seek INPUT, $params_addr, 0;
+
+my %charge_state;
+foreach my $i ( $first_scan - 1.. $last_scan - 1) {
+  my $n = $i + 1;
+  my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->fields);
+  next if $n < $from;
+  $charge_state{$i} = $p->charge_state;
+  last if $n == $to;
+}
+
+say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
 #------------------------------------------------------------------------------------------
 # This is a reasonably good point to start generating the output. We
@@ -140,11 +175,12 @@ say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 # itself
 
 my $parent_scan_data; # for looking up the precursor ion for each of
-                       # the dependent MS2'
+                      # the dependent MS2
 
-unlink "unfinnigan-scandb";
-tie my %scan_data, "TokyoCabinet::HDB", "unfinnigan-scandb",  TokyoCabinet::HDB::OWRITER|TokyoCabinet::HDB::OCREAT, 0640 or die $!;
-
+my %scan_data;
+open SCANDATA, ">unfinnigan-scandata"
+  or die "cannot open temp file 'unfinnigan-scandata': $!";
+binmode SCANDATA;
 
 my $xmlgen = XML::Generator->new(
 				 pretty => 1,
@@ -263,7 +299,7 @@ my $xml = $xmlgen->mzXML(
           tie my %precursorAttr, 'Tie::IxHash';
           %precursorAttr = (
             precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
-            precursorCharge     => "0",
+            precursorCharge     => $charge_state{$n-1},
             activationMethod    => "unknown",
           );
 
@@ -290,17 +326,36 @@ say STDERR "xml object size: " . total_size($xml);
 
 my @xml_chunk = split "=== cut ===", "$xml";
 
+close SCANDATA;
+open SCANDATA, "<unfinnigan-scandata"
+  or die "cannot open temp file 'unfinnigan-scandata': $!";
+
+
 my %xml_scan_offset;
 foreach my $n ( $from .. $to ) {
   my $i = $n - 1;
-  my $peaks = thaw $scan_data{$i};
+  my $chunk_no = $n - $from;
+
+  my $rec;
+  my ($pos, $bytes_to_read) = @{$scan_data{$i}};
+  seek SCANDATA, $pos, 0;
+  my $nbytes = read SCANDATA, $rec, $bytes_to_read;
+  $nbytes == $bytes_to_read
+    or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
+  my $peaks = thaw $rec;
+
   my $buf;
   foreach my $peak ( @$peaks ) {
     $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
   }
-  print $xml_chunk[$i];
+  print $xml_chunk[$chunk_no];
   $xml_scan_offset{$i} = tell STDOUT;
-#  print encode_base64($buf, "");
+  if ( $buf ) {
+    print encode_base64($buf, "");
+  }
+  else {
+    say STDERR "no data in scan $n";
+  }
 }
 substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
 say $xml_chunk[-1];
@@ -315,10 +370,6 @@ say " </index>";
 say " <indexOffset>$index_offset</indexOffset>";
 say " <sha1></sha1>";
 say "</mzXML>";
-
-say "==========";
-say "$xml";
-
 
 
 sub min($$) { $_[$_[0] > $_[1]] }
@@ -364,19 +415,29 @@ sub read_scan {
     $peakCount = $peaks->count;
   }
   else {
-    # the M/z range; leave it undefined for now, until the command-line argumnet is added
+    # the M/z range; set it to full range, until the command-line argumnet is added
     my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
     if ( $profile ) {
       $profile->set_converter($scan_event->{$i}->converter);
       $profile->set_inverse_converter($scan_event->{$i}->inverse_converter);
-      my $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+      my $bins;
+      if ( $profile->peak_count > 1) {
+        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+      }
+      else {
+        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+      }
       $peakCount = scalar @$bins;      
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
-      $scan_data->{$i} = freeze $bins;
+      my $pos = tell SCANDATA;
+      print SCANDATA freeze $bins;
+      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
     }
     elsif ( $peaks ) {
       say STDERR "freezing peak list $scan_event->{$i} at $i";
-      $scan_data->{$i} = freeze $peaks->all;
+      my $pos = tell SCANDATA;
+      print SCANDATA freeze $peaks->all;
+      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
     }
     else {
       die "no data in scan $i?";
