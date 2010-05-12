@@ -184,18 +184,18 @@ class Finnigan(Parser):
             nscans = last_scan_number - first_scan_number + 1
 
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 395) + 1):
+            for n in range(1, min(nscans, 33) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
-            # if run_header_addr > self.current_size/8:
-            #     yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "This is where the scand data packets are found")
-            # yield RunHeader(self, "run header", "The directory structure for the entire file")
-            # yield InstID(self, "inst id", "Instrument ID")
-            # yield InstrumentLog(self, "inst log", "Instrument status log")
-            # yield ErrorLog(self, "error log", "Error Log File")
-            # yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
-            # yield StatusLog(self, "status log", "Status log")
+            if run_header_addr > self.current_size/8:
+                yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "This is where the scand data packets are found")
+            yield RunHeader(self, "run header", "The directory structure for the entire file")
+            yield InstID(self, "inst id", "Instrument ID")
+            yield InstrumentLog(self, "inst log", "Instrument status log")
+            yield ErrorLog(self, "error log", "Error Log File")
+            yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
+            yield StatusLog(self, "status log", "Status log")
         else:
             exit("unknown file version: %s" % VERSION[-1])
 
