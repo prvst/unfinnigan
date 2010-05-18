@@ -184,7 +184,7 @@ class Finnigan(Parser):
             nscans = last_scan_number - first_scan_number + 1
 
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 33) + 1):
+            for n in range(1, min(nscans, 5) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
@@ -649,12 +649,10 @@ class MethodFile(FieldSet):
         yield MethodInfo(self, "method info", "Method file description")
         yield RawBytes(
             self,
-            "method data",
+            "ms ole data",
             self["method info/bytes to eof"].value,
             "Method file data"
             )
-        # This probably was just the end of the buffer with random junk left over from earlier use
-        # yield ThermoFinniganHeader(self, "thermo header", "A version of the Finnigan header (magic 5) -- purpose unknown)")
 
 class MethodInfo(FieldSet):
      endian = LITTLE_ENDIAN
@@ -666,7 +664,6 @@ class MethodInfo(FieldSet):
          for index in range(1, self["n"].value + 1):
              yield PascalStringWin32(self, "tag[%s].a" % index, "Unknown tag")
              yield PascalStringWin32(self, "tag[%s].b" % index, "Unknown tag")
-
 
 class IcisStatusLog(FieldSet):
     endian = LITTLE_ENDIAN
@@ -999,7 +996,7 @@ class TrailerScanEvent(FieldSet):
         if 0: # and ABBREVIATE_LISTS and nrecords > 100:
             ## this is likely to break the following items because the
             ## size to skip depends on the file!
-            for n in range(1, 33+1):
+            for n in range(1, 30+1):
                 yield ScanEvent(self, "scan event[%s]" % n, "Scan Event")
             yield RawBytes(self, ". . .", 3634072 - 2*212 - 4, "records skipped for speed")
         else:
