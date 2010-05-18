@@ -189,7 +189,7 @@ class Finnigan(Parser):
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
             if run_header_addr > self.current_size/8:
-                yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "This is where the scand data packets are found")
+                yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "This is where the scan data packets are found")
             yield RunHeader(self, "run header", "The directory structure for the entire file")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
