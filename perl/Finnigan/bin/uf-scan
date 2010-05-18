@@ -14,8 +14,9 @@ my $args = new Getopt::Declare q{
   [mutex: -p -l]
   [mutex: -p -plot]
   [mutex: -plot -l]
-  -l[ist]			list the called peaks [required]
-  -p[rofile]			print the scan profile as a 2-column table [required]
+  -e[xtract]			extract the entire scan as binary data (will print by default)
+  -l[ist]			print or extract the peak list [required]
+  -p[rofile]			print or extract the scan profile as a 2-column table [required]
   -plot				plot the profile (and the called peaks, if available) [required]
   -v				convert f -> M/z [requires: -p]
   -z				add empty bins [requires: -p]
@@ -95,8 +96,10 @@ foreach my $i ( 1 .. $trailer_length) {
   last;
 }
 
+# start of the scan data (packet header)
 seek INPUT, $data_addr + $scan_index->{offset}, 0;
 my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+
 my $profile;
 $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
 
@@ -105,7 +108,17 @@ $peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
 
 if ( exists $args->{-l} ) {
   if ( $peaks ) {
-    $peaks->list;
+    if ( exists $args->{-e} ) {
+      say STDERR sprintf("%d (%x) .. %d (%x)", $peaks->addr, $peaks->addr, $peaks->addr + $peaks->size, $peaks->addr + $peaks->size);
+      seek INPUT, $peaks->addr, 0;
+      $nbytes = read INPUT, $rec, $peaks->size;
+      $nbytes == $peaks->size
+        or die "could not read all " . $peaks->size . " bytes of the peak list at " . $peaks->addr;
+      print $rec;
+    }
+    else {
+      $peaks->list;
+    }
     exit(0); # the job is done
   }
   else {
@@ -119,13 +132,23 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
     exit; # done with the task
   }
   if ( exists $args->{-p} ) {
-    my $range = [$ph->low_mz, $ph->high_mz];
-    if ( exists $args->{-v} ) {
-      $profile->set_converter($scan_event->converter);
-      $profile->print_bins($range, $args->{-z});
+    if ( exists $args->{-e} ) {
+      say STDERR sprintf("%d (%x) .. %d (%x)", $profile->addr, $profile->addr, $profile->addr + $profile->size, $profile->addr + $profile->size);
+      seek INPUT, $profile->addr, 0;
+      $nbytes = read INPUT, $rec, $profile->size;
+      $nbytes == $profile->size
+        or die "could not read all " . $profile->size . " bytes of the peak list at " . $profile->addr;
+      print $rec;
     }
     else {
-      $profile->print_bins(undef, $args->{-z});
+      my $range = [$ph->low_mz, $ph->high_mz];
+      if ( exists $args->{-v} ) {
+        $profile->set_converter($scan_event->converter);
+        $profile->print_bins($range, $args->{-z});
+      }
+      else {
+        $profile->print_bins(undef, $args->{-z});
+      }
     }
   }
   else {
