@@ -71,19 +71,44 @@ sub iterate_scalar {
   $self->{data}->{$name} = {};
   $self->{data}->{$name}->{value} = [];
   foreach my $i ( 1 .. $count ) {
-    my $rec;
-    my $bytes_to_read = length(pack($template,()));
-    my $nbytes = CORE::read $stream, $rec, $bytes_to_read;
-    $nbytes == $bytes_to_read
-      or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+    my ($rec, $nbytes, $value);
 
-    my $value;
-    if ($template =~ /^U0C/) {
-      $value = pack "C*", unpack $template, $rec;
+    if ( $template eq 'varstr' ) {
+      if ( $type eq 'PascalStringWin32' ) {
+        # read the prefix counter into $nchars
+        my $bytes_to_read = 4;
+        $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+        $nbytes == $bytes_to_read
+          or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
+        my $nchars = unpack "V", $rec;
+
+        # read the 2-byte characters
+        $bytes_to_read = 2*$nchars;
+        $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+        $nbytes == $bytes_to_read
+          or die "could not read all $nchars 2-byte characters of $name at $current_addr";
+        $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
+        $nbytes += 4;
+      }
+      else {
+        confess "unknown varstr type $type";
+      }
     }
     else {
-      $value = unpack $template, $rec;
+      my $bytes_to_read = length(pack($template,()));
+      my $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+      $nbytes == $bytes_to_read
+        or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+
+      my $value;
+      if ($template =~ /^U0C/) {
+        $value = pack "C*", unpack $template, $rec;
+      }
+      else {
+        $value = unpack $template, $rec;
+      }
     }
+
     $size += $nbytes;
     $current_addr += $nbytes;
 
@@ -202,6 +227,10 @@ sub size {
 
 sub data {
   shift->{data};
+}
+
+sub addr {
+  shift->{addr};
 }
 
 sub item {

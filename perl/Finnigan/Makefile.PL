@@ -9,6 +9,7 @@ WriteMakefile(
 			  Module::Find => '0.08',
 			  DateTime::Format::WindowsFileTime => '0.02',
                           Devel::Size => '0.71',
+                          OLE::Storage_Lite => '0.19',
 			  XML::Generator => '1.01',
 			 },
     EXE_FILES         => [
@@ -16,6 +17,7 @@ WriteMakefile(
 			  'bin/uf-seqrow',
 			  'bin/uf-casinfo',
 			  'bin/uf-rfi',
+			  'bin/uf-meth',
 			  'bin/uf-runheader',
 			  'bin/uf-index',
 			  'bin/uf-trailer',
