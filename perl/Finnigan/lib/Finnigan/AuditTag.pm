@@ -6,6 +6,8 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
+
 sub decode {
   my ($class, $stream) = @_;
 
@@ -29,6 +31,14 @@ sub time {
 sub tag1 {
   my ( $self ) = @_;
   $self->{data}->{"tag[1]"}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+
+  my $time = $self->time;
+  my $tag1 = $self->tag1;
+  return "$time; $tag1";
 }
 
 1;
