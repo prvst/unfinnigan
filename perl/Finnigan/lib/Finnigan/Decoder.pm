@@ -264,6 +264,13 @@ sub dump {
       if ( ref $value eq 'ARRAY' ) {
         $value = join ", ", map {"$_"} @$value;
       }
+      if ( $type eq 'RawBytes' ) {
+        my $len = length($value);
+        my @list = unpack('C*', substr($value, 0, 16));
+        $_ = sprintf "%2.2x", $_ for @list;
+        $value = join(" ", @list);
+        $value .= " ..." if $len > 16;
+      }
       say "  <tr>"
 	. " <td>" . $offset . "</td>"
 	  . " <td>" . $self->item($key)->{size} . "</td>"
@@ -293,6 +300,13 @@ sub dump {
       if ( ref $value eq 'ARRAY' ) {
         $value = join ", ", map {"$_"} @$value;
       }
+      if ( $type eq 'RawBytes' ) {
+        my $len = length($value);
+        my @list = unpack('C*', substr($value, 0, 16));
+        $_ = sprintf "%2.2x", $_ for @list;
+        $value = join(" ", @list);
+        $value .= " ..." if $len > 16;
+      }
       say "|| " . join(" || ",
 		       $offset,
 		       $self->item($key)->{size},
@@ -310,6 +324,13 @@ sub dump {
       $type =~ s/^Finnigan:://;
       if ( ref $value eq 'ARRAY' ) {
         $value = join ", ", map {"$_"} @$value;
+      }
+      if ( $type eq 'RawBytes' ) {
+        my $len = length($value);
+        my @list = unpack('C*', substr($value, 0, 16));
+        $_ = sprintf "%2.2x", $_ for @list;
+        $value = join(" ", @list);
+        $value .= " ..." if $len > 16;
       }
       say join("\t",
 	       $offset,
