@@ -6,7 +6,6 @@ use feature qw/state say/;
 use 5.010;
 
 use Getopt::Declare;
-use Pod::Usage;
 use Finnigan;
 
 my $args = new Getopt::Declare q{
