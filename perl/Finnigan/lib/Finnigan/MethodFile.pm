@@ -3,18 +3,17 @@ package Finnigan::MethodFile;
 use strict;
 use warnings;
 
-use OLE::Storage_Lite;
-
 use Finnigan;
 use base 'Finnigan::Decoder';
+use Data::Dumper;
 
 
 sub decode {
   my ($class, $stream, $version) = @_;
 
   my @fields = (
-                "header"           => ['object', 'Finnigan::FileHeader'],
-                "file size"             => ['V',      'UInt32'],
+                "header"      => ['object', 'Finnigan::FileHeader'],
+                "file size"        => ['V',      'UInt32'],
                 "orig file name"   => ['varstr', 'PascalStringWin32'],
                 "n"                => ['V',      'UInt32'],
                );
@@ -24,11 +23,10 @@ sub decode {
 
   if ( $self->n ) { # this is a hack, because I don't have an iterate_hash() method
     # the tags come in pairs, so retreive them later with a method
-    print STDERR "iterating ...\n";
     $self->iterate_scalar($stream, 2*$self->n, "instrument tag" => ['varstr', 'PascalStringWin32']);
   }
 
-  $self->SUPER::decode($stream, ["ms_ole_data" => ['C' . $self->file_size, 'RawBytes']]);
+  $self->SUPER::decode($stream, ["ms ole data" => ['object', 'Finnigan::OLE2File']]);
 
   return $self;
 }
@@ -39,6 +37,35 @@ sub n {
 
 sub file_size {
   shift->{data}->{"file size"}->{value};
+}
+
+sub ms_ole_data {
+  shift->{data}->{"ms ole data"}->{value};
+}
+
+sub header {
+  shift->{data}->{"header"}->{value};
+}
+
+sub instrument_tag {
+  shift->{data}->{"instrument tag"}->{value};
+}
+
+sub instrument {
+  my ($self, $i) = @_;
+  my $n = $self->n;
+  die "insrument index cannot be 0" if $i == 0;
+  die "instrument index cannot be greater than $n" if $i > $n;
+  $i--;
+  return @{$self->instrument_tag}[2*$i .. 2*$i + 1];
+}
+
+sub time1 {
+  Finnigan::Decoder::from_struct_tm(shift->{tree}->{Time1st});
+}
+
+sub time2 {
+  Finnigan::Decoder::from_struct_tm(shift->{tree}->{Time2nd});
 }
 
 1;

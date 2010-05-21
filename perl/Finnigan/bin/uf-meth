@@ -15,7 +15,7 @@ my $option_dump = 0;
 my $option_html = 0;
 my $option_wiki = 0;
 my $option_size = 0;
-my $option_preamble = 0;
+my $option_header = 0;
 my $option_relative = 0;
 
 Getopt::Long::Configure ("bundling");
@@ -27,6 +27,7 @@ GetOptions(
 	   'html|h' => \$option_html,
 	   'wiki|w' => \$option_wiki,
 	   'relative|r' => \$option_relative,
+	   'header|h' => \$option_header,
 	  ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
@@ -47,54 +48,113 @@ my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
-my $method_file = Finnigan::MethodFile->decode(\*INPUT);
-
-$method_file->dump;
-__END__
+my $mf = Finnigan::MethodFile->decode(\*INPUT);
 
 if ( $option_size ) {
-  if ( $option_preamble ) {
-    say "size: " . $rfi->preamble->size;
+  if ( $option_header ) {
+    say "size: " . $mf->header->size;
   }
   else {
-    say "size: " . $rfi->size;
+    say "size: " . $mf->size;
   }
 }
 
+$option_dump = 1 if $option_header;
+
 if ( $option_dump ) {
   if ( $option_html ) {
-    if ( $option_preamble ) {
-      $rfi->preamble->dump(style => 'html', relative => $option_relative);
+    if ( $option_header ) {
+      $mf->header->dump(style => 'html', relative => $option_relative);
     }
     else {
-      $rfi->dump(style => 'html', relative => $option_relative);
+      $mf->dump(style => 'html', relative => $option_relative);
     }
   }
   elsif ( $option_wiki ) {
-    if ( $option_preamble ) {
-      $rfi->preamble->dump(style => 'wiki', relative => $option_relative);
+    if ( $option_header ) {
+      $mf->header->dump(style => 'wiki', relative => $option_relative);
     }
     else {
-      $rfi->dump(style => 'wiki', relative => $option_relative);
+      $mf->dump(style => 'wiki', relative => $option_relative);
     }
   }
   else {
-    if ( $option_preamble ) {
-      $rfi->preamble->dump(relative => $option_relative);
+    if ( $option_header ) {
+      $mf->header->dump(relative => $option_relative);
     }
     else {
-      $rfi->dump(relative => $option_relative);
+      $mf->dump(relative => $option_relative);
     }
   }
 }
 else {
-  say "$file: "
-    . $rfi->preamble->timestamp
-      . "; "
-	. "data addr: " . $rfi->preamble->data_addr
-	  . "; "
-	    . "RunHeader addr: " . $rfi->preamble->run_header_addr
-	  ;
+  if ( $option_html ) {
+    foreach my $i ( 1 .. $mf->n ) {
+      my ($tag1, $tag2) = $mf->instrument($i);
+      say "$tag1 / $tag2";
+    }
+  }
+  elsif ( $option_wiki ) {
+    say "|| tag 1 || tag 2 ||";
+    foreach my $i ( 1 .. $mf->n ) {
+      my ($tag1, $tag2) = $mf->instrument($i);
+      say "|| $tag1 || $tag2 ||";
+    }
+  }
+  else {
+    foreach my $i ( 1 .. $mf->n ) {
+      my ($tag1, $tag2) = $mf->instrument($i);
+      say "$tag1 / $tag2";
+    }
+  }
+}
+
+say "-------";
+say "ole file size: " . $mf->ms_ole_data->size;
+$mf->ms_ole_data->dump;
+
+say "-------";
+say "header size: " . $mf->ms_ole_data->header->size;
+$mf->ms_ole_data->header->dump;
+
+say "-------";
+say "DIF size: " . $mf->ms_ole_data->dif->size;
+$mf->ms_ole_data->dif->dump;
+
+say "-------";
+say "FAT size: " . $mf->ms_ole_data->fat(0)->size;
+$mf->ms_ole_data->fat(0)->dump;
+
+# use Data::Dumper;
+# print Dumper($mf->ms_ole_data);
+
+
+my $data;
+print "------------------\n";
+my $dir = new Finnigan::OLE2DirectoryEntry($mf->ms_ole_data, 1);
+if ($data = $dir->data) {
+  print $dir->name . ": $data\n";
+}
+else {
+  print $dir->name . " has no data\n";
+}
+
+print "------------------\n";
+$dir = new Finnigan::OLE2DirectoryEntry($mf->ms_ole_data, 3);
+if ($data = $dir->data) {
+  print $dir->name . ": $data\n";
+}
+else {
+  print $dir->name . " has no data\n";
+}
+
+print "------------------\n";
+$dir = new Finnigan::OLE2DirectoryEntry($mf->ms_ole_data, 14);
+if ($data = $dir->data) {
+  print $dir->name . ": $data\n";
+}
+else {
+  print $dir->name . " has no data\n";
 }
 
 __END__
@@ -112,7 +172,7 @@ uf-meth [options] file
    --html            requet html formatting of the dump
    --wiki            format as a wiki table
    --size            tell object size
-   --preamble        dump the content of RawFileInfoPreamble instead of RawFileInfo itself
+   --header          dump the content of FileHeader instead of entire MethodFile
    --relative        show relative addresses
 
 =head1 OPTIONS
@@ -144,9 +204,9 @@ Dump as a wiki table.
 
 Show structure size in bytes.
 
-=item B<--preamble>
+=item B<--header>
 
-Dump the contents of RawFileInfoPreamble, instead of the parent object.
+Dump the contents of RawFileInfoHeader, instead of the parent object.
 
 =item B<--relative>
 
@@ -158,7 +218,7 @@ absolute seek address.
 =head1 DESCRIPTION
 
 B<uf-meth>displays the contents of the RawFileInfo structure, or its
-component RawFileInfoPreamble.
+component RawFileInfoHeader.
 
 It will return an error message if its input is not a Finnigan raw
 file.
@@ -177,7 +237,7 @@ uf-meth -d sample.raw
 
 uf-meth -dpr sample.raw
 
-  (dumps the RawFileInfoPreamble with relative addresses)
+  (dumps the RawFileInfoHeader with relative addresses)
 
 
 =cut
