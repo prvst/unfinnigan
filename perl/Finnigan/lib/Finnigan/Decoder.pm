@@ -14,10 +14,19 @@ sub windows_datetime_in_bytes {
   require DateTime::Format::WindowsFileTime;
 
   my @hex = map { sprintf "%2.2X", $_ } @_; # convert to upper-case hex
+  return "null" if "@hex" eq "00 00 00 00 00 00 00 00";
+
   my $hex_date = join('', @hex[reverse 0..7]); # swap to network format
   my $dt = DateTime::Format::WindowsFileTime->parse_datetime( $hex_date );
   # $dt is a regular DateTime object
   return $dt->ymd . " " . $dt->hms;
+}
+
+sub from_struct_tm {
+  my $ref = shift;
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = @$ref;
+  $year += 1900;
+  "${year}-${mon}-${mday} $hour:$min:$sec";
 }
 
 sub read {
@@ -35,7 +44,7 @@ sub iterate_object {
 
   my $current_element = scalar keys(%{$self->{data}}) + 1;
 
-  die qq(key "$name" already exists) if $self->item($name);
+  confess qq(key "$name" already exists) if $self->item($name);
 
   my $size = 0;
   $self->{data}->{$name} = {};
@@ -65,7 +74,7 @@ sub iterate_scalar {
 
   my $current_element = scalar keys(%{$self->{data}}) + 1;
 
-  die qq(key "$name" already exists) if $self->item($name);
+  confess qq(key "$name" already exists) if $self->item($name);
 
   my $size = 0;
   $self->{data}->{$name} = {};
@@ -96,11 +105,10 @@ sub iterate_scalar {
     }
     else {
       my $bytes_to_read = length(pack($template,()));
-      my $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
         or die "could not read all $bytes_to_read bytes of $name at $current_addr";
 
-      my $value;
       if ($template =~ /^U0C/) {
         $value = pack "C*", unpack $template, $rec;
       }
@@ -142,7 +150,7 @@ sub decode {
     my ($template, $type) = @$desc;
     my $value;
 
-    die qq(key "$name" already exists) if $self->item($name);
+    confess qq(key "$name" already exists) if $self->item($name);
 
     if ( $template eq 'object' ) {
       $value = eval{$type}->decode($stream, $any_arg);
@@ -178,7 +186,15 @@ sub decode {
         $value = unpack "Z*", $rec;
       }
       elsif ( $type =~ /^UTF-16-LE/ ) {
-        confess "utf-16-le not implemented";
+        (undef, my $bytes_to_read) = split ":", $type;
+        $nbytes = CORE::read $stream, $rec, $bytes_to_read;
+        $nbytes == $bytes_to_read
+          or die "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
+        $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
+        $value =~ s/\0+$//;
+      }
+      elsif ( $type =~ /^UTF-16-BE/ ) {
+        confess "UTF-16-BE not implemented";
       }
       else {
         confess "unknown string type";
@@ -250,6 +266,8 @@ sub dump {
   my $addr = $self->{addr};
 
   my @keys = sort {
+    # print "item($a)->seq: " . $self->data->{$a}->{seq} . "\n";
+    # print "item($b)->seq: " . $self->data->{$b}->{seq} . "\n\n";
     $self->data->{$a}->{seq} <=> $self->data->{$b}->{seq}
   } keys %{$self->{data}};
 
