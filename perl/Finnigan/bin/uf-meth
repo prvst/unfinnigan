@@ -5,37 +5,32 @@ use warnings;
 use feature qw/state say/;
 use 5.010;
 
-use Getopt::Long;
-use Pod::Usage;
+use Getopt::Declare;
 use Finnigan;
 
-my $option_help = 0;
-my $option_man = 0;
-my $option_dump = 0;
-my $option_html = 0;
-my $option_wiki = 0;
-my $option_size = 0;
-my $option_header = 0;
-my $option_relative = 0;
+my $args = new Getopt::Declare q{
+  [strict]
+  [mutex: -h -w]
+  [mutex: -e -l]
+  [mutex: -e -d]
+  [mutex: -e -p]
+  [mutex: -l -p]
+  [mutex: -header -c]
+  -e[xtract]		        extract the entire Microsoft Compound File (OLE2)
+  -l[ist]			list the compound file's contents
+  -p[ath]			gives the full path to a single component to be extracted
+  -d[ump]			dump the raw method file or its components
+  -h[tml]			dump as html [requires: -d]
+  -w[iki]			dump in wiki table format [requires: -d]
+  -r[elative]			show relative addersess in dump [requires: -d]
+  -header			dump the contents of the Finnigan header [requires: -d]
+  -c[ontainer]			dump the contents of the OLE2 container [requires: -d]
+  -s[ize]			tell object size [requires: -d]
+  <file>			input file [required]
+}
+  or exit(-1);
 
-Getopt::Long::Configure ("bundling");
-GetOptions(
-	   'help|?' => \$option_help,
-	   'man' => \$option_man,
-	   'dump|d' => \$option_dump,
-	   'size|s' => \$option_size,
-	   'html|h' => \$option_html,
-	   'wiki|w' => \$option_wiki,
-	   'relative|r' => \$option_relative,
-	   'header|h' => \$option_header,
-	  ) or pod2usage(2);
-pod2usage(1) if $option_help;
-pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
-
-@ARGV == 1 or do{ say STDERR "Expecting a single input file\n"; pod2usage(2) };
-
-my $file = shift @ARGV;
-
+my $file = $args->{"<file>"};
 -e $file or die "file '$file' does not exist";
 -f $file or die "'$file' is not a plain file";
 -s $file or die "'$file' has zero size";
@@ -50,51 +45,74 @@ my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 my $mf = Finnigan::MethodFile->decode(\*INPUT);
 
-if ( $option_size ) {
-  if ( $option_header ) {
+if ( exists $args->{-s} ) {
+  if ( exists $args->{-header} ) {
     say "size: " . $mf->header->size;
+  }
+  elsif ( exists $args->{-c} ) {
+    say "size: " . $mf->container->size;
   }
   else {
     say "size: " . $mf->size;
   }
 }
 
-$option_dump = 1 if $option_header;
-
-if ( $option_dump ) {
-  if ( $option_html ) {
-    if ( $option_header ) {
-      $mf->header->dump(style => 'html', relative => $option_relative);
+if ( exists $args->{-d} ) {
+  if ( exists $args->{-h} ) {
+    if ( exists $args->{-header} ) {
+      $mf->header->dump(style => 'html', relative => exists $args->{-r});
+    }
+    elsif ( exists $args->{-c} ) {
+      $mf->container->dump(style => 'html', relative => exists $args->{-r});
     }
     else {
-      $mf->dump(style => 'html', relative => $option_relative);
+      $mf->dump(style => 'html', relative => exists $args->{-r});
     }
   }
-  elsif ( $option_wiki ) {
-    if ( $option_header ) {
-      $mf->header->dump(style => 'wiki', relative => $option_relative);
+  elsif ( exists $args->{-w} ) {
+    if ( exists $args->{-header} ) {
+      $mf->header->dump(style => 'wiki', relative => exists $args->{-r});
+    }
+    elsif ( exists $args->{-c} ) {
+      $mf->container->dump(style => 'wiki', relative => exists $args->{-r});
     }
     else {
-      $mf->dump(style => 'wiki', relative => $option_relative);
+      $mf->dump(style => 'wiki', relative => exists $args->{-r});
     }
   }
   else {
-    if ( $option_header ) {
-      $mf->header->dump(relative => $option_relative);
+    if ( exists $args->{-header} ) {
+      $mf->header->dump(relative => exists $args->{-r});
+    }
+    elsif ( exists $args->{-container} ) {
+      $mf->header->dump(relative => exists $args->{-r});
     }
     else {
-      $mf->dump(relative => $option_relative);
+      $mf->dump(relative => exists $args->{-r});
     }
   }
 }
+
+elsif ( exists $args->{-l} ) {
+  if ( exists $args->{-h} ) {
+    $mf->container->list(style => 'html');
+  }
+  elsif ( exists $args->{-w} ) {
+    $mf->container->(style => 'wiki');
+  }
+  else {
+    $mf->container->list();
+  }
+}
+
 else {
-  if ( $option_html ) {
+  if ( exists $args->{-h} ) {
     foreach my $i ( 1 .. $mf->n ) {
       my ($tag1, $tag2) = $mf->instrument($i);
       say "$tag1 / $tag2";
     }
   }
-  elsif ( $option_wiki ) {
+  elsif ( exists $args->{-w} ) {
     say "|| tag 1 || tag 2 ||";
     foreach my $i ( 1 .. $mf->n ) {
       my ($tag1, $tag2) = $mf->instrument($i);
@@ -109,58 +127,58 @@ else {
   }
 }
 
-say "-------";
-say "ole file size: " . $mf->ms_ole_data->size;
-$mf->ms_ole_data->dump;
+# say "-------";
+# say "ole file size: " . $mf->container->size;
+# $mf->container->dump;
 
-say "-------";
-say "header size: " . $mf->ms_ole_data->header->size;
-$mf->ms_ole_data->header->dump;
+# say "-------";
+# say "header size: " . $mf->container->header->size;
+# $mf->container->header->dump;
 
-say "-------";
-say "DIF size: " . $mf->ms_ole_data->dif->size;
-$mf->ms_ole_data->dif->dump;
+# say "-------";
+# say "DIF size: " . $mf->container->dif->size;
+# $mf->container->dif->dump;
 
-say "-------";
-say "FAT size: " . $mf->ms_ole_data->fat(0)->size;
-$mf->ms_ole_data->fat(0)->dump;
+# say "-------";
+# say "FAT size: " . $mf->container->fat(0)->size;
+# $mf->container->fat(0)->dump;
 
-# use Data::Dumper;
-# print Dumper($mf->ms_ole_data);
+# # use Data::Dumper;
+# # print Dumper($mf->container);
 
 
-my $data;
-print "------------------\n";
-my $dir = new Finnigan::OLE2DirectoryEntry($mf->ms_ole_data, 1);
-if ($data = $dir->data) {
-  print $dir->name . ": $data\n";
-}
-else {
-  print $dir->name . " has no data\n";
-}
+# my $data;
+# print "------------------\n";
+# my $dir = new Finnigan::OLE2DirectoryEntry($mf->container, 1);
+# if ($data = $dir->data) {
+#   print $dir->name . ": $data\n";
+# }
+# else {
+#   print $dir->name . " has no data\n";
+# }
 
-print "------------------\n";
-$dir = new Finnigan::OLE2DirectoryEntry($mf->ms_ole_data, 3);
-if ($data = $dir->data) {
-  print $dir->name . ": $data\n";
-}
-else {
-  print $dir->name . " has no data\n";
-}
+# print "------------------\n";
+# $dir = new Finnigan::OLE2DirectoryEntry($mf->container, 3);
+# if ($data = $dir->data) {
+#   print $dir->name . ": $data\n";
+# }
+# else {
+#   print $dir->name . " has no data\n";
+# }
 
-print "------------------\n";
-$dir = new Finnigan::OLE2DirectoryEntry($mf->ms_ole_data, 14);
-if ($data = $dir->data) {
-  print $dir->name . ": $data\n";
-}
-else {
-  print $dir->name . " has no data\n";
-}
+# print "------------------\n";
+# $dir = new Finnigan::OLE2DirectoryEntry($mf->container, 14);
+# if ($data = $dir->data) {
+#   print $dir->name . ": $data\n";
+# }
+# else {
+#   print $dir->name . " has no data\n";
+# }
 
 __END__
 =head1 NAME
 
-uf-meth - decode the RawFileInfo structure in a Finnigan raw file
+uf-meth - decode the embedded method file in a Finnigan raw file
 
 =head1 SYNOPSIS
 
