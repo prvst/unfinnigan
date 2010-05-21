@@ -1,0 +1,116 @@
+package Finnigan::OLE2Header;
+
+use strict;
+use warnings;
+
+use Finnigan;
+use base 'Finnigan::Decoder';
+use Data::Dumper;
+
+
+sub decode {
+  my ($class, $stream, $version) = @_;
+
+  my @fields = (
+                "guid"            => ['a16',   'RawBytes'], # used by some apps
+                "minor version"   => ['v',     'UInt16'],
+                "major version"   => ['v',     'UInt16'],
+                "endian"          => ['a2',    'RawBytes'], # 0xFFFE for Intel
+                "bb log"          => ['v',     'UInt16'],   # log2-size of big blocks
+                "sb log"          => ['v',     'UInt16'],   # log2-size of small blocks (minisectors)
+                "reserved"        => ['a6',    'RawBytes'],
+                "csectdir"        => ['V',     'UInt32'],   # Number of sector pointers in directory chain (sector size 4 kb)
+                "bb count"        => ['V',     'UInt32'],   # number of blocks in Big Block Depot (number SECTs in the FAT chain)
+                "bb start"        => ['V',     'UInt32'],   # the first block in Big Block Depot (first SECT in the Directory chain
+                "transaction"     => ['a4',    'RawBytes'], # transaction signature
+                "ministream max"  => ['V',     'UInt32'],   # max. size of a ministream (4096)
+                "sb start"        => ['V',     'UInt32'],   # the first block in Small Block Depot (first SECT in the mini-FAT chain
+                "sb count"        => ['V',     'UInt32'],   # number of blocks in Small Block Depot (number of SECTs in the mini-FAT chain
+                "dif start"       => ['V',     'UInt32'],   # the first SECT in the DIF chain (should be 0xfffffffe if the file is smaller than 7Mb)
+                "dif count"       => ['V',     'UInt32'],   # number of SECTs in the DIF chain (should be 0 if the file is smaller than 7Mb)
+               );
+
+  my $self = Finnigan::Decoder->read($stream, \@fields, $version);
+  return bless $self, $class;
+}
+
+sub ministream_max {
+  shift->{data}->{"ministream max"}->{value};
+}
+
+sub bb_log {
+  shift->{data}->{"bb log"}->{value};
+}
+
+sub sb_log {
+  shift->{data}->{"sb log"}->{value};
+}
+
+sub bb_start {
+  shift->{data}->{"bb start"}->{value};
+}
+
+sub bb_count {
+  shift->{data}->{"bb count"}->{value};
+}
+
+sub sb_start {
+  shift->{data}->{"sb start"}->{value};
+}
+
+sub sb_count {
+  shift->{data}->{"sb count"}->{value};
+}
+
+sub dif_start {
+  shift->{data}->{"dif start"}->{value};
+}
+
+sub dif_count {
+  shift->{data}->{"dif count"}->{value};
+}
+
+1;
+__END__
+
+=head1 NAME
+
+Finnigan::OLE2Header -- a decoder for Microsoft OLE2 header structure
+
+=head1 SYNOPSIS
+
+  use Finnigan;
+  my $header = Finnigan::OLE2Header->decode(\*INPUT);
+  $header->dump;
+
+=head1 DESCRIPTION
+
+...
+
+
+=head2 EXPORT
+
+None
+
+=head1 SEE ALSO
+
+Finnigan::OLE2File
+Finnigan::MethodFile
+
+Windows Compound Binary File Format Specification
+http://download.microsoft.com/download/0/B/E/0BE8BDD7-E5E8-422A-ABFD-4342ED7AD886/WindowsCompoundBinaryFileFormatSpecification.pdf
+
+=head1 AUTHOR
+
+Gene Selkov, E<lt>selkovjr@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2010 by Gene Selkov
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.10.0 or,
+at your option, any later version of Perl 5 you may have available.
+
+
+=cut
