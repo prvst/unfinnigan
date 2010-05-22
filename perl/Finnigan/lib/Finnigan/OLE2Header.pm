@@ -41,7 +41,7 @@ sub stringify {
   my $fat_blocks = $self->bb_count;
   my $minifat_blocks = $self->sb_count;
   my $dif_blocks = $self->dif_count;
-  return "Version $version; $fat_blocks block(s) in FAT chain; $minifat_blocks in mini-FAT chain; $dif_blocks in DIF chain";
+  return "Version $version; block(s) in FAT chain: $fat_blocks; in mini-FAT chain: $minifat_blocks; in DIF chain: $dif_blocks";
 }
 
 sub ministream_max {
