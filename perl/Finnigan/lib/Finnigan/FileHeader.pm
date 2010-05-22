@@ -6,6 +6,8 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
+
 sub decode {
   my ($class, $stream) = @_;
 
@@ -51,6 +53,14 @@ sub audit_end {
 sub tag {
   my ( $self ) = @_;
   $self->{data}->{tag}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+
+  my $version = $self->version;
+  my $audit_tag = $self->audit_start;
+  return "V.$version; $audit_tag";
 }
 
 1;
