@@ -15,18 +15,22 @@ my $args = new Getopt::Declare q{
   [mutex: -e -d]
   [mutex: -e -p]
   [mutex: -l -p]
-  [mutex: -header -c]
-  -e[xtract]		        extract the entire Microsoft Compound File (OLE2)
-  -l[ist]			list the compound file's contents
-  -p[ath]			gives the full path to a single component to be extracted
-  -d[ump]			dump the raw method file or its components
-  -h[tml]			dump as html [requires: -d]
-  -w[iki]			dump in wiki table format [requires: -d]
-  -r[elative]			show relative addersess in dump [requires: -d]
-  -header			dump the contents of the Finnigan header [requires: -d]
-  -c[ontainer]			dump the contents of the OLE2 container [requires: -d]
-  -s[ize]			tell object size [requires: -d]
-  <file>			input file [required]
+  [mutex: -H -c]
+  -e[xtract]		extract the entire Microsoft Compound File (OLE2)
+  -l[ist]		list the compound file's contents
+  -p[ath]		gives the full path to a single component to be extracted
+  -d[ump]		dump the raw method file or its components
+  -h[tml]		dump as html [requires: -d || -l]
+  -w[iki]		dump in wiki table format [requires: -d || -l]
+  -r[elative]		show relative addersess in dump [requires: -d]
+  -H[eader]		dump the Finnigan file header [requires: -d]
+  -c[ontainer]		dump the OLE2 container [requires: -d]
+  -s[ize]		tell object size in all forms of dump [requires: -d]
+  <file>		input file [required]
+
+Default:
+
+  List instrument tag mapping (instrument name -> directory name)
 }
   or exit(-1);
 
@@ -46,7 +50,7 @@ my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 my $mf = Finnigan::MethodFile->decode(\*INPUT);
 
 if ( exists $args->{-s} ) {
-  if ( exists $args->{-header} ) {
+  if ( exists $args->{-H} ) {
     say "size: " . $mf->header->size;
   }
   elsif ( exists $args->{-c} ) {
@@ -59,7 +63,7 @@ if ( exists $args->{-s} ) {
 
 if ( exists $args->{-d} ) {
   if ( exists $args->{-h} ) {
-    if ( exists $args->{-header} ) {
+    if ( exists $args->{-H} ) {
       $mf->header->dump(style => 'html', relative => exists $args->{-r});
     }
     elsif ( exists $args->{-c} ) {
@@ -70,7 +74,7 @@ if ( exists $args->{-d} ) {
     }
   }
   elsif ( exists $args->{-w} ) {
-    if ( exists $args->{-header} ) {
+    if ( exists $args->{-H} ) {
       $mf->header->dump(style => 'wiki', relative => exists $args->{-r});
     }
     elsif ( exists $args->{-c} ) {
@@ -81,7 +85,7 @@ if ( exists $args->{-d} ) {
     }
   }
   else {
-    if ( exists $args->{-header} ) {
+    if ( exists $args->{-H} ) {
       $mf->header->dump(relative => exists $args->{-r});
     }
     elsif ( exists $args->{-container} ) {
@@ -106,24 +110,10 @@ elsif ( exists $args->{-l} ) {
 }
 
 else {
-  if ( exists $args->{-h} ) {
-    foreach my $i ( 1 .. $mf->n ) {
-      my ($tag1, $tag2) = $mf->instrument($i);
-      say "$tag1 / $tag2";
-    }
-  }
-  elsif ( exists $args->{-w} ) {
-    say "|| tag 1 || tag 2 ||";
-    foreach my $i ( 1 .. $mf->n ) {
-      my ($tag1, $tag2) = $mf->instrument($i);
-      say "|| $tag1 || $tag2 ||";
-    }
-  }
-  else {
-    foreach my $i ( 1 .. $mf->n ) {
-      my ($tag1, $tag2) = $mf->instrument($i);
-      say "$tag1 / $tag2";
-    }
+  # default (no options given)
+  foreach my $i ( 1 .. $mf->n ) {
+    my ($tag1, $tag2) = $mf->instrument($i);
+    say "$tag1 -> $tag2";
   }
 }
 
@@ -190,7 +180,7 @@ uf-meth [options] file
    --html            requet html formatting of the dump
    --wiki            format as a wiki table
    --size            tell object size
-   --header          dump the content of FileHeader instead of entire MethodFile
+   --H          dump the content of FileHeader instead of entire MethodFile
    --relative        show relative addresses
 
 =head1 OPTIONS
@@ -218,11 +208,11 @@ Dump as html table.
 
 Dump as a wiki table.
 
-=item B<--size>
+=item B<-s[ize]>
 
 Show structure size in bytes.
 
-=item B<--header>
+=item B<-H>
 
 Dump the contents of RawFileInfoHeader, instead of the parent object.
 
