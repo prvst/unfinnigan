@@ -6,7 +6,10 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
+
 my $NDIF = 109;
+my $UNUSED = 0xffffffff;
 
 sub decode {
   my ($class, $stream, $param) = @_;
@@ -30,6 +33,12 @@ sub sect {
   shift->{data}->{sect}->{value};
 }
 
+sub stringify {
+  my $self = shift;
+
+  my $used = grep {$_ != $UNUSED} @{$self->sect};
+  return "Double-Indirect FAT; $used/$NDIF entries used";
+}
 
 1;
 __END__

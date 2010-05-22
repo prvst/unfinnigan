@@ -5,8 +5,8 @@ use warnings;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
-use Data::Dumper;
 
+use overload ('""' => 'stringify');
 
 sub decode {
   my ($class, $stream, $version) = @_;
@@ -20,7 +20,7 @@ sub decode {
                 "sb log"          => ['v',     'UInt16'],   # log2-size of small blocks (minisectors)
                 "reserved"        => ['a6',    'RawBytes'],
                 "csectdir"        => ['V',     'UInt32'],   # Number of sector pointers in directory chain (sector size 4 kb)
-                "bb count"        => ['V',     'UInt32'],   # number of blocks in Big Block Depot (number SECTs in the FAT chain)
+                "bb count"        => ['V',     'UInt32'],   # number of blocks in Big Block Depot (number of SECTs in the FAT chain)
                 "bb start"        => ['V',     'UInt32'],   # the first block in Big Block Depot (first SECT in the Directory chain
                 "transaction"     => ['a4',    'RawBytes'], # transaction signature
                 "ministream max"  => ['V',     'UInt32'],   # max. size of a ministream (4096)
@@ -32,6 +32,16 @@ sub decode {
 
   my $self = Finnigan::Decoder->read($stream, \@fields, $version);
   return bless $self, $class;
+}
+
+sub stringify {
+  my $self = shift;
+
+  my $version = $self->{data}->{"major version"}->{value} . "." . $self->{data}->{"minor version"}->{value};
+  my $fat_blocks = $self->bb_count;
+  my $minifat_blocks = $self->sb_count;
+  my $dif_blocks = $self->dif_count;
+  return "Version $version; $fat_blocks block(s) in FAT chain; $minifat_blocks in mini-FAT chain; $dif_blocks in DIF chain";
 }
 
 sub ministream_max {
