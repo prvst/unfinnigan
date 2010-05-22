@@ -10,7 +10,10 @@ my $UNUSED       = 0xFFFFFFFF;   # -1
 my $END_OF_CHAIN = 0xFFFFFFFE;   # -2
 my $FAT_SECTOR  = 0xFFFFFFFD;   # -3
 my $DIF_SECTOR = 0xFFFFFFFC;   # -4
+my $STORAGE = 1;
 my $ROOT = 5;
+
+my $DEPTH = -1; # for recursive directory listing
 
 my %SPECIAL = ($END_OF_CHAIN => 1, $UNUSED => 1, $FAT_SECTOR => 1, $DIF_SECTOR => 1);
 
@@ -19,8 +22,11 @@ sub new {
   my $self = {file => $file, index => $index};
   bless $self, $class;
 
-  # The directory entries are organized as a red-black tree. The
-  # following piece of code does an ordered traversal of such a tree
+  # The directory entries are organized as a red-black tree (for
+  # efficiency of acces). The following piece of code does an ordered
+  # traversal of such a tree and creates a new tree of
+  # OLE2DirectoryEntry objects whose child lists are properly ordered,
+  # to simplify the code
 
   my $p = $file->{properties}->[$index];
   
@@ -28,7 +34,7 @@ sub new {
   $self->{name} = $p->name;
   $self->{type} = $p->type;
   $self->{start} = $p->start;
-  $self->{size} = $p->size;
+  $self->{size} = $p->data_size;
   
   # process child nodes, if any
   my @stack = ($index);
@@ -94,24 +100,36 @@ sub new {
   return $self;
 }
 
+sub list {
+  my ( $self, $style ) = @_;
+  $self->render_list_item($style, $DEPTH) unless $self->type == $ROOT;;
+  if ( $self->{children} ) {
+    $DEPTH++;
+    $_->list($style) for @{$self->{children}};
+    $DEPTH--;
+  }
+}
+
+sub render_list_item {
+  my ($self, $style) = @_;
+  my $size = $self->size;
+  my $size_text = $self->type == $STORAGE ? "" :  "($size bytes)";
+  print "  " x $DEPTH, $self->name, " $size_text\n";
+}
+
 sub data {
   my $self = shift;
-  print "parsing property: \"" . $self->name . "\"; size: " . $self->size . "; type: " . $self->type . "\n";
-
   my $data;
 
   # get the data
   my $stream_size;
   if ( $self->size ) {
-    if (
-        $self->size > $self->file->header->ministream_max
-        or
-        $self->type == $ROOT ) {  # the data in the root entry is always in big blocks
+    if ( $self->size > $self->file->header->ministream_max
+         or
+         $self->type == $ROOT ) {  # the data in the root entry is always in big blocks
       $stream_size = 'big';
-      print "  has data in big stream\n";
     }
     else {
-      print "  has data in ministream\n";
       $stream_size = 'mini';
     }
 
@@ -120,8 +138,8 @@ sub data {
     my $size = 0;
     my $fragment_group = undef;
     my @chain = $self->file->get_chain($self->start, $stream_size);
-    print "chain: @chain\n";
 
+    # assemble contiguous fragments
     my $contiguous;
     while ( 1 ) {
       my $block = shift @chain;
@@ -148,9 +166,9 @@ sub data {
                                  $previous - $first + 1 # how many sectors
                                 );
 
-      my $desc = sprintf "$stream_size blocks %s..%s (%s)", $first, $previous, $previous-$first+1;
-      $desc .= sprintf " of %s bytes", $self->file->sector_size($stream_size);
-      print "$desc\n";
+      # my $desc = sprintf "$stream_size blocks %s..%s (%s)", $first, $previous, $previous-$first+1;
+      # $desc .= sprintf " of %s bytes", $self->file->sector_size($stream_size);
+      # print "$desc\n";
 
       last unless $block;
 
