@@ -649,9 +649,9 @@ class MethodFile(FieldSet):
         yield MethodInfo(self, "method info", "Method file description")
         yield RawBytes(
             self,
-            "ms ole data",
+            "container",
             self["method info/bytes to eof"].value,
-            "Method file data"
+            "Method file data in the OLE2 container"
             )
 
 class MethodInfo(FieldSet):
@@ -660,10 +660,10 @@ class MethodInfo(FieldSet):
      def createFields(self):
          yield UInt32(self, "bytes to eof", "Method data size = file length - header size - method info size")
          yield PascalStringWin32(self, "file name", "Method file name")
-         yield UInt32(self, "n", "the number of tag pairs")
+         yield UInt32(self, "n", "translation table size")
          for index in range(1, self["n"].value + 1):
-             yield PascalStringWin32(self, "tag[%s].a" % index, "Unknown tag")
-             yield PascalStringWin32(self, "tag[%s].b" % index, "Unknown tag")
+             yield PascalStringWin32(self, "instrument[%s]" % index, "device name")
+             yield PascalStringWin32(self, "dirname[%s]" % index, "OLE2 directory name")
 
 class IcisStatusLog(FieldSet):
     endian = LITTLE_ENDIAN
