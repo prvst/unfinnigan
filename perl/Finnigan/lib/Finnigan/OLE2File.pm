@@ -232,6 +232,11 @@ sub get_chain {
   return @result;
 }
 
+sub find {
+  my ($self, $path) = @_;
+  $self->{rootdir}->find($path);
+}
+
 1;
 __END__
 

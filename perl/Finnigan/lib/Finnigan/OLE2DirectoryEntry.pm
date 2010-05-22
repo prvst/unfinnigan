@@ -102,12 +102,45 @@ sub new {
 
 sub list {
   my ( $self, $style ) = @_;
-  $self->render_list_item($style, $DEPTH) unless $self->type == $ROOT;;
+  $self->render_list_item($style, $DEPTH) unless $self->type == $ROOT;
   if ( $self->{children} ) {
     $DEPTH++;
     $_->list($style) for @{$self->{children}};
     $DEPTH--;
   }
+}
+
+sub find {
+  my ( $self, $query) = @_;
+
+  die "find() must be called on the root entry" unless $self->type == $ROOT;
+
+  return $self if $query eq "/";
+
+  $query =~ s%^/+%%;
+  $query =~ s%/+$%%;
+
+  my @name = split "\/", $query;
+
+  my $node = $self;
+  foreach my $i ( 0 .. $#name ) {
+    if ( $node->{children} ) {
+      my $match = 0;
+      foreach my $child ( @{$node->{children}} ) {
+        if ( $child->name eq $name[$i]) {
+          $node = $child;
+          $match = 1;
+          last;
+        }
+      }
+      return undef unless $match;
+    }
+    else {
+      return undef;
+    }
+  }
+  return $node unless $node->name eq $self->name;
+  return undef; # not found
 }
 
 sub render_list_item {

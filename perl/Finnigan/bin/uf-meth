@@ -6,6 +6,7 @@ use feature qw/state say/;
 use 5.010;
 
 use Getopt::Declare;
+use Data::Hexdumper qw/hexdump/;
 use Finnigan;
 
 my $args = new Getopt::Declare q{
@@ -15,10 +16,11 @@ my $args = new Getopt::Declare q{
   [mutex: -e -d]
   [mutex: -e -p]
   [mutex: -l -p]
+  [mutex: -l -d]
   [mutex: -H -c]
   -e[xtract]		extract the entire Microsoft Compound File (OLE2)
   -l[ist]		list the compound file's contents
-  -p[ath]		gives the full path to a single component to be extracted
+  -p <path>		gives the full path to a single component to be extracted
   -d[ump]		dump the raw method file or its components
   -h[tml]		dump as html [requires: -d || -l]
   -w[iki]		dump in wiki table format [requires: -d || -l]
@@ -91,6 +93,18 @@ if ( exists $args->{-d} ) {
     elsif ( exists $args->{-container} ) {
       $mf->header->dump(relative => exists $args->{-r});
     }
+    elsif ( exists $args->{-p} ) {
+      my ($dirent, $data);
+      unless ( $dirent = $mf->container->find($args->{-p}) ) {
+        say "$args->{-p} not found";
+        exit -1;
+      }
+      unless ( $data = $dirent->data ) {
+        say "$args->{-p} has no data";
+        exit -1;
+      }
+      print hexdump(data => $data);
+    }
     else {
       $mf->dump(relative => exists $args->{-r});
     }
@@ -118,6 +132,20 @@ elsif ( exists $args->{-e} ) {
   $nbytes == $bytes_to_read
     or die "could not read $bytes_to_read bytes of the OLE2 container at $addr";
   print $rec;
+}
+
+elsif ( exists $args->{-p} ) {
+  my ($dirent, $data);
+  unless ( $dirent = $mf->container->find($args->{-p}) ) {
+    say "$args->{-p} not found";
+    exit -1;
+  }
+  unless ( $data = $dirent->data ) {
+    say "$args->{-p} has no data";
+    exit -1;
+  }
+  print $data;
+  #      $mf->header->dump(relative => exists $args->{-r});
 }
 
 else {
