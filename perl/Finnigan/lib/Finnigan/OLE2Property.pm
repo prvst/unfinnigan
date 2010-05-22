@@ -33,14 +33,14 @@ sub decode {
 
   if ( $bb_log == 9 ) {
     push @$fields, (
-                    "size"    => ['V',  'UInt32'],   # size in bytes (valid for stream and root types)
-                    "padding" => ['a4', 'RawBytes'],
+                    "data size" => ['V',  'UInt32'],   # size in bytes (valid for stream and root types)
+                    "padding"   => ['a4', 'RawBytes'],
                    );
   }
   else {
     die "small block streams and Uint64 stream size are not implemented";
     push @$fields, (
-                    "size"    => ['*',  'UInt64'],   # size in bytes (valid for stream and root types)
+                    "data size" => ['*',  'UInt64'],   # size in bytes (valid for stream and root types)
                    );
   }
 
@@ -53,8 +53,8 @@ sub name {
   shift->{data}->{name}->{value};
 }
 
-sub size {
-  shift->{data}->{size}->{value};
+sub data_size {
+  shift->{data}->{"data size"}->{value};
 }
 
 sub child {
