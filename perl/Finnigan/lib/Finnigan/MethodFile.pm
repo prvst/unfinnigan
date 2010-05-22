@@ -23,7 +23,7 @@ sub decode {
 
   if ( $self->n ) { # this is a hack, because I don't have an iterate_hash() method
     # the tags come in pairs, so retreive them later with a method
-    $self->iterate_scalar($stream, 2*$self->n, "instrument tag" => ['varstr', 'PascalStringWin32']);
+    $self->iterate_scalar($stream, 2*$self->n, "name trans" => ['varstr', 'PascalStringWin32']);
   }
 
   $self->SUPER::decode($stream, ["container" => ['object', 'Finnigan::OLE2File']]);
@@ -47,17 +47,17 @@ sub header {
   shift->{data}->{"header"}->{value};
 }
 
-sub instrument_tag {
-  shift->{data}->{"instrument tag"}->{value};
+sub translation_table {
+  shift->{data}->{"name trans"}->{value};
 }
 
-sub instrument {
+sub instrument_name {
   my ($self, $i) = @_;
   my $n = $self->n;
-  die "insrument index cannot be 0" if $i == 0;
+  die "instrument index cannot be 0" if $i == 0;
   die "instrument index cannot be greater than $n" if $i > $n;
   $i--;
-  return @{$self->instrument_tag}[2*$i .. 2*$i + 1];
+  return @{$self->translation_table}[2*$i .. 2*$i + 1];
 }
 
 sub time1 {

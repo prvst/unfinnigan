@@ -109,11 +109,22 @@ elsif ( exists $args->{-l} ) {
   }
 }
 
+elsif ( exists $args->{-e} ) {
+  my $rec;
+  my $bytes_to_read = $mf->file_size;
+  my $addr = $mf->container->addr;
+  seek INPUT, $addr, 0;
+  my $nbytes = read INPUT, $rec, $bytes_to_read;
+  $nbytes == $bytes_to_read
+    or die "could not read $bytes_to_read bytes of the OLE2 container at $addr";
+  print $rec;
+}
+
 else {
   # default (no options given)
   foreach my $i ( 1 .. $mf->n ) {
-    my ($tag1, $tag2) = $mf->instrument($i);
-    say "$tag1 -> $tag2";
+    my ($name, $dirname) = $mf->instrument_name($i);
+    say "$name -> $dirname";
   }
 }
 
