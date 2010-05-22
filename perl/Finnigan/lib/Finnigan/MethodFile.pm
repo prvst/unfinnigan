@@ -26,7 +26,7 @@ sub decode {
     $self->iterate_scalar($stream, 2*$self->n, "instrument tag" => ['varstr', 'PascalStringWin32']);
   }
 
-  $self->SUPER::decode($stream, ["ms ole data" => ['object', 'Finnigan::OLE2File']]);
+  $self->SUPER::decode($stream, ["container" => ['object', 'Finnigan::OLE2File']]);
 
   return $self;
 }
@@ -39,8 +39,8 @@ sub file_size {
   shift->{data}->{"file size"}->{value};
 }
 
-sub ms_ole_data {
-  shift->{data}->{"ms ole data"}->{value};
+sub container {
+  shift->{data}->{"container"}->{value};
 }
 
 sub header {
