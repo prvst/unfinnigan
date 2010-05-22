@@ -7,6 +7,8 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 use Carp qw/confess/;
 
+use overload ('""' => 'stringify');
+
 my $NDIF = 109;
 my $FAT_POINTER_SIZE = 4; # 32 bits
 my $PROPERTY_SIZE    = 128;
@@ -126,10 +128,14 @@ sub decode {
 
   # read the small block depot (which resides in the root entry's data stream)
   my $dir = new Finnigan::OLE2DirectoryEntry($self, 0);
+  $self->{rootdir} = $dir;
   $self->{sbd} = $dir->data;
 
-
   return $self;
+}
+
+sub list {
+  shift->{rootdir}->list();
 }
 
 sub stream {
@@ -151,6 +157,13 @@ sub dif {
 sub fat {
   my ( $self, $block ) = @_;
   shift->{data}->{"fat[$block]"}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+
+  my $n = scalar @{$self->{properties}};
+  return "Windows Compound Binary File: $n nodes";
 }
 
 sub sector_size {
