@@ -103,7 +103,7 @@ uf-header [options] file
    --help            brief help message
    --man             full documentation
    --dump            dump all header fields as a table
-   --html            requet html formatting of the dump
+   --html            request html formatting of the dump
    --wiki            dump as a wiki table
    --size            tell header size
    --atag            dump the content of AuditTags instead of the header itself
@@ -159,5 +159,23 @@ file.
 
 By default, it prints a few header items (version number and
 parts of its AuditTag) on a single line.
+
+=head1 SEE ALSO
+
+[FileHeader]
+
+=head1 EXAMPLES
+
+ uf-header sample.raw
+
+  (will print the file version and creation date)
+
+ uf-header -d sample.raw
+
+  (will dump all header fields)
+
+ uf-header -d --atag sample.raw
+
+  (will dump the contents of the first [AuditTag])
 
 =cut
