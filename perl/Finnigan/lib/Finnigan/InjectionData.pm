@@ -26,6 +26,9 @@ sub decode {
   return bless $self, $class;
 }
 
+sub n {
+  shift->{data}->{n}->{value};
+}
 1;
 
 __END__
