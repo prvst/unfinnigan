@@ -9,6 +9,7 @@ WriteMakefile(
 			  Module::Find => '0.08',
 			  DateTime::Format::WindowsFileTime => '0.02',
                           Devel::Size => '0.71',
+                          Data::Hexdumper => '2.01',
                           OLE::Storage_Lite => '0.19',
 			  XML::Generator => '1.01',
 			 },
