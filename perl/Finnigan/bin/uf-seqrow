@@ -83,11 +83,11 @@ else {
 __END__
 =head1 NAME
 
-uf-seqrow - decode the file SeqRow structure in a Finnigan raw file
+uf-seqrow -- decode the SeqRow structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-seqrow [options] file
+uf-seqrow [options] <file>
 
  Options:
    --help            brief help message
@@ -119,7 +119,7 @@ sizes, acess keys and values.
 
 Dump as html table.
 
-=item B<--html>
+=item B<--wiki>
 
 Dump as a wiki table.
 
@@ -146,9 +146,9 @@ row) structure or its component, InjectionData.
 It will return an error message if its input is not a Finnigan raw
 file.
 
-By default, it dumps the object in tabular format.
+By default, it will dump the SeqRow object in tabular format.
 
-=head2 EXAMPLES
+=head1 EXAMPLES
 
 uf-seqrow sample.raw
 
@@ -159,6 +159,8 @@ uf-seqrow -sri sample.raw
   (dumps the InjectionData substructure with relative addresses and
   prints its size)
 
-=cut
+=head1 SEE ALSO
+
+[Finnigan::SeqRow]
 
 =cut

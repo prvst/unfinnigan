@@ -249,7 +249,7 @@ Option B<-z> adds a pair of empty bins on either side of each peak in the profil
 
 =head1 SEE ALSO
 
-uf-mzhml
+uf-mzxml
 
 =head1 EXAMPLES
 

@@ -18,15 +18,15 @@ my $args = new Getopt::Declare q{
   [mutex: -l -p]
   [mutex: -l -d]
   [mutex: -H -c]
-  -e[xtract]		extract the entire Microsoft Compound File (OLE2)
-  -l[ist]		list the compound file's contents
-  -p <path>		gives the full path to a single component to be extracted
-  -d[ump]		dump the raw method file or its components
-  -h[tml]		dump as html [requires: -d || -l]
-  -w[iki]		dump in wiki table format [requires: -d || -l]
+  -e[xtract]		extract the entire OLE2 container (Microsoft Compound File)
+  -l[ist]		list container contents
+  -p <path>		give the full path to extract a single component
+  -d[ump]		display the structure of the method file or its components
+  -h[tml]		display structure as html [requires: -d || -l]
+  -w[iki]		dislpay in wiki table format [requires: -d || -l]
   -r[elative]		show relative addersess in dump [requires: -d]
-  -H[eader]		dump the Finnigan file header [requires: -d]
-  -c[ontainer]		dump the OLE2 container [requires: -d]
+  -H[eader]		display the embedded Finnigan header [requires: -d]
+  -c[ontainer]		display the OLE2 container's structure [requires: -d]
   -s[ize]		tell object size in all forms of dump [requires: -d]
   <file>		input file [required]
 
@@ -155,54 +155,6 @@ else {
     say "$name -> $dirname";
   }
 }
-
-# say "-------";
-# say "ole file size: " . $mf->container->size;
-# $mf->container->dump;
-
-# say "-------";
-# say "header size: " . $mf->container->header->size;
-# $mf->container->header->dump;
-
-# say "-------";
-# say "DIF size: " . $mf->container->dif->size;
-# $mf->container->dif->dump;
-
-# say "-------";
-# say "FAT size: " . $mf->container->fat(0)->size;
-# $mf->container->fat(0)->dump;
-
-# # use Data::Dumper;
-# # print Dumper($mf->container);
-
-
-# my $data;
-# print "------------------\n";
-# my $dir = new Finnigan::OLE2DirectoryEntry($mf->container, 1);
-# if ($data = $dir->data) {
-#   print $dir->name . ": $data\n";
-# }
-# else {
-#   print $dir->name . " has no data\n";
-# }
-
-# print "------------------\n";
-# $dir = new Finnigan::OLE2DirectoryEntry($mf->container, 3);
-# if ($data = $dir->data) {
-#   print $dir->name . ": $data\n";
-# }
-# else {
-#   print $dir->name . " has no data\n";
-# }
-
-# print "------------------\n";
-# $dir = new Finnigan::OLE2DirectoryEntry($mf->container, 14);
-# if ($data = $dir->data) {
-#   print $dir->name . ": $data\n";
-# }
-# else {
-#   print $dir->name . " has no data\n";
-# }
 
 __END__
 =head1 NAME
