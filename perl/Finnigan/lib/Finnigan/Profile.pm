@@ -160,7 +160,6 @@ sub print_bins {
   }
 
   print "$range->[0]\t0\n" if $add_zeroes;
-  my $last_bin_written = 0;
 
   my $shift = 0; # this is declared outside the chunk loop to allow
                  # writing the empty bin following the last chunk with
@@ -171,15 +170,9 @@ sub print_bins {
     my $first_bin = $chunk->first_bin;
     $shift = $chunk->unknown ? $chunk->unknown : 0;
     my $x = $start + $first_bin * $step;
+    my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
 
-    if ( $add_zeroes and $last_bin_written < $first_bin - 1) {
-      # add an empty bin ahead of the chunk, unless there is no gap
-      # between this and the previous chunk
-      my $x0 = $x - $step;
-      my $x_conv = $self->converter ? &{$self->converter}($x0) + $shift: $x0;
-      print "$x_conv\t0\n";
-    }
-
+    # print all points in the chunk that fall within the specified range
     foreach my $j ( 0 .. $chunk->nbins - 1) {
       my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
       $x += $step;
@@ -194,31 +187,50 @@ sub print_bins {
       }
       my $bin = $first_bin + $j;
       print "$x_conv\t" . $chunk->signal->[$j] . "\n";
-      $last_bin_written = $first_bin + $j;
     }
 
-    if ( $add_zeroes
-         and
-         $i < $self->peak_count - 1
-         and
-         $last_bin_written < $self->chunk->[$i+1]->first_bin - 1
-       ) {
-      # add an empty bin following the chunk, unless there is no gap
-      # between this and the next chunk
-      my $bin = $last_bin_written + 1;
-      # $x has been incremented inside the chunk loop
-      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
-      print "$x_conv\t0\n";
-      $last_bin_written++;
+    if ( $add_zeroes and $i < $self->peak_count - 1 ) {
+      my $from = $self->chunk->[$i]->first_bin + $self->chunk->[$i]->nbins;
+      my $to = $self->chunk->[$i+1]->first_bin - 1;
+      if ($to >= $from) {
+	foreach my $bin ( $from .. $to ) {
+	  my $x = $start + $bin * $step;
+	  my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+	  if ( $range ) {
+	    if ( $self->converter ) {
+	      next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+	    }
+	    else {
+	      # frequencies have the reverse order
+	      next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
+	    }
+	  }
+	  print "$x_conv\t0\n";
+	}
+      }
     }
   }
 
-  if ( $add_zeroes and $last_bin_written < $self->nbins - 1 ) {
-    # add an empty bin following the last chunk, unless there is no gap
-    # left between it and the end of the range ($self->nbins - 1)
-    my $x = $start + ($last_bin_written + 1) * $step;
-    my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
-    print "$x_conv\t0\n";
+  # get the last bin number in the last chunk
+  if ( $add_zeroes ) {
+    my $last_chunk = $self->chunk->[$self->peak_count - 1];
+    my $first_trailer_bin = $last_chunk->first_bin + $last_chunk->nbins;
+    if ( $first_trailer_bin < $self->nbins ) {
+      foreach my $bin ( $first_trailer_bin .. $self->nbins - 1 ) {
+	my $x = $start + $bin * $step;
+	my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+	if ( $range ) {
+	  if ( $self->converter ) {
+	    next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+	  }
+	  else {
+	    # frequencies have the reverse order
+	    next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
+	  }
+	}
+	print "$x_conv\t0\n";
+      }
+    }
     print "$range->[1]\t0\n";
   }
 }
