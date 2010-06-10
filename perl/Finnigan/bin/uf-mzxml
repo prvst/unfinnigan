@@ -370,6 +370,8 @@ say " <indexOffset>$index_offset</indexOffset>";
 say " <sha1></sha1>";
 say "</mzXML>";
 
+close SCANDATA;
+unlink "unfinnigan-scandata";
 
 sub min($$) { $_[$_[0] > $_[1]] }
 
