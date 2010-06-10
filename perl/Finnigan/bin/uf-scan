@@ -18,9 +18,9 @@ my $args = new Getopt::Declare q{
   -p[rofile]			print or extract the scan profile as a 2-column table [required]
   -plot				plot the profile (and the called peaks, if available) [required]
   -v				convert f -> M/z [requires: -p]
-  -z				add empty bins [requires: -p]
+  -z				add empty bins [requires: -p || -plot]
   -n[unmber] <n:+i>		select scan number <n> [required]
-  -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
+  -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: (-p && -v) || -plot]
   <file>			input file [required]
 }
   or exit(-1);
@@ -141,6 +141,9 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
     }
     else {
       my $range = [$ph->low_mz, $ph->high_mz];
+      if ( exists $args->{-mz} ) {
+	$range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
+      }
       if ( exists $args->{-v} ) {
         $profile->set_converter($scan_event->converter);
         $profile->print_bins($range, $args->{-z});
