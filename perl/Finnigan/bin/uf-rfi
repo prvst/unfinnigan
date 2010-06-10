@@ -170,11 +170,11 @@ uf-rfi sample.raw
 
 uf-rfi -d sample.raw
 
-  (dumps a the entire RawFileInfo with absolute addresses)
+  (dumps the entire [RawFileInfo] with absolute addresses)
 
 uf-rfi -dpr sample.raw
 
-  (dumps the RawFileInfoPreamble with relative addresses)
+  (dumps the [RawFileInfoPreamble] with relative addresses)
 
 
 =cut
