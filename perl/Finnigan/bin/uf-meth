@@ -163,33 +163,31 @@ uf-meth - decode the embedded method file in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-meth [options] file
-
- Options:
-   --help            brief help message
-   --man             full documentation
-   --html            requet html formatting of the dump
-   --wiki            format as a wiki table
-   --size            tell object size
-   --H          dump the content of FileHeader instead of entire MethodFile
-   --relative        show relative addresses
+uf-meth [options] <file>
 
 =head1 OPTIONS
 
 =over 8
 
-=item B<--help>
+=item B<-help>
 
 Print a brief help message and exit.
 
-=item B<--man>
+=item B<-e[xtract]>
 
-Print the manual page and exit.
+extract the entire OLE2 container (Microsoft Compound
+File) 
+
+=item B<-l[ist]>
+
+list the container contents
 
 =item B<--dump>
 
-Prints the table listing all header fields with their seek addresses,
-sizes, acess keys and values.
+Prints a table listing all structure elements with their seek
+addresses, sizes, acess keys and values. Complex sub-structures are
+represented by short summaries and their contents can be examined
+separately (see the B<-H> and B<-p> options}
 
 =item B<--html>
 
@@ -197,48 +195,105 @@ Dump as html table.
 
 =item B<--wiki>
 
-Dump as a wiki table.
+Dump as a wiki-style table.
 
 =item B<-s[ize]>
 
-Show structure size in bytes.
-
-=item B<-H>
-
-Dump the contents of RawFileInfoHeader, instead of the parent object.
+Show overall structure size in bytes.
 
 =item B<--relative>
 
 Show relative addresses of all itmes. The default is to show the
 absolute seek address.
 
+=item B<-H[eader]>
+
+Dump the contents of [FileHeader], instead of the parent object.
+
+=item B<-p[ath]> <path>
+
+Give the full path to extract a single component from the compound OLE2 container.
+
+
 =back
 
 =head1 DESCRIPTION
 
-B<uf-meth>displays the contents of the RawFileInfo structure, or its
-component RawFileInfoHeader.
+B<uf-meth>displays the contents of the [MethodFile] structure, its
+component [FileHeader]. and the compound file (OLE2) storage embedded
+within.
 
-It will return an error message if its input is not a Finnigan raw
-file.
+By default, it lists the instrument methods comtained in the compound
+file, along with with their directory names.
 
-By default, it prints a summary of the object's data on a single line.
+=head1 SEE ALSO
+
+[MethodFile]
 
 =head2 EXAMPLES
 
 uf-meth sample.raw
 
-  (displays a single line with file creation date, followed by the data and  RunHeader addresses)
+(names all instruments described in the file, one name per line)
 
-uf-meth -d sample.raw
-
-  (dumps a the entire RawFileInfo with absolute addresses)
-
-uf-meth -dpr sample.raw
-
-  (dumps the RawFileInfoHeader with relative addresses)
+Example output:
+  Surveyor Sample Pump -> Surveyor Sample Pump
+  Surveyor MS Pump -> Surveyor MS Pump
+  Micro AS -> Micro AS
+  LTQ-FT MS -> LTQ
 
 
-=cut
+uf-meth -l sample.raw
+
+(lists the compound file's directory, one node per line)
+
+Example output:
+  LTQ 
+    Data (2560 bytes)
+    Text (11742 bytes)
+    Header (1396 bytes)
+  Micro AS 
+    Data (641 bytes)
+    Text (1164 bytes)
+  Surveyor MS Pump 
+    Data (228 bytes)
+    Text (1176 bytes)
+    Comments (4 bytes)
+  Surveyor Sample Pump 
+    Data (228 bytes)
+    Text (1176 bytes)
+    Comments (4 bytes)
+
+
+uf-meth sample.raw -p LTQ/Text > method.ltq
+
+(writes the text description of the analyzer method)
+
+
+uf-meth sample.raw -p LTQ/Data > method.ltq.data
+
+(writes the raw binary data of the analyzer method)
+
+
+uf-meth sample.raw -dp LTQ/Header
+
+(prints the hex dump of LTQ/Header)
+
+Example output:
+
+  0x0000 : 05 A1 54 00 68 00 65 00 72 00 6D 00 6F 00 20 00 : ..T.h.e.r.m.o...
+  0x0010 : 46 00 69 00 6E 00 6E 00 69 00 67 00 61 00 6E 00 : F.i.n.n.i.g.a.n.
+  0x0020 : 20 00 4C 00 54 00 51 00 00 00 00 00 00 00 00 00 : ..L.T.Q.........
+  0x0030 : 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 : ................
+  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+uf-meth -dr sample.raw
+
+  (dumps the MethodFile structure with relative addresses)
+
+uf-meth -drH sample.raw
+
+  (dumps the Finnigan header residing in the MethodFile, with relative addresses)
+
 
 =cut
