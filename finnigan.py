@@ -444,9 +444,10 @@ class FinniganHeader(FieldSet):
             yield self.seekBit(self._size, "trailer")
 
 class ThermoFinniganHeader(FieldSet):
-    # this may actually be an accidental leftover in the method
-    # file. It was complete in two instances of V.62, but in one instance of
-    # V.57, it was missing the magic number -- possibly overwritten?
+    # This type of header occurs as a separate file inside the LTQ
+    # directory of the embedded OLE2 container in MethodFile. It is
+    # difficult to access directly from Hachoir; the OLE2 file must be
+    # parsed first.
     static_size = 0x0600 * 8
     endian = LITTLE_ENDIAN
 
