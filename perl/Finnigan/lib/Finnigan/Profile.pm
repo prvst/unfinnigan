@@ -1,28 +1,23 @@
 package Finnigan::Profile;
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
+use Carp;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
 
-sub min($$) { $_[$_[0] > $_[1]] }
-sub max($$) { $_[$_[0] < $_[1]] }
+my $preamble = [
+		"first value" => ['d', 'Float64'],
+		"step"        => ['d', 'Float64'],
+		"peak count"  => ['V', 'UInt32'],
+		"nbins"       => ['V', 'UInt32'],
+	       ];
 
 
 sub decode {
-  my ($class, $stream, $layout) = @_;
-
-  my $preamble = [
-		  "first value" => ['d', 'Float64'],
-		  "step"        => ['d', 'Float64'],
-		  "peak count"  => ['V', 'UInt32'],
-		  "nbins"       => ['V', 'UInt32'],
-		 ];
-
-  my $self = bless Finnigan::Decoder->read($stream, $preamble), $class;
-  $self->iterate_object($stream, $self->peak_count, chunks => 'Finnigan::ProfileChunk', $layout);
-  return $self;
+  my $self = bless Finnigan::Decoder->read($_[1], $preamble), $_[0];
+  return $self->iterate_object($_[1], $self->{data}->{"peak count"}->{value}, chunks => 'Finnigan::ProfileChunk', $_[2]); # the last arg is layout
 }
 
 sub peak_count {
@@ -39,7 +34,6 @@ sub first_value {
 
 sub step {
   my $self = shift;
-  use Carp;
   confess "undefined" unless $self;
   $self->{data}->{"step"}->{value};
 }
@@ -47,37 +41,35 @@ sub step {
 sub chunks {
   shift->{data}->{"chunks"}->{value};
 }
+
 sub chunk { # a syntactic eye-sore remover
   shift->{data}->{"chunks"}->{value};
 }
 
 sub converter {
-  shift->{converter}
+  $_[0]->{converter};
 }
 
 sub set_converter {
-  my ($self, $converter) = @_;
-  $self->{converter} = $converter;
+  $_[0]->{converter} = $_[1];
 }
 
 sub inverse_converter {
-  shift->{"inverse converter"}
+  $_[0]->{"inverse converter"};
 }
 
 sub set_inverse_converter {
-  my ($self, $converter) = @_;
-  $self->{"inverse converter"} = $converter;
+  $_[0]->{"inverse converter"} = $_[1];
 }
 
 sub bins {
   my ($self, $range, $add_zeroes) = @_;
   my @list;
-  my $start = $self->first_value;
-  my $step = $self->step;
-
+  my $start = $self->{data}->{"first value"}->{value};
+  my $step = $self->{data}->{step}->{value};
   unless ( $range ) {
-    unless ($self->converter ) {
-      $range = [$start, $start + $self->nbins * $step];
+    unless ( exists $self->{converter} ) {
+      $range = [$start, $start + $self->{data}->{nbins}->{value} * $step];
     }
   }
 
@@ -88,25 +80,25 @@ sub bins {
                  # writing the empty bin following the last chunk with
                  # the same amount of shift as in the last chunk
 
-  foreach my $i ( 0 .. $self->peak_count - 1 ) { # each chunk
-    my $chunk = $self->chunk->[$i];
-    my $first_bin = $chunk->first_bin;
-    $shift = $chunk->unknown ? $chunk->unknown : 0;
+  foreach my $i ( 0 .. $self->{data}->{"peak count"}->{value} - 1 ) { # each chunk
+    my $chunk = $self->{data}->{chunks}->{value}->[$i];
+    my $first_bin = $chunk->{data}->{"first bin"}->{value};
+    $shift = $chunk->{data}->{fudge} ? $chunk->{data}->{fudge}->{value} : 0;
     my $x = $start + $first_bin * $step;
 
     if ( $add_zeroes and $last_bin_written < $first_bin - 1) {
       # add an empty bin ahead of the chunk, unless there is no gap
       # between this and the previous chunk
       my $x0 = $x - $step;
-      my $x_conv = $self->converter ? &{$self->converter}($x0) + $shift: $x0;
+      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x0) + $shift : $x0;
       push @list, [$x_conv, 0];
     }
 
-    foreach my $j ( 0 .. $chunk->nbins - 1) {
-      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+    foreach my $j ( 0 .. $chunk->{data}->{nbins}->{value} - 1) {
+      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
       $x += $step;
       if ( $range ) {
-        if ( $self->converter ) {
+        if ( exists $self->{converter} ) {
           next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
         }
         else {
@@ -115,47 +107,48 @@ sub bins {
         }
       }
       my $bin = $first_bin + $j;
-      push @list, [$x_conv, $chunk->signal->[$j]];
+      push @list, [$x_conv, $chunk->{data}->{signal}->{value}->[$j]];
       $last_bin_written = $first_bin + $j;
     }
 
     if ( $add_zeroes
          and
-         $i < $self->peak_count - 1
+         $i < $self->{data}->{"peak count"}->{value} - 1
          and
-         $last_bin_written < $self->chunk->[$i+1]->first_bin - 1
+         $last_bin_written < $self->{data}->{chunks}->{value}->[$i+1]->{data}->{"first bin"}->{value} - 1
        ) {
       # add an empty bin following the chunk, unless there is no gap
       # between this and the next chunk
       my $bin = $last_bin_written + 1;
       # $x has been incremented inside the chunk loop
-      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
       push @list, [$x_conv, 0];
       $last_bin_written++;
     }
   }
 
-  if ( $add_zeroes and $last_bin_written < $self->nbins - 1 ) {
+  if ( $add_zeroes and $last_bin_written < $self->{data}->{nbins}->{value} - 1 ) {
     # add an empty bin following the last chunk, unless there is no gap
     # left between it and the end of the range ($self->nbins - 1)
     my $x = $start + ($last_bin_written + 1) * $step;
-    my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+    my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
     push @list, [$x_conv, 0];
     push @list, [$range->[1], 0] if $add_zeroes;
   }
-  print STDERR "list size: " . scalar(@list) . "\n";
   return \@list;
 }
 
 sub print_bins {
   my ($self, $range, $add_zeroes) = @_;
   my @list;
-  my $start = $self->first_value;
-  my $step = $self->step;
+  my $data = $self->{data};
+  my $start = $data->{"first value"}->{value};
+  my $step = $data->{step}->{value};
+  my $chunks = $data->{chunks}->{value};
 
   unless ( $range ) {
-    unless ($self->converter ) {
-      $range = [$start, $start + $self->nbins * $step];
+    unless (exists $self->{converter} ) {
+      $range = [$start, $start + $data->{nbins}->{value} * $step];
     }
   }
 
@@ -165,19 +158,19 @@ sub print_bins {
                  # writing the empty bin following the last chunk with
                  # the same amount of shift as in the last chunk
 
-  foreach my $i ( 0 .. $self->peak_count - 1 ) { # each chunk
-    my $chunk = $self->chunk->[$i];
-    my $first_bin = $chunk->first_bin;
-    $shift = $chunk->unknown ? $chunk->unknown : 0;
+  foreach my $i ( 0 .. $data->{"peak count"}->{value} - 1 ) { # each chunk
+    my $chunk = $chunks->[$i]->{data};
+    my $first_bin = $chunk->{"first bin"}->{value};
+    $shift = $chunk->{fudge} ? $chunk->{fudge}->{value} : 0;
     my $x = $start + $first_bin * $step;
-    my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+    my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
 
     # print all points in the chunk that fall within the specified range
-    foreach my $j ( 0 .. $chunk->nbins - 1) {
-      my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+    foreach my $j ( 0 .. $chunk->{nbins}->{value} - 1) {
+      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
       $x += $step;
       if ( $range ) {
-        if ( $self->converter ) {
+        if ( exists $self->{converter} ) {
           next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
         }
         else {
@@ -186,18 +179,18 @@ sub print_bins {
         }
       }
       my $bin = $first_bin + $j;
-      print "$x_conv\t" . $chunk->signal->[$j] . "\n";
+      print "$x_conv\t" . $chunk->{signal}->{value}->[$j] . "\n";
     }
 
-    if ( $add_zeroes and $i < $self->peak_count - 1 ) {
-      my $from = $self->chunk->[$i]->first_bin + $self->chunk->[$i]->nbins;
-      my $to = $self->chunk->[$i+1]->first_bin - 1;
+    if ( $add_zeroes and $i < $data->{"peak count"}->{value} - 1 ) {
+      my $from = $chunks->[$i]->first_bin + $chunks->[$i]->{data}->{nbins}->{value};
+      my $to = $chunks->[$i+1]->first_bin - 1;
       if ($to >= $from) {
 	foreach my $bin ( $from .. $to ) {
 	  my $x = $start + $bin * $step;
-	  my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+	  my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
 	  if ( $range ) {
-	    if ( $self->converter ) {
+	    if ( exists $self->{converter} ) {
 	      next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
 	    }
 	    else {
@@ -213,14 +206,14 @@ sub print_bins {
 
   # get the last bin number in the last chunk
   if ( $add_zeroes ) {
-    my $last_chunk = $self->chunk->[$self->peak_count - 1];
-    my $first_trailer_bin = $last_chunk->first_bin + $last_chunk->nbins;
-    if ( $first_trailer_bin < $self->nbins ) {
-      foreach my $bin ( $first_trailer_bin .. $self->nbins - 1 ) {
+    my $last_chunk = $chunks->[$data->{"peak count"}->{value} - 1];
+    my $first_trailer_bin = $last_chunk->{data}->{"first bin"}->{value} + $last_chunk->{data}->{nbins}->{value};
+    if ( $first_trailer_bin < $data->{nbins}->{value} ) {
+      foreach my $bin ( $first_trailer_bin .. $self->{data}->{nbins}->{value} - 1 ) {
 	my $x = $start + $bin * $step;
-	my $x_conv = $self->converter ? &{$self->converter}($x) + $shift: $x;
+	my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
 	if ( $range ) {
-	  if ( $self->converter ) {
+	  if ( exists $self->{converter} ) {
 	    next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
 	  }
 	  else {
@@ -238,16 +231,17 @@ sub print_bins {
 sub find_precursor_peak {
   my ($self, $query) = @_;
 
-  my $raw_query = &{$self->inverse_converter}($query);
+  my $raw_query = &{$self->{"inverse converter"}}($query);
 
-  my $start = $self->first_value;
-  my $step = $self->step;
+  my $start = $self->{data}->{"first value"}->{value};
+  my $step = $self->{data}->{step}->{value};
+  my $chunks = $self->{data}->{chunks}->{value};
 
   # find the closest point
   my $closest = my $second_closest = { point => {chunk => 0, n => 0}, dist => 10e6 };
-  foreach my $i ( 0 .. $self->peak_count - 1 ) {
-    my $x = $start + ($self->chunk->[$i]->first_bin - 1) * $step;
-    foreach my $j ( 0 .. $self->chunk->[$i]->nbins - 1) {
+  foreach my $i ( 0 .. $self->{data}->{"peak count"}->{value} - 1 ) {
+    my $x = $start + ($chunks->[$i]->{data}->{"first bin"}->{value} - 1) * $step;
+    foreach my $j ( 0 .. $chunks->[$i]->{data}->{nbins}->{value} - 1) {
       $x += $step;
       my $dist1 = $raw_query - $x;
       my $dist2 = $x - $raw_query;
@@ -267,14 +261,21 @@ sub find_precursor_peak {
   my $i = $closest->{point}->{chunk};
   my $j = $closest->{point}->{n};
   my $point1 = {
-                mz => &{$self->converter}($start + ($self->chunk->[$i]->first_bin + $j - 1) * $step),
-                intensity => $self->chunk->[$i]->signal->[$j]
+                mz => &{$self->{converter}}($start + ($chunks->[$i]->{data}->{"first bin"}->{value} + $j - 1) * $step),
+                intensity => $chunks->[$i]->{data}->{signal}->{value}->[$j]
                };
   $i = $second_closest->{point}->{chunk};
   $j = $second_closest->{point}->{n};
   my $point2 = {
-                mz => &{$self->converter}($start + ($self->chunk->[$i]->first_bin + $j - 1) * $step),
-                intensity => $self->chunk->[$i]->signal->[$j]
+                mz => &{$self->{converter}}(
+					    $start +
+					    (
+					     $self->{data}->{chunks}->{value}->[$i]
+					     ->{data}->{"first bin"}->{value}
+					     + $j - 1
+					    ) * $step
+					   ),
+                intensity => $chunks->[$i]->{data}->{signal}->{value}->[$j]
                };
   return $point1->{intensity} > $point2->{intensity} ? $point1 : $point2;
 }

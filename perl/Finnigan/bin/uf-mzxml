@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
@@ -104,7 +104,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   last if $n == $to;
 }
 
-say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+# say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
 # ---------------------------------------------------------------------
 # Now read the ScanParameters stream. Its records have variable size
@@ -166,7 +166,7 @@ foreach my $i ( $first_scan - 1.. $last_scan - 1) {
   last if $n == $to;
 }
 
-say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+# say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
 #------------------------------------------------------------------------------------------
 # This is a reasonably good point to start generating the output. We
@@ -278,7 +278,7 @@ my $xml = $xmlgen->mzXML(
       my $n = $_;
       say STDERR "in outer map ($n)";
       my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
-      say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+#      say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
       tie my %peakAttr, 'Tie::IxHash';
       %peakAttr = (
         precision       => 32,
@@ -482,7 +482,7 @@ sub read_scan {
 }
 
 
-sub get_stat_info {
+sub get_stat_info {  ## this will only work in Linux
   my $ref = {};
 
   ### open and read the main stat file

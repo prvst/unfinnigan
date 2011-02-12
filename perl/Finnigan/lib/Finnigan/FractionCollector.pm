@@ -15,9 +15,7 @@ my @fields = (
 	     );
 
 sub decode {
-  my ($class, $stream) = @_;
-  my $self = Finnigan::Decoder->read($stream, \@fields);
-  return bless $self, $class;
+  return bless Finnigan::Decoder->read($_[1], \@fields), $_[0];
 }
 
 sub low {

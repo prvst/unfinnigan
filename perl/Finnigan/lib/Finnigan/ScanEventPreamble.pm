@@ -408,10 +408,9 @@ my %name = (
            );
 
 sub decode {
-  my ($class, $stream, $version) = @_;
-  die "don\'t know how to parse version $version" unless $specific_fields{$version};
-  my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
-  return bless $self, $class;
+  # my ($class, $stream, $version) = @_;
+  die "don\'t know how to parse version $_[2]" unless $specific_fields{$_[2]};
+  return bless Finnigan::Decoder->read($_[1], [@common_fields, @{$specific_fields{$_[2]}}]), $_[0];
 }
 
 
@@ -442,100 +441,82 @@ sub corona {
 }
 
 sub polarity {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
   my $key = "polarity";
-  if ( $decode ) {
+  if ( $_[1] ) { # decode
     return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
   }
   else {
-    return $self->{data}->{$key}->{value};
+    return $_[0]->{data}->{$key}->{value};
   }
 }
 
 sub scan_mode {
-  shift->{data}->{"scan mode"}->{value};
+  $_[0]->{data}->{"scan mode"}->{value};
 }
 
 sub detector {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
   my $key = "detector";
-  if ( $decode ) {
+  if ( $_[1] ) {
     return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
   }
   else {
-    shift->{data}->{$key}->{value};
+    $_[0]->{data}->{$key}->{value};
   }
 }
 
 sub dependent {
-  shift->{data}->{dependent}->{value};
+  $_[0]->{data}->{dependent}->{value};
 }
 
 sub ms_power {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
   my $key = "ms power";
-  if ( $decode ) {
+  if ( $_[1] ) {
     return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
   }
   else {
-    return $self->{data}->{$key}->{value};
+    $_[0]->{data}->{$key}->{value};
   }
 }
 
 sub analyzer {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
   my $key = "analyzer";
-  if ( $decode ) {
+  if ( $_[1] ) {
     return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
   }
   else {
-    return $self->{data}->{$key}->{value};
+    $_[0]->{data}->{$key}->{value};
   }
 }
 
 sub scan_type {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
   my $key = "scan type";
-  if ( $decode ) {
+  if ( $_[1] ) {
     return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
   }
   else {
-    return $self->{data}->{$key}->{value};
+    $_[0]->{data}->{$key}->{value};
   }
 }
 
 sub ionization {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
   my $key = "ionization";
-  if ( $decode ) {
+  if ( $_[1] ) {
     return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	: $self->{data}->{$key}->{value};
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
   }
   else {
-    return $self->{data}->{$key}->{value};
+    $_[0]->{data}->{$key}->{value};
   }
 }
 

@@ -18,17 +18,17 @@ sub decode {
 }
 
 sub mz {
-  shift->{data}->{"mz"}->{value};
+  $_[0]->{data}->{"mz"}->{value};
 }
 
 sub abundance {
-  shift->{data}->{"abundance"}->{value};
+  $_[0]->{data}->{"abundance"}->{value};
 }
 
 sub stringify {
   my $self = shift;
-  my $mz = $self->mz; #sprintf("%.2f", $self->mz);
-  my $abundance = $self->abundance; #sprintf("%.2f", $self->abundance);
+  my $mz = $self->{data}->{mz}->{value};
+  my $abundance = $self->{data}->{abundance}->{value};
   return "$mz\t$abundance";
 }
 

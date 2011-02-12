@@ -12,6 +12,7 @@ WriteMakefile(
                           Devel::Size => '0.71',
                           Data::Hexdumper => '2.01',
 			  XML::Generator => '1.01',
+                          Tie::IxHash => '1.21',
 			 },
     EXE_FILES         => [
 			  'bin/uf-header',

@@ -135,23 +135,23 @@ sub E {
 
 sub converter {
   my $self = shift;
-  if ( $self->nparam == 0 ) {
+  if ( $self->{data}->{nparam}->{value} == 0 ) {
     # no conversion parameters -- no conversion
-    return sub{shift};  # the null converter allows the M/z spectra to pass unchanged
+    return sub{$_[0]};  # the null converter allows the M/z spectra to pass unchanged
   }
-  elsif ( $self->nparam == 4 ) {
+  elsif ( $self->{data}->{nparam}->{value} == 4 ) {
     # LTQ-FT
-    my $A = $self->A;
-    my $B = $self->B;
-    my $C = $self->C;
-    return eval "sub {my \$f = shift; return $A + $B/\$f + $C/\$f/\$f}";
+    my $A = $self->{data}->{A}->{value};
+    my $B = $self->{data}->{B}->{value};
+    my $C = $self->{data}->{C}->{value};
+    return sub {$A + $B/$_[0] + $C/$_[0]/$_[0]};  # $_[0] = frequency
   }
-  elsif ( $self->nparam == 7 ) {
+  elsif ( $self->{data}->{nparam}->{value} == 7 ) {
     # Orbitrap
-    my $A = $self->A;
-    my $B = $self->B;
-    my $C = $self->C;
-    return eval "sub {my \$f = shift; return $A + $B/(\$f**2) + $C/(\$f**4)}";
+    my $A = $self->{data}->{A}->{value};
+    my $B = $self->{data}->{B}->{value};
+    my $C = $self->{data}->{C}->{value};
+    return sub {$A + $B/($_[0]**2) + $C/($_[0]**4)};  # $_[0] = frequency
   }
   else {
     die "don't know how to convert with " . $self->nparam . " conversion parameters";
@@ -160,23 +160,33 @@ sub converter {
 
 sub inverse_converter {
   my $self = shift;
-  if ( $self->nparam == 0 ) {
+  if ( $self->{data}->{nparam}->{value} == 0 ) {
     # no conversion parameters -- no conversion
     return sub{shift};  # the null converter allows the M/z spectra to pass unchanged
   }
-  elsif ( $self->nparam == 4 ) {
+  elsif ( $self->{data}->{nparam}->{value} == 4 ) {
     # LTQ-FT
-    my $A = $self->A;
-    my $B = $self->B;
-    my $C = $self->C;
-    return eval "sub {my \$Mz = shift; return (-$B - sqrt($B**2 - 4*$C*($A - \$Mz)))/(2*($A - \$Mz))}";
+    my $A = $self->{data}->{A}->{value};
+    my $B = $self->{data}->{B}->{value};
+    my $C = $self->{data}->{C}->{value};
+    return sub {
+      (-$B - sqrt($B**2 - 4*$C*($A - $_[0])))  # $_[0] == Mz
+      /
+      (2*($A - $_[0]));
+    };
   }
-  elsif ( $self->nparam == 7 ) {
+  elsif ( $self->{data}->{nparam}->{value} == 7 ) {
     # Orbitrap
-    my $A = $self->A;
-    my $B = $self->B;
-    my $C = $self->C;
-    return eval "sub {my \$Mz = shift; return sqrt( (-$B - sqrt($B**2 - 4*$C*($A - \$Mz)))/(2*($A - \$Mz)) )}";
+    my $A = $self->{data}->{A}->{value};
+    my $B = $self->{data}->{B}->{value};
+    my $C = $self->{data}->{C}->{value};
+    return sub {
+      sqrt(
+	   (-$B - sqrt($B**2 - 4*$C*($A - $_[0])))  # $_[0] == Mz
+	   /
+	   (2*($A - $_[0]))
+	  );
+    };
   }
   else {
     die "don't know how to convert with " . $self->nparam . " conversion parameters";

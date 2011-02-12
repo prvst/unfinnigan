@@ -12,7 +12,7 @@ my $preamble_0 = [
 		 "nbins"         => ['V', 'UInt32'],
 		];
 
-my $preamble = [@$preamble_0, "unknown float" => ['f', 'Float32']];
+my $preamble = [@$preamble_0, "fudge" => ['f', 'Float32']];
 
 sub decode {
   my $self;
@@ -34,8 +34,8 @@ sub first_bin {
   shift->{data}->{"first bin"}->{value};
 }
 
-sub unknown {
-  shift->{data}->{"unknown float"}->{value};
+sub fudge {
+  shift->{data}->{fudge}->{value};
 }
 
 sub signal {

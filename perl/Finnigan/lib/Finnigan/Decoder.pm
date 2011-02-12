@@ -34,6 +34,7 @@ sub read {
 
   bless $self, $class;
   $self->decode($stream, $fields, $any_arg);
+  return $self;
 }
 
 sub iterate_object {
@@ -41,12 +42,12 @@ sub iterate_object {
 
   my $addr = tell $stream;
 
-  my $current_element_number = scalar keys(%{$self->{data}}) + 1;
+  my $current_element_number = keys(%{$self->{data}}) + 1;
 
   confess qq(key "$name" already exists) if $self->{data}->{$name};
 
   my $size = 0;
-  for (my $i = 1; $i <= $count; $i++) {
+  foreach my $i ( 1 .. $count ) {
     my $value = $class->decode($stream, $any_arg);
     $size += $value->{size};
     push @{$self->{data}->{$name}->{value}}, $value;
@@ -69,7 +70,7 @@ sub iterate_scalar {
 
   my $addr = my $current_addr = tell $stream;
 
-  my $current_element_number = scalar keys(%{$self->{data}}) + 1;
+  my $current_element_number = keys(%{$self->{data}}) + 1;
 
   confess qq(key "$name" already exists) if $self->{data}->{$name};
 
@@ -107,7 +108,7 @@ sub iterate_scalar {
   else {
     my $template_length = length(pack($template,()));
     if ( substr($template, 0, 3) eq 'U0C' ) {
-      for ($i = 1; $i <= $count; $i++) {
+      foreach $i ( 1 .. $count ) {
 	$nbytes = CORE::read $stream, $rec, $template_length;
 	$nbytes == $template_length
 	  or die "could not read all $template_length bytes of $name at $current_addr";
@@ -119,7 +120,7 @@ sub iterate_scalar {
       }
     }
     else {
-      for ($i = 1; $i <= $count; $i++) {
+      foreach $i ( 1 .. $count ) {
 	$nbytes = CORE::read $stream, $rec, $template_length;
 	$nbytes == $template_length
 	  or die "could not read all $template_length bytes of $name at $current_addr";
@@ -152,7 +153,7 @@ sub decode {
                                    # the first time (because decoding
                                    # can be done in multiple chunks)
 
-  my $current_element_number = scalar keys %{$self->{data}};
+  my $current_element_number = keys %{$self->{data}};
 
   my $value;
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
@@ -187,14 +188,14 @@ sub decode {
       }
     }
     elsif ( $template eq 'string' ) {
-      if ( $type =~ /^ASCIIZ/ ) {
+      if ( substr($type, 0, 6) eq 'ASCIIZ' ) {
         (undef, my $bytes_to_read) = split ":", $type;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
           or die "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
         $value = unpack "Z*", $rec;
       }
-      elsif ( $type =~ /^UTF-16-LE/ ) {
+      elsif ( substr($type, 0, 9) eq 'UTF-16-LE' ) {
         (undef, my $bytes_to_read) = split ":", $type;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
@@ -202,7 +203,7 @@ sub decode {
         $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
         $value =~ s/\0+$//;
       }
-      elsif ( $type =~ /^UTF-16-BE/ ) {
+      elsif ( substr($type, 0, 9) eq 'UTF-16-BE' ) {
         confess "UTF-16-BE not implemented";
       }
       else {
@@ -222,7 +223,7 @@ sub decode {
       $nbytes == $bytes_to_read
 	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
 
-      if ($template =~ /^U0C/) {
+      if ( substr($template, 0, 3) eq 'U0C' ) {
 	$value = pack "C*", unpack $template, $rec;
       }
       else {
@@ -373,7 +374,7 @@ sub purge_unused_data {
   delete $self->{addr};
   delete $self->{size};
   foreach my $key (keys %{$self->{data}}) {
-    if ( $key =~ /^unknown/ ) {
+    if ( substr($key, 0, 4) eq 'unkn' ) {
       delete $self->{data}->{$key};
     }
     else {
