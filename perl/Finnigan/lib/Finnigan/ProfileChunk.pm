@@ -7,22 +7,23 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 
+my $preamble_0 = [
+		 "first bin"     => ['V', 'UInt32'],
+		 "nbins"         => ['V', 'UInt32'],
+		];
+
+my $preamble = [@$preamble_0, "unknown float" => ['f', 'Float32']];
+
 sub decode {
-  my ($class, $stream, $layout) = @_;
-
-  my $preamble = [
-		  "first bin"     => ['V', 'UInt32'],
-		  "nbins"         => ['V', 'UInt32'],
-		 ];
-
-  if ( $layout > 0 ) {
-    push @$preamble, ("unknown float" => ['f', 'Float32']);
+  my $self;
+  if ( $_[2] > 0 ) { # the layout flag
+    $self = Finnigan::Decoder->read($_[1], $preamble);
   }
-
-  my $self = bless Finnigan::Decoder->read($stream, $preamble), $class;
-
-  $self->iterate_scalar($stream, $self->nbins, signal => ['f', 'Float32']);
-  return $self;
+  else {
+    $self = Finnigan::Decoder->read($_[1], $preamble_0);
+  }
+  bless $self, $_[0]; # class
+  return $self->iterate_scalar($_[1], $self->{data}->{"nbins"}->{value}, signal => ['f', 'Float32']);
 }
 
 sub nbins {

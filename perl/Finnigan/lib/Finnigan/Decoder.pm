@@ -3,6 +3,7 @@ package Finnigan::Decoder;
 use 5.010000;
 use strict;
 use warnings;
+use DateTime::Format::WindowsFileTime;
 use Encode qw//;
 use Carp qw/confess/;
 
@@ -10,8 +11,6 @@ our $VERSION = '0.01';
 
 sub windows_datetime_in_bytes {
   # expects 8 arguments representing windows date in little-endian order
-
-  require DateTime::Format::WindowsFileTime;
 
   my @hex = map { sprintf "%2.2X", $_ } @_; # convert to upper-case hex
   return "null" if "@hex" eq "00 00 00 00 00 00 00 00";
@@ -42,26 +41,24 @@ sub iterate_object {
 
   my $addr = tell $stream;
 
-  my $current_element = scalar keys(%{$self->{data}}) + 1;
+  my $current_element_number = scalar keys(%{$self->{data}}) + 1;
 
-  confess qq(key "$name" already exists) if $self->item($name);
+  confess qq(key "$name" already exists) if $self->{data}->{$name};
 
   my $size = 0;
-  $self->{data}->{$name} = {};
-  $self->{data}->{$name}->{value} = [];
-  foreach my $i ( 1 .. $count ) {
-    my $value = eval{$class}->decode($stream, $any_arg);
-    $size += $value->size();
+  for (my $i = 1; $i <= $count; $i++) {
+    my $value = $class->decode($stream, $any_arg);
+    $size += $value->{size};
     push @{$self->{data}->{$name}->{value}}, $value;
   }
 
-  $self->{data}->{$name}->{seq} = $current_element;
+  $self->{data}->{$name}->{seq} = $current_element_number;
   $self->{data}->{$name}->{addr} = $addr,
   $self->{data}->{$name}->{size} = $size,
   $self->{data}->{$name}->{type} = "$class\[\]",
 
   $self->{size} += $size;
-  $self->{current_element}++;
+  $self->{current_element_number}++;
 
   return $self;
 }
@@ -72,18 +69,17 @@ sub iterate_scalar {
 
   my $addr = my $current_addr = tell $stream;
 
-  my $current_element = scalar keys(%{$self->{data}}) + 1;
+  my $current_element_number = scalar keys(%{$self->{data}}) + 1;
 
-  confess qq(key "$name" already exists) if $self->item($name);
+  confess qq(key "$name" already exists) if $self->{data}->{$name};
 
   my $size = 0;
-  $self->{data}->{$name} = {};
-  $self->{data}->{$name}->{value} = [];
-  foreach my $i ( 1 .. $count ) {
-    my ($rec, $nbytes, $value);
+  my ($rec, $nbytes);
+  my ($i, $bytes_to_read);
 
-    if ( $template eq 'varstr' ) {
-      if ( $type eq 'PascalStringWin32' ) {
+  if ( $template eq 'varstr' ) {
+    if ( $type eq 'PascalStringWin32' ) {
+      for ($i = 1; $i <= $count; $i++) {
         # read the prefix counter into $nchars
         my $bytes_to_read = 4;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
@@ -96,40 +92,53 @@ sub iterate_scalar {
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
           or die "could not read all $nchars 2-byte characters of $name at $current_addr";
-        $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
-        $nbytes += 4;
-      }
-      else {
-        confess "unknown varstr type $type";
+        $nbytes += 4; # total string length
+
+	$size += $nbytes;
+	$current_addr += $nbytes;
+
+	push @{$self->{data}->{$name}->{value}}, Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
       }
     }
     else {
-      my $bytes_to_read = length(pack($template,()));
-      $nbytes = CORE::read $stream, $rec, $bytes_to_read;
-      $nbytes == $bytes_to_read
-        or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+      confess "unknown varstr type $type";
+    }
+  }
+  else {
+    my $template_length = length(pack($template,()));
+    if ( substr($template, 0, 3) eq 'U0C' ) {
+      for ($i = 1; $i <= $count; $i++) {
+	$nbytes = CORE::read $stream, $rec, $template_length;
+	$nbytes == $template_length
+	  or die "could not read all $template_length bytes of $name at $current_addr";
 
-      if ($template =~ /^U0C/) {
-        $value = pack "C*", unpack $template, $rec;
-      }
-      else {
-        $value = unpack $template, $rec;
+	$size += $nbytes;
+	$current_addr += $nbytes;
+
+	push @{$self->{data}->{$name}->{value}}, pack ( "C*", unpack $template, $rec );
       }
     }
+    else {
+      for ($i = 1; $i <= $count; $i++) {
+	$nbytes = CORE::read $stream, $rec, $template_length;
+	$nbytes == $template_length
+	  or die "could not read all $template_length bytes of $name at $current_addr";
 
-    $size += $nbytes;
-    $current_addr += $nbytes;
+	$size += $nbytes;
+	$current_addr += $nbytes;
 
-    push @{$self->{data}->{$name}->{value}}, $value;
+	push @{$self->{data}->{$name}->{value}}, unpack ( $template, $rec );
+      }
+    }
   }
 
-  $self->{data}->{$name}->{seq} = $current_element;
+  $self->{data}->{$name}->{seq} = $current_element_number;
   $self->{data}->{$name}->{addr} = $addr,
   $self->{data}->{$name}->{size} = $size,
   $self->{data}->{$name}->{type} = $type,
 
   $self->{size} += $size;
-  $self->{current_element}++;
+  $self->{current_element_number}++;
 
   return $self;
 }
@@ -141,20 +150,20 @@ sub decode {
   my $current_addr = tell $stream;
   $self->{addr} ||= $current_addr; # assign the address only if called
                                    # the first time (because decoding
-                                   # can be done in multiple chunks).
+                                   # can be done in multiple chunks)
 
-  my $current_element = scalar keys %{$self->{data}};
+  my $current_element_number = scalar keys %{$self->{data}};
 
+  my $value;
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
-    my ($name, $desc) = ($fields->[2*$i], $fields->[2*$i+1]); # the slice form is more expensive: @{$fields}[2*$i .. 2*$i+1];
-    my ($template, $type) = @$desc;
-    my $value;
+    my $name = $fields->[2*$i];
+    my ($template, $type) = @{$fields->[2*$i+1]};
 
-    confess qq(key "$name" already exists) if $self->item($name);
+    confess qq(key "$name" already exists) if $self->{data}->{$name};
 
     if ( $template eq 'object' ) {
-      $value = eval{$type}->decode($stream, $any_arg);
-      $nbytes = $value->size();
+      $value = $type->decode($stream, $any_arg);
+      $nbytes = $value->{size};
     }
     elsif ( $template eq 'varstr' ) {
       if ( $type eq 'PascalStringWin32' ) {
@@ -222,7 +231,7 @@ sub decode {
     }
 
     $self->{data}->{$name} = {
-			      seq => $current_element + $i,
+			      seq => $current_element_number + $i,
 			      addr => $current_addr,
 			      size => $nbytes,
 			      type => $type,
@@ -231,7 +240,7 @@ sub decode {
 
     $current_addr = tell $stream;
     $self->{size} += $nbytes;
-    $self->{current_element} = $i;
+    $self->{current_element_number} = $i;
   }
 
   return $self;
@@ -256,8 +265,7 @@ sub item {
 
 sub values {
   my ($self) = @_;
-  my %values = map { $_ => $self->{data}->{$_}->{value} } keys %{$self->{data}};
-  return \%values;
+  return {map { $_ => $self->{data}->{$_}->{value} } keys %{$self->{data}}};
 }
 
 sub dump {
@@ -266,8 +274,6 @@ sub dump {
   my $addr = $self->{addr};
 
   my @keys = sort {
-    # print "item($a)->seq: " . $self->data->{$a}->{seq} . "\n";
-    # print "item($b)->seq: " . $self->data->{$b}->{seq} . "\n\n";
     $self->data->{$a}->{seq} <=> $self->data->{$b}->{seq}
   } keys %{$self->{data}};
 
@@ -363,7 +369,7 @@ sub dump {
 
 sub purge_unused_data {
   my $self = shift;
-  delete $self->{current_element};
+  delete $self->{current_element_number};
   delete $self->{addr};
   delete $self->{size};
   foreach my $key (keys %{$self->{data}}) {

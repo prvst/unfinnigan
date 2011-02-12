@@ -8,16 +8,13 @@ use base 'Finnigan::Decoder';
 
 use overload ('""' => 'stringify');
 
+my $fields = [
+	      "mz"        => ['f', 'Float32'],
+	      "abundance" => ['f', 'Float32'],
+	     ];
+
 sub decode {
-  my ($class, $stream) = @_;
-
-  my $fields = [
-		"mz"        => ['f', 'Float32'],
-		"abundance" => ['f', 'Float32'],
-	       ];
-  my $self = Finnigan::Decoder->read($stream, $fields);
-
-  return bless $self, $class;
+  return bless Finnigan::Decoder->read($_[1], $fields), $_[0];
 }
 
 sub mz {

@@ -9,15 +9,14 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
  
 
+my @fields = (
+	      "low mz"  => ['d', 'Float64'],
+	      "high mz" => ['d', 'Float64'],
+	     );
+
 sub decode {
   my ($class, $stream) = @_;
-
-  my @fields = (
-		"low mz"  => ['d', 'Float64'],
-		"high mz" => ['d', 'Float64'],
-	       );
   my $self = Finnigan::Decoder->read($stream, \@fields);
-
   return bless $self, $class;
 }
 
@@ -31,8 +30,8 @@ sub high {
 
 sub stringify {
   my $self = shift;
-  my $low = sprintf("%.2f", $self->low);
-  my $high = sprintf("%.2f", $self->high);
+  my $low = sprintf("%.2f", $self->{data}->{"low mz"}->{value});
+  my $high = sprintf("%.2f", $self->{data}->{"high mz"}->{value});
   return "[$low-$high]";
 }
 

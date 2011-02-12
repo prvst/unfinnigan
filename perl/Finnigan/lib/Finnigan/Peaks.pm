@@ -8,33 +8,32 @@ use base 'Finnigan::Decoder';
 
 
 sub decode {
-  my ($class, $stream) = @_;
-
-  my $self = bless Finnigan::Decoder->read($stream, ["count" => ['V', 'UInt32']]), $class;
-
-  $self->iterate_object($stream, $self->count, peaks => 'Finnigan::Peak');
-  return $self;
+  my $self = bless Finnigan::Decoder->read($_[1], ["count" => ['V', 'UInt32']]), $_[0];
+  return $self->iterate_object(
+                               $_[1],
+                               $self->{data}->{count}->{value},
+                               peaks => 'Finnigan::Peak'
+                              );
 }
 
 sub count {
-  shift->{data}->{"count"}->{value};
+  shift->{data}->{count}->{value};
 }
 
 sub peaks {
-  shift->{data}->{"peaks"}->{value};
+  shift->{data}->{peaks}->{value};
 }
 
 sub peak {
-  shift->{data}->{"peaks"}->{value};
+  shift->{data}->{peaks}->{value};
 }
 
 sub all {
-  my $self = shift;
-  my @list;
-  foreach my $peak ( @{$self->peaks} ) {
-    push @list, [$peak->mz, $peak->abundance];
-  }
-  return \@list;
+  my $d;
+  return [
+          map {$d = $_->{data}; [$d->{mz}->{value}, $d->{abundance}->{value}]}
+          @{$_[0]->{data}->{peaks}->{value}}
+         ];
 }
 
 sub list {
