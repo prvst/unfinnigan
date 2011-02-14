@@ -437,7 +437,15 @@ sub list {
 }
 
 sub corona {
-  shift->{data}->{corona}->{value};
+  my $key = "corona";
+  if ( $_[1] ) { # decode
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    shift->{data}->{corona}->{value};
+  }
 }
 
 sub polarity {
@@ -453,7 +461,15 @@ sub polarity {
 }
 
 sub scan_mode {
-  $_[0]->{data}->{"scan mode"}->{value};
+  my $key = "scan mode";
+  if ( $_[1] ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    $_[0]->{data}->{$key}->{value};
+  }
 }
 
 sub detector {
@@ -520,6 +536,18 @@ sub ionization {
   }
 }
 
+sub wideband {
+  my $key = "wideband";
+  if ( $_[1] ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	: $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    $_[0]->{data}->{$key}->{value};
+  }
+}
+
 sub stringify {
   my $self = shift;
 
@@ -528,9 +556,9 @@ sub stringify {
   $self->analyzer(decode => 1)
     . " " . $polarity_symbol{$self->polarity}
       . " " . $scan_mode_symbol{$self->scan_mode}
-  	. " " . $self->ionization(decode => 1)
+  	. " " . $self->ionization('decode')
 	  . $dependent_symbol{$self->dependent}
-	    . " " . $self->scan_type(decode => 1)
+	    . " " . $self->scan_type('decode')
 	      . " " . $ms_power_symbol{$self->ms_power}
 }
 

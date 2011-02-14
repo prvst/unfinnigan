@@ -10,7 +10,6 @@ bin/uf-scan
 bin/uf-seqrow
 bin/uf-trailer
 Changes
-Finnigan-0.01.tar.gz
 lib/Finnigan.pm
 lib/Finnigan/AuditTag.pm
 lib/Finnigan/CASInfo.pm
