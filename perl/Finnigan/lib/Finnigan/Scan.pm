@@ -1,23 +1,4 @@
-package Finnigan::Scan::CentroidList;
-
-sub new {
-  my ($class, $buf) = @_;
-  my $self = {count => unpack 'V', $buf};
-  my $offset = 4; # V
-
-  my $chunk;
-  foreach my $i (0 .. $self->{count} - 1) {
-    push @{$self->{peaks}}, [unpack "x${offset} ff", $buf];
-    $offset += 8;
-  }
-
-  return bless $self, $class;
-}
-
-sub list {
-  shift->{peaks};
-}
-
+# ----------------------------------------------------------------------------------------
 package Finnigan::Scan::Profile;
 
 sub new {
@@ -50,6 +31,10 @@ sub inverse_converter {
 
 sub set_inverse_converter {
   $_[0]->{"inverse converter"} = $_[1];
+}
+
+sub peak_count {
+  $_[0]->{"peak count"};
 }
 
 sub bins {
@@ -128,7 +113,120 @@ sub bins {
   return \@list;
 }
 
+sub find_peak_intensity {
+  # Finds the nearest peak in the profile for a given query value.
+  # One possible use is to look up the precursor ion intensity, since
+  # it is not stored as a separate item anywhere in the data file.
+  my ($self, $query) = @_;
+  my $raw_query = &{$self->{"inverse converter"}}($query);
+  my $max_dist = 0.05; # kHz
 
+  # find the closest chunk
+  my ($nearest_chunk, $dist) = $self->find_chunk($raw_query);
+  if ($dist > $max_dist) {
+    say STDERR "could not find a profile peak within ${max_dist} kHz of the target frequency $raw_query ($query M/z)";
+    return undef;
+  }
+
+  my @chunk_ix = ($nearest_chunk);
+  $i = $nearest_chunk;
+  while ( $i < $self->{"peak count"} - 1 and $self->chunk_dist($i, $i++) <= 0.05 ) { # kHz
+    push @chunk_ix, $i;
+  }
+  $i = $nearest_chunk;
+  while ( $i > 0 and $self->chunk_dist($i, $i--) <= 0.05 ) { # kHz
+    push @chunk_ix, $i;
+  }
+
+  return (sort {$b <=> $a} map {$self->chunk_max($_)} @chunk_ix)[0]; # max. intensity
+}
+
+sub chunk_dist {
+  # find the gap distance between the chunks
+  my ($self, $i, $j) = @_;
+  my ($chunk_i, $chunk_j) = ($self->{chunks}->[$i], $self->{chunks}->[$j]);
+  my $start = $self->{"first value"};
+  my $step = $self->{step};
+  my $min_i = $start + ($chunk_i->{"first bin"} - 1) * $step;
+  my $max_i = $min_i + $chunk_i->{nbins} * $step;
+  my $min_j = $start + ($chunk_j->{"first bin"} - 1) * $step;
+  my $max_j = $min_j + $chunk_j->{nbins} * $step;
+  my $dist = (sort {$a <=> $b}
+	      (
+	       abs($min_i - $min_j),
+	       abs($min_i - $max_j),
+	       abs($max_i - $min_j),
+	       abs($max_i - $max_j)
+	      )
+	     )[0];
+  return $dist;
+}
+
+sub chunk_max {
+  my ($self, $num) = @_;
+  my $chunk = $self->{chunks}->[$num];
+  my $max = 0;
+  foreach my $i ( 0 .. $chunk->{nbins} - 1) {
+    my $intensity = $chunk->{signal}->[$i];
+    $max = $intensity if $intensity > $max;
+  }
+  return $max;
+}
+
+sub find_chunk {
+  # Use binary search to find a pair of profile chunks
+  # in the (sorted) chunk list surrounding the probe value
+
+  my ( $self, $value) = @_;
+  my $chunks = $self->{chunks};
+  my $first_value = $self->{"first value"};
+  my $step = $self->{step};
+  my ( $lower, $upper, $low_ix, $high_ix, $cur );
+  my $safety_count = 15;
+
+  ( $upper, $lower ) = ( $first_value, $first_value + $step * $self->{nbins} ) ;
+  if ( $value < $lower or $value > $upper ) {
+    return undef;
+  }
+  else {
+    ( $low_ix, $high_ix ) = ( 0, $self->{"peak count"});
+    while ( $low_ix < $high_ix ) {
+      die "broken find_chunk algorithm" unless $safety_count--;
+      $cur = int ( ( $low_ix + $high_ix ) / 2 );
+      my $chunk = $chunks->[$cur];
+      $upper = $first_value + $chunk->{"first bin"} * $step;
+      $lower = $upper + $chunk->{nbins} * $step;
+      # say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
+      if ( $value >= $lower and $value <= $upper ) {
+	# say STDERR "      direct hit";
+	return ($cur, 0);
+      }
+      if ( $value > $upper ) {
+	# say STDERR "      shifting up";
+        $high_ix = $cur;
+      }
+      if ( $value < $lower ) {
+	# say STDERR "      shifting down";
+        $low_ix = $cur + 1;
+      }
+      # say STDERR "The remainder: $low_ix, $high_ix";
+    }
+    # say STDERR "The final remainder: $low_ix, $high_ix";
+  }
+
+  if ( $low_ix == $high_ix ) {
+    # this is the closest chunk, still some distance away from the probe
+    my $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0]; # minimal distance
+    # say STDERR "      no match, $low_ix = $cur, $value [$lower, $upper], dist: $dist";
+    return ($cur, $dist);
+  }
+  else {
+    die "unexpected condition";
+  }
+}
+
+
+# ----------------------------------------------------------------------------------------
 package Finnigan::Scan::ProfileChunk;
 
 sub new {
@@ -150,7 +248,31 @@ sub new {
   return bless $self, $class;
 }
 
+# ----------------------------------------------------------------------------------------
+package Finnigan::Scan::CentroidList;
 
+sub new {
+  my ($class, $buf) = @_;
+  my $self = {count => unpack 'V', $buf};
+  my $offset = 4; # V
+
+  my $chunk;
+  foreach my $i (0 .. $self->{count} - 1) {
+    push @{$self->{peaks}}, [unpack "x${offset} ff", $buf];
+    $offset += 8;
+  }
+
+  return bless $self, $class;
+}
+
+sub list {
+  shift->{peaks};
+}
+
+sub count {
+  shift->{count};
+}
+# ----------------------------------------------------------------------------------------
 package Finnigan::Scan;
 
 use strict;
