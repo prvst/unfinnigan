@@ -36,7 +36,7 @@ sub stringify {
   my $self = shift;
   my $precursor = sprintf("%.2f", $self->precursor);
   my $energy = sprintf("%.2f", $self->energy);
-  return "$precursor\@cid$energy";
+  return "$precursor\@$Finnigan::activationMethod$energy";
 }
 
 1;
