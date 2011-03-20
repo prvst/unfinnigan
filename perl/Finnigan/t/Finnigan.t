@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 90;
+use Test::More tests => 92;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -136,6 +136,9 @@ is ($scan_event->fraction_collector->stringify, "[110.00-460.00]", "ScanEvent->f
 is ($scan_event->np, 1, "ScanEvent->np");
 my $pr = join ", ", map {"$_"} @{$scan_event->precursors};
 is ($pr, '445.12@cid35.00', "ScanEvent->precursors (2)");
+$Finnigan::activationMethod = 'ecd';
+$pr = $scan_event->precursors->[0]->stringify;
+is ($pr, '445.12@ecd35.00', "ScanEvent->precursors (3: activation method)");
 
 # read the first scan
 seek INPUT, $data_addr, 0;
@@ -177,6 +180,7 @@ is ($bins->[0]->[0], 400.209152455266, "Scan->profile->bins (Mz)");
 is ($bins->[0]->[1], 447.530578613281, "Scan->profile->bins (signal)");
 
 my $c = $scan->centroids;
+is ($c->count, 580, "Scan->centroids->count");
 is ($c->list->[0]->[0], 400.212463378906, "Scan->centroids->list (Mz)");
 is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
 
