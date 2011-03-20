@@ -13,9 +13,12 @@ use Storable qw(freeze thaw);
 use MIME::Base64;
 use Devel::Size qw(size total_size);
 
+# test case:
+#  uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
 
 my $args = new Getopt::Declare q{
   [strict]
+  -a[ctivationMethod] <symbol>          specify ion activation method [CID by default]
   -c[entroids]				write the list of centroided peaks instead of the scan profile
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
   <file>				input file [required]
@@ -28,6 +31,9 @@ my $file = $args->{"<file>"};
 -s $file or die "'$file' has zero size";
 
 # -----------------------------------------------------------------------------
+
+$Finnigan::activationMethod = lc $args->{-a}{"<symbol"} if exists $args->{-a};
+
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
@@ -79,7 +85,7 @@ foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT)->values;
 }
 
-say STDERR "scan index size: " . total_size(\%scan_index)/1024/1024;
+say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
 
 # ---------------------------------------------------------------------
 # Now go read the trailer. Because the trailer records are of variable
@@ -174,17 +180,17 @@ foreach my $i ( $first_scan - 1.. $last_scan - 1) {
 # itself
 
 my $parent_scan_data; # for looking up the precursor ion for each of
-                      # the dependent MS2
+                      # the dependent MS2 scans
 
 my %scan_data;
-open SCANDATA, ">unfinnigan-scandata"
-  or die "cannot open temp file 'unfinnigan-scandata': $!";
+open SCANDATA, ">unfinnigan-scandata.$$"
+  or die "cannot open temp file 'unfinnigan-scandata.$$': $!";
 binmode SCANDATA;
 
 my $xmlgen = XML::Generator->new(
 				 pretty => 1,
-#				 conformance => 'strict',
-				 namespace => ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.0'],
+				 # conformance => 'strict',
+				 namespace => ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
 				);
 
 
@@ -255,10 +261,10 @@ tie my %convSoftwareAttr, 'Tie::IxHash';
                     );
 
 my $xml = $xmlgen->mzXML(
-  ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.0'],
+  ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
   {
    'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
-   'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.0 http://sashimi.sourceforge.net/schema_revision/mzXML_3.0/mzXML_idx_3.0.xsd'
+   'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.1 http://sashimi.sourceforge.net/schema_revision/mzXML_3.1/mzXML_idx_3.1.xsd'
   },
   $xmlgen->msRun(\%msRunAttr,
     $xmlgen->parentFile(\%parentFileAttr),
@@ -276,9 +282,9 @@ my $xml = $xmlgen->mzXML(
     ),
     map {
       my $n = $_;
-      say STDERR "in outer map ($n)";
+      # say STDERR "in outer map ($n)";
       my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
-#      say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+      # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
       tie my %peakAttr, 'Tie::IxHash';
       %peakAttr = (
         precision       => 32,
@@ -292,14 +298,14 @@ my $xml = $xmlgen->mzXML(
         $xmlgen->peaks(\%peakAttr, "=== cut ==="),
         map {
           my $n = $_;
-          say STDERR "  in inner map ($n)";
+          # say STDERR "  in inner map ($n)";
           my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
 
           tie my %precursorAttr, 'Tie::IxHash';
           %precursorAttr = (
             precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
             precursorCharge     => $charge_state{$n-1},
-            activationMethod    => "unknown",
+            activationMethod    => $Finnigan::activationMethod,
           );
 
           tie my %peaksAttr, 'Tie::IxHash';
@@ -326,9 +332,10 @@ say STDERR "xml object size: " . total_size($xml);
 my @xml_chunk = split "=== cut ===", "$xml";
 
 close SCANDATA;
-open SCANDATA, "<unfinnigan-scandata"
-  or die "cannot open temp file 'unfinnigan-scandata': $!";
+open SCANDATA, "<unfinnigan-scandata.$$"
+  or die "cannot open temp file 'unfinnigan-scandata.$$': $!";
 
+say '<?xml version="1.0" encoding="ISO-8859-1"?>';
 
 my %xml_scan_offset;
 foreach my $n ( $from .. $to ) {
@@ -371,7 +378,7 @@ say " <sha1></sha1>";
 say "</mzXML>";
 
 close SCANDATA;
-unlink "unfinnigan-scandata";
+unlink "unfinnigan-scandata.$$";
 
 sub min($$) { $_[$_[0] > $_[1]] }
 
@@ -402,31 +409,44 @@ sub read_scan {
 
   seek INPUT, $data_addr + $scan_index->{$i}->{offset}, 0;
 
-  my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+  my $scan = Finnigan::Scan->decode( \*INPUT );
+  my $ph = $scan->header;
   my $profile;
-  $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
+  $profile = $scan->profile if $ph->profile_size;
+  if ( $profile ) {
+    $profile->set_converter($scan_event->{$i}->converter);
+    $profile->set_inverse_converter($scan_event->{$i}->inverse_converter);
+  }
   my $peaks;
-  $peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
-
+  $peaks = $scan->centroids if $ph->peak_list_size;
   my $ms_power = $scan_event->{$i}->preamble->ms_power;
+  if ( $ms_power == 1 ) {
+    $parent_scan_data = $profile ? $profile : $peaks;
+    $parent_scan_data->{"scan number"} = $n;
+  }
 
-  # if there are no called peaks, treat the profile as a set of peaks
+  # the M/z range; use the full range for now; consider adding a command-line argument;
+  my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
+
   my $peakCount;
   if ( exists $args->{-c} ) {
     $peakCount = $peaks->count;
-  }
-  else {
-    # the M/z range; set it to full range, until the command-line argumnet is added
-    my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
-    if ( $profile ) {
-      $profile->set_converter($scan_event->{$i}->converter);
-      $profile->set_inverse_converter($scan_event->{$i}->inverse_converter);
+    if ( $peakCount ) {
+      say STDERR "freezing peak list $scan_event->{$i} at $i";
+      my $pos = tell SCANDATA;
+      print SCANDATA freeze $peaks->list;
+      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
+    }
+    elsif ( $profile ) {
+      # if there are no called peaks, treat the profile as a set of peaks
       my $bins;
       if ( $profile->peak_count > 1) {
-        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+	$bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
       }
-      else {
-        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+      else { # the profile is stored as one huge set of bins
+	$bins = $profile->bins($range); # this call implicitly uses the forward converter
+	use Data::Dumper;
+	print Dumper($bins);
       }
       $peakCount = scalar @$bins;      
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
@@ -434,20 +454,32 @@ sub read_scan {
       print SCANDATA freeze $bins;
       $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
     }
-    elsif ( $peaks ) {
-      say STDERR "freezing peak list $scan_event->{$i} at $i";
-      my $pos = tell SCANDATA;
-      print SCANDATA freeze $peaks->all;
-      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
-    }
     else {
       die "no data in scan $i?";
     }
-    if ( $ms_power == 1 ) {
-      $parent_scan_data = $profile ? $profile : $peaks;
+  }
+  else {
+    say STDERR "reading the profile...";
+    # simply read the profile and ignore the centroids
+    if ( $profile ) {
+      my $bins;
+      if ( $profile->peak_count > 1) {
+	$bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+      }
+      else {
+	$bins = $profile->bins($range); # this call implicitly uses the forward converter
+      }
+      $peakCount = scalar @$bins;      
+      say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
+      my $pos = tell SCANDATA;
+      print SCANDATA freeze $bins;
+      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
+    }
+    else {
+      say STDERR "No profile in scan $n? Try to extract centroids by adding the -c option";
+      exit -1;
     }
   }
-  
   my %polarity_symbol = (
                          0 => "-",
                          1 => "+",
@@ -471,10 +503,12 @@ sub read_scan {
               );
   if ( $ms_power == 2 ) {
     $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
-    my $precursor_mz = $scan_event{$i}->reaction->precursor;
-    my $precursor_peak = $parent_scan_data->find_precursor_peak($precursor_mz);
-    $precursor_peak->{Mz} = $precursor_mz;
-    return (\%scanAttr, $precursor_peak);
+    my $prec_mz = $scan_event{$i}->reaction->precursor;
+    return (\%scanAttr, {
+			 Mz => $prec_mz,
+			 intensity => $parent_scan_data->find_peak_intensity($prec_mz)
+			}
+	   );
   }
   else {
     return (\%scanAttr);
@@ -523,7 +557,7 @@ uf-mzxml [options] file
 
  Options:
 
-  -a[ll]		        process all ScanEvent objects
+  -a[ll]                        process all ScanEvent objects
   -c[oefficients]		print the table of conversion coefficients
   -n[unmber] <n:0+n>		extract ScanEvent number <n>
   -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
