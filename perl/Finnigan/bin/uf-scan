@@ -272,7 +272,7 @@ uf-mzxml
 
   (will print the list of centroids in the 1st scan; note that B<uf-scan> will not calculate the peak centroids from the profile; it will only list the existing centroids, if they are present)
 
- uf-scan -plot -n 1 -mz 445.0..445.2 sample.raw | R --vanilla --slave > plot.eps
+ uf-scan -plot -n 1 -mz 445.0 .. 445.2 sample.raw | R --vanilla --slave > plot.eps
 
   (This command will call R to plot the profile in a range of the M/z values. If the called peaks are present, they will be shown as dots on the graph)
 
