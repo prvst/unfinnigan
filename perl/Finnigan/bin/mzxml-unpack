@@ -27,7 +27,7 @@ my $from = exists $args->{-r} ? $args->{-r}{"<from>"} : 0;
 my $to = exists $args->{-r} ? $args->{-r}{"<to>"} : 2**31 - 1;
 die "inverted range: [$from .. $to]" if $from > $to;
 
-$/ = "</peaks>\n";
+$/ = "</peaks>";
 while ( <> ) {
   if ( s/(<peaks[^>]+>)(.*)$// ) {
     my ($tag, $data) = ($1, $2);
@@ -50,6 +50,6 @@ while ( <> ) {
     say "</peaks>";
   }
   else {
-    print;
+    #print;
   }
 }
