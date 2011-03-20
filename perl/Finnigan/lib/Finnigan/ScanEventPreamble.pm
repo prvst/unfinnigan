@@ -379,6 +379,12 @@ my %dependent_symbol = (
                         1 => " d",
                        );
 
+my %wideband_symbol = (
+                        0 => "",
+                        1 => " w",
+		        2 => "",
+                       );
+
 my %ms_power_symbol = (
                        0 => "?",
                        1 => "ms",
@@ -558,8 +564,9 @@ sub stringify {
       . " " . $scan_mode_symbol{$self->scan_mode}
   	. " " . $self->ionization('decode')
 	  . $dependent_symbol{$self->dependent}
-	    . " " . $self->scan_type('decode')
-	      . " " . $ms_power_symbol{$self->ms_power}
+	    . $wideband_symbol{$self->wideband}
+	      . " " . $self->scan_type('decode')
+		. " " . $ms_power_symbol{$self->ms_power}
 }
 
 1;
