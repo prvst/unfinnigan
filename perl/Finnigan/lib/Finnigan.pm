@@ -7,6 +7,8 @@ use Module::Find qw/findsubmod/;
 
 our $VERSION = '0.02';
 
+$Finnigan::activationMethod = 'cid';
+
 my @modules = findsubmod __PACKAGE__;
 
 map { eval "require $_" } @modules;
