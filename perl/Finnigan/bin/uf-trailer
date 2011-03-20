@@ -14,6 +14,7 @@ my $args = new Getopt::Declare q{
   [mutex: -a -n]
   [mutex: -a -range]
   [mutex: -n -range]
+  [mutex: -c -d]
   -a[ll]		        process all ScanEvent objects
   -c[oefficients]		print the table of conversion coefficients
   -n[unmber] <n:0+n>		extract ScanEvent number <n>
@@ -154,9 +155,25 @@ foreach my $i ( 0 .. $trailer_length - 1) {
     else {
       $e->dump(relative => exists $args->{-r});
     }
+
+    if ($e->precursors) {
+      foreach my $p ( @{ $e->precursors } ) {
+	say "---------------------- precursors --------------------";
+	if ( exists $args->{-h} ) {
+	  $p->dump(style => 'html', relative => exists $args->{-r});
+	}
+	elsif ( exists $args->{-w} ) {
+	  $p->dump(style => 'wiki', relative => exists $args->{-r});
+	}
+	else {
+	  $p->dump(relative => exists $args->{-r});
+	}
+      }
+    }
+
   }
   elsif ( exists $args->{-c} ) {
-    unless ( $e->precursors ) {
+    if ( $e->nparam ) {
       if ($e->nparam == 4) {
 	say join("\t", $n, $e->unknown_double, $e->A, $e->B, $e->C);
       }
@@ -164,6 +181,11 @@ foreach my $i ( 0 .. $trailer_length - 1) {
 	say join("\t", $n, $e->unknown_double, $e->I, $e->A, $e->B, $e->C, $e->D, $e->E);
       }
     }
+    else {
+      say STDERR "no raw profile in this scan";
+    }
+  }
+  elsif ( exists $args->{-p} ) {
   }
   else { # no arguments given
     say "$n\t$e"; # it stringifies itself
