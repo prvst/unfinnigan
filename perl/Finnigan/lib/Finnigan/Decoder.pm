@@ -7,8 +7,6 @@ use DateTime::Format::WindowsFileTime;
 use Encode qw//;
 use Carp qw/confess/;
 
-our $VERSION = '0.01';
-
 sub windows_datetime_in_bytes {
   # expects 8 arguments representing windows date in little-endian order
 
