@@ -19,9 +19,9 @@ use Devel::Size qw(size total_size);
 my $args = new Getopt::Declare q{
   [strict]
   -a[ctivationMethod] <symbol>          specify ion activation method [CID by default]
-  -c[entroids]				write the list of centroided peaks instead of the scan profile
-  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
-  <file>				input file [required]
+  -c[entroids]                          write peak centroids instead of scan profiles
+  -r[ange] <from:0+n> .. <to:0+n>       write only scans with numbers between <from> and <to>
+  <file>                                input file [required]
 }
   or exit(-1);
 
@@ -188,10 +188,10 @@ open SCANDATA, ">unfinnigan-scandata.$$"
 binmode SCANDATA;
 
 my $xmlgen = XML::Generator->new(
-				 pretty => 1,
-				 # conformance => 'strict',
-				 namespace => ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
-				);
+                                 pretty => 1,
+                                 # conformance => 'strict',
+                                 namespace => ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
+                                );
 
 
 tie my %msRunAttr, 'Tie::IxHash';
@@ -441,12 +441,12 @@ sub read_scan {
       # if there are no called peaks, treat the profile as a set of peaks
       my $bins;
       if ( $profile->peak_count > 1) {
-	$bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
       }
       else { # the profile is stored as one huge set of bins
-	$bins = $profile->bins($range); # this call implicitly uses the forward converter
-	use Data::Dumper;
-	print Dumper($bins);
+        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+        use Data::Dumper;
+        print Dumper($bins);
       }
       $peakCount = scalar @$bins;      
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
@@ -464,10 +464,10 @@ sub read_scan {
     if ( $profile ) {
       my $bins;
       if ( $profile->peak_count > 1) {
-	$bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
       }
       else {
-	$bins = $profile->bins($range); # this call implicitly uses the forward converter
+        $bins = $profile->bins($range); # this call implicitly uses the forward converter
       }
       $peakCount = scalar @$bins;      
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
@@ -505,10 +505,10 @@ sub read_scan {
     $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
     my $prec_mz = $scan_event{$i}->reaction->precursor;
     return (\%scanAttr, {
-			 Mz => $prec_mz,
-			 intensity => $parent_scan_data->find_peak_intensity($prec_mz)
-			}
-	   );
+                         Mz => $prec_mz,
+                         intensity => $parent_scan_data->find_peak_intensity($prec_mz)
+                        }
+           );
   }
   else {
     return (\%scanAttr);
@@ -549,7 +549,7 @@ sub get_stat_info {  ## this will only work in Linux
 __END__
 =head1 NAME
 
-uf-mzxml - decode the ScanEvent structures in a Finnigan raw file "trailer"
+uf-mzxml - convert a Finnigan raw file to mzXML
 
 =head1 SYNOPSIS
 
@@ -557,15 +557,11 @@ uf-mzxml [options] file
 
  Options:
 
-  -a[ll]                        process all ScanEvent objects
-  -c[oefficients]		print the table of conversion coefficients
-  -n[unmber] <n:0+n>		extract ScanEvent number <n>
-  -range <from:0+n> .. <to:0+n>	extract ScanEvent objects with numbers between <from> and <to>
-  -d[ump]			dump all data in each ScanEvent
-  -h[tml]			dump as html
-  -w[iki]			dump in wiki table format
-  -r[elative]			show relative addersess in dump
-  <file>			input file
+  [strict]
+  -a[ctivationMethod] <symbol>          specify ion activation method [CID by default]
+  -c[entroids]                          write peak centroids instead of scan profiles
+  -r[ange] <from:0+n> .. <to:0+n>       write only scans with numbers between <from> and <to>
+  <file>                                input file
 
 =head1 OPTIONS
 
@@ -573,9 +569,9 @@ uf-mzxml [options] file
 
 =item B<-help>
 
-Print a brief help message and exits.
+Prints a brief help message and exits.
 
-=item B<-d[ump]>
+=item B<-a[ctivationMethod] symbol>
 
 Prints a table listing all fields in ScanEvent entries, with their seek
 addresses, sizes, names and values. Individual entries can be selected
