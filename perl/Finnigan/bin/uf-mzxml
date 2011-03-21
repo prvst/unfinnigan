@@ -18,10 +18,10 @@ use Devel::Size qw(size total_size);
 
 my $args = new Getopt::Declare q{
   [strict]
-  -a[ctivationMethod] <symbol>          specify ion activation method [CID by default]
-  -c[entroids]                          write peak centroids instead of scan profiles
-  -r[ange] <from:0+n> .. <to:0+n>       write only scans with numbers between <from> and <to>
-  <file>                                input file [required]
+  -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
+  -c[entroids]				write peak centroids instead of scan profiles
+  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
+  <file>				input file [required]
 }
   or exit(-1);
 
@@ -557,11 +557,10 @@ uf-mzxml [options] file
 
  Options:
 
-  [strict]
-  -a[ctivationMethod] <symbol>          specify ion activation method [CID by default]
-  -c[entroids]                          write peak centroids instead of scan profiles
-  -r[ange] <from:0+n> .. <to:0+n>       write only scans with numbers between <from> and <to>
-  <file>                                input file
+  -a[ctivationMethod] <symbol>     specify ion activation method [CID by default]
+  -c[entroids]                     write peak centroids instead of scan profiles
+  -r[ange] <from> .. <to>          write only scans with numbers between <from> and <to>
+  <file>                           input file
 
 =head1 OPTIONS
 
@@ -571,76 +570,38 @@ uf-mzxml [options] file
 
 Prints a brief help message and exits.
 
-=item B<-a[ctivationMethod] symbol>
+=item B<-a[ctivationMethod] <symbolE<gt>>
 
-Prints a table listing all fields in ScanEvent entries, with their seek
-addresses, sizes, names and values. Individual entries can be selected
-with the B<-n[umber]> option or with the B<-range> option.
+Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzXML> attribute set to 'CID' (Collision-Induced Dissociation). It is going to be a valid assumption in most cases. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
 
-=item B<-n[umber]>
+=item B<-c[entroids]>
 
-Gives the number of a single ScanEvent to process
+Prefer centroids to raw profiles.
 
-=item B<-r[ange]>
+B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, it will be skipped.
 
-Selects a range of the ScanEvent records to process
+=item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
 
-=item B<-h[tml]>
+Selects a range of scans records to process.
 
-Format the dump output as an html table. When multiple entries are
-specified, each will be rendered in its own table
+B<Note:> in order to form a nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Oherwise, the program will crash with the following message:
 
-=item B<-w[iki]>
+  C<Can't use an undefined value as an ARRAY reference...>
 
-Format the dump output as a wiki table.
-
-=item B<-r[elative]>
-
-Show relative addresses of all itmes in the dump. The default is to
-show the absolute seek address. (works with the -d[ump] option)
-
-=item B<-a[ll]>
-
-Process all entries, including those that may lie outside the declared
-range. It appears as though it can be possible to find more index
-entries in the file than would fit between the first and the last scan
-numbers specified in RunHeader/SampleInfo. In that case, in the
-absence of the -all option, the entries will be enumerated according
-to ScanIndex, which will be treated as a linked list -- starting with
-the entry whose index matches the first scan number.
-
-=back
-
-=head1 DESCRIPTION
-
-B<uf-mzxml> can be used to list or dump the ScanEvent records in a
-Finnigan raw file. These records are stored in a stream Thermo calls a
-"trailer", which follows the data stream. Now, the "trailer"
-containing scan event descriptions is not the only stream trailing the
-data; apparently, new ones were added as the format evolved, but the
-name stuck. The code in Thermo libraries refers to this stream as
-"TrailerScanEvent".
+To detrmine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
 
 =head1 SEE ALSO
 
-Finnigan::ScanEvent
-Finnigan::ScanEventPreamble
-Finnigan::FractionCollector
-Finnigan::Reaction
+Finnigan::Scan
+Finnigan::Profile
+Finnigan::ProfileChunk
+uf-trailer
 
-=head1 EXAMPLES
+=head1 EXAMPLE
 
-uf-mzxml sample.raw 
+ uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
 
-  (will list all scan events in the file in Thermo's short-hand notation)
-
-uf-mzxml -range 1..5 sample.raw
-
-  (will list the first five records)
-
-uf-mzxml -drn 5 ~/shared/test/sample4.raw 
-
-  (will dump the fifth ScanEvent with relative addresses)
+  (extract peak centroids from scans 350 through 352)
 
 =cut
 
