@@ -11,6 +11,7 @@ use XML::Generator;
 use Tie::IxHash;
 use Storable qw(freeze thaw);
 use MIME::Base64;
+use File::Temp;
 use Devel::Size qw(size total_size);
 
 # test case:
@@ -183,9 +184,8 @@ my $parent_scan_data; # for looking up the precursor ion for each of
                       # the dependent MS2 scans
 
 my %scan_data;
-open SCANDATA, ">unfinnigan-scandata.$$"
-  or die "cannot open temp file 'unfinnigan-scandata.$$': $!";
-binmode SCANDATA;
+my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.dat' );
+binmode $scandata_fh;
 
 my $xmlgen = XML::Generator->new(
                                  pretty => 1,
@@ -249,9 +249,9 @@ tie my %acqSoftwareAttr, 'Tie::IxHash';
                 );
 
 tie my %dataProcessingAttr, 'Tie::IxHash';
-%dataProcessingAttr = (
-                       # centroided => 1,
-                      );
+if ( exists $args->{-c} ) {
+  $dataProcessingAttr{centroided}++;
+}
 
 tie my %convSoftwareAttr, 'Tie::IxHash';
 %convSoftwareAttr = (
@@ -331,10 +331,6 @@ say STDERR "xml object size: " . total_size($xml);
 
 my @xml_chunk = split "=== cut ===", "$xml";
 
-close SCANDATA;
-open SCANDATA, "<unfinnigan-scandata.$$"
-  or die "cannot open temp file 'unfinnigan-scandata.$$': $!";
-
 say '<?xml version="1.0" encoding="ISO-8859-1"?>';
 
 my %xml_scan_offset;
@@ -344,8 +340,8 @@ foreach my $n ( $from .. $to ) {
 
   my $rec;
   my ($pos, $bytes_to_read) = @{$scan_data{$i}};
-  seek SCANDATA, $pos, 0;
-  my $nbytes = read SCANDATA, $rec, $bytes_to_read;
+  seek $scandata_fh, $pos, 0;
+  my $nbytes = read $scandata_fh, $rec, $bytes_to_read;
   $nbytes == $bytes_to_read
     or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
   my $peaks = thaw $rec;
@@ -377,8 +373,7 @@ say " <indexOffset>$index_offset</indexOffset>";
 say " <sha1></sha1>";
 say "</mzXML>";
 
-close SCANDATA;
-unlink "unfinnigan-scandata.$$";
+close $scandata_fh;
 
 sub min($$) { $_[$_[0] > $_[1]] }
 
@@ -433,9 +428,9 @@ sub read_scan {
     $peakCount = $peaks->count;
     if ( $peakCount ) {
       say STDERR "freezing peak list $scan_event->{$i} at $i";
-      my $pos = tell SCANDATA;
-      print SCANDATA freeze $peaks->list;
-      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
+      my $pos = tell $scandata_fh;
+      print $scandata_fh freeze $peaks->list;
+      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
     }
     elsif ( $profile ) {
       # if there are no called peaks, treat the profile as a set of peaks
@@ -450,9 +445,9 @@ sub read_scan {
       }
       $peakCount = scalar @$bins;      
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
-      my $pos = tell SCANDATA;
-      print SCANDATA freeze $bins;
-      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
+      my $pos = tell $scandata_fh;
+      print $scandata_fh freeze $bins;
+      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
     }
     else {
       die "no data in scan $i?";
@@ -471,9 +466,9 @@ sub read_scan {
       }
       $peakCount = scalar @$bins;      
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
-      my $pos = tell SCANDATA;
-      print SCANDATA freeze $bins;
-      $scan_data->{$i} = [$pos, tell(SCANDATA) - $pos];
+      my $pos = tell $scandata_fh;
+      print $scandata_fh freeze $bins;
+      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
     }
     else {
       say STDERR "No profile in scan $n? Try to extract centroids by adding the -c option";
@@ -553,7 +548,7 @@ uf-mzxml - convert a Finnigan raw file to mzXML
 
 =head1 SYNOPSIS
 
-uf-mzxml [options] file
+uf-mzxml [options] <file>
 
  Options:
 
@@ -572,19 +567,19 @@ Prints a brief help message and exits.
 
 =item B<-a[ctivationMethod] <symbolE<gt>>
 
-Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzXML> attribute set to 'CID' (Collision-Induced Dissociation). It is going to be a valid assumption in most cases. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
+Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzXML> attribute is set to 'CID' (Collision-Induced Dissociation). It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
 
 =item B<-c[entroids]>
 
 Prefer centroids to raw profiles.
 
-B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, it will be skipped.
+B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, it is skipped.
 
 =item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
 
 Selects a range of scans records to process.
 
-B<Note:> in order to form a nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Oherwise, the program will crash with the following message:
+B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Oherwise, the program will crash with the following message:
 
   C<Can't use an undefined value as an ARRAY reference...>
 

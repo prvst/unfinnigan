@@ -123,8 +123,9 @@ sub find_peak_intensity {
 
   # find the closest chunk
   my ($nearest_chunk, $dist) = $self->find_chunk($raw_query);
+  say STDERR "nearest chunk: ($nearest_chunk, $dist)";
   if ($dist > $max_dist) {
-    say STDERR "could not find a profile peak within ${max_dist} kHz of the target frequency $raw_query ($query M/z)";
+    say STDERR "could not find a profile peak within ${max_dist} kHz of the target frequency $raw_query ($query M/z) in scan $self->{'scan number'}";
     return undef;
   }
 
@@ -196,28 +197,28 @@ sub find_chunk {
       my $chunk = $chunks->[$cur];
       $upper = $first_value + $chunk->{"first bin"} * $step;
       $lower = $upper + $chunk->{nbins} * $step;
-      # say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
+       say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
       if ( $value >= $lower and $value <= $upper ) {
-	# say STDERR "      direct hit";
+	 say STDERR "      direct hit";
 	return ($cur, 0);
       }
       if ( $value > $upper ) {
-	# say STDERR "      shifting up";
+	 say STDERR "      shifting up";
         $high_ix = $cur;
       }
       if ( $value < $lower ) {
-	# say STDERR "      shifting down";
+	 say STDERR "      shifting down";
         $low_ix = $cur + 1;
       }
-      # say STDERR "The remainder: $low_ix, $high_ix";
+       say STDERR "The remainder: $low_ix, $high_ix";
     }
-    # say STDERR "The final remainder: $low_ix, $high_ix";
+     say STDERR "The final remainder: $low_ix, $high_ix";
   }
 
   if ( $low_ix == $high_ix ) {
     # this is the closest chunk, still some distance away from the probe
     my $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0]; # minimal distance
-    # say STDERR "      no match, $low_ix = $cur, $value [$lower, $upper], dist: $dist";
+     say STDERR "      no match, $low_ix = $cur, $value [$lower, $upper], dist: $dist";
     return ($cur, $dist);
   }
   else {

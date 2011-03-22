@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 92;
+use Test::More tests => 94;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -54,6 +54,8 @@ my $run_header      = Finnigan::RunHeader->decode( \*INPUT, $header->version );
 my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 my $trailer_addr    = $run_header->trailer_addr;
 
+is( $run_header->sample_info->start_time, 0.00581833333333333, "RunHeader->sample_info->start_time" );
+is( $run_header->sample_info->end_time, 0.242753333333333, "RunHeader->sample_info->end_time" );
 is( $scan_index_addr, 829706, "RunHeader->sample_info->scan_index_addr" );
 is( $trailer_addr, 832082, "RunHeader->trailer_addr" );
 
