@@ -305,7 +305,7 @@ my $xml = $xmlgen->mzXML(
           %precursorAttr = (
             precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
             precursorCharge     => $charge_state{$n-1},
-            activationMethod    => $Finnigan::activationMethod,
+            activationMethod    => uc $Finnigan::activationMethod,
           );
 
           tie my %peaksAttr, 'Tie::IxHash';
@@ -427,7 +427,7 @@ sub read_scan {
   if ( exists $args->{-c} ) {
     $peakCount = $peaks->count;
     if ( $peakCount ) {
-      say STDERR "freezing peak list $scan_event->{$i} at $i";
+      # say STDERR "freezing peak list $scan_event->{$i} at $i";
       my $pos = tell $scandata_fh;
       print $scandata_fh freeze $peaks->list;
       $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
@@ -499,6 +499,7 @@ sub read_scan {
   if ( $ms_power == 2 ) {
     $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
     my $prec_mz = $scan_event{$i}->reaction->precursor;
+    $parent_scan_data->{"dependent scan number"} = $n;
     return (\%scanAttr, {
                          Mz => $prec_mz,
                          intensity => $parent_scan_data->find_peak_intensity($prec_mz)
