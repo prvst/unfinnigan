@@ -119,23 +119,22 @@ sub find_peak_intensity {
   # it is not stored as a separate item anywhere in the data file.
   my ($self, $query) = @_;
   my $raw_query = &{$self->{"inverse converter"}}($query);
-  my $max_dist = 0.05; # kHz
+  my $max_dist = 0.025; # kHz
 
   # find the closest chunk
   my ($nearest_chunk, $dist) = $self->find_chunk($raw_query);
-  say STDERR "nearest chunk: ($nearest_chunk, $dist)";
   if ($dist > $max_dist) {
-    say STDERR "could not find a profile peak within ${max_dist} kHz of the target frequency $raw_query ($query M/z) in scan $self->{'scan number'}";
-    return undef;
+    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${max_dist} kHz of the target frequency $raw_query (M/z $query);
+    return 0;
   }
 
   my @chunk_ix = ($nearest_chunk);
   $i = $nearest_chunk;
-  while ( $i < $self->{"peak count"} - 1 and $self->chunk_dist($i, $i++) <= 0.05 ) { # kHz
+  while ( $i < $self->{"peak count"} - 1 and $self->chunk_dist($i, $i++) <= $max_dist ) { # kHz
     push @chunk_ix, $i;
   }
   $i = $nearest_chunk;
-  while ( $i > 0 and $self->chunk_dist($i, $i--) <= 0.05 ) { # kHz
+  while ( $i > 0 and $self->chunk_dist($i, $i--) <= $max_dist ) { # kHz
     push @chunk_ix, $i;
   }
 
@@ -184,6 +183,8 @@ sub find_chunk {
   my $step = $self->{step};
   my ( $lower, $upper, $low_ix, $high_ix, $cur );
   my $safety_count = 15;
+  my $last_match = [undef, 100000];
+  my $dist;
 
   ( $upper, $lower ) = ( $first_value, $first_value + $step * $self->{nbins} ) ;
   if ( $value < $lower or $value > $upper ) {
@@ -197,29 +198,41 @@ sub find_chunk {
       my $chunk = $chunks->[$cur];
       $upper = $first_value + $chunk->{"first bin"} * $step;
       $lower = $upper + $chunk->{nbins} * $step;
-       say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
+#      say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
       if ( $value >= $lower and $value <= $upper ) {
-	 say STDERR "      direct hit";
+#	say STDERR "      direct hit";
 	return ($cur, 0);
       }
       if ( $value > $upper ) {
-	 say STDERR "      shifting up";
+	$dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
+	$last_match = [$cur, $dist] if $dist < $last_match->[1];
+#	say STDERR "      distance = $dist, shifting up";
         $high_ix = $cur;
       }
       if ( $value < $lower ) {
-	 say STDERR "      shifting down";
+	$dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
+	$last_match = [$cur, $dist] if $dist < $last_match->[1];
+#	say STDERR "      distance = $dist; shifting down";
         $low_ix = $cur + 1;
       }
-       say STDERR "The remainder: $low_ix, $high_ix";
+#      say STDERR "The remainder: $low_ix, $high_ix";
     }
-     say STDERR "The final remainder: $low_ix, $high_ix";
+#    say STDERR "The final remainder: $low_ix, $high_ix";
   }
 
   if ( $low_ix == $high_ix ) {
-    # this is the closest chunk, still some distance away from the probe
-    my $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0]; # minimal distance
-     say STDERR "      no match, $low_ix = $cur, $value [$lower, $upper], dist: $dist";
-    return ($cur, $dist);
+    # this is one of possibly two closest chunks, with no direct hits found
+    my $chunk = $chunks->[$low_ix];
+    $upper = $first_value + $chunk->{"first bin"} * $step;
+    $lower = $upper + $chunk->{nbins} * $step;
+    my $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
+
+    my ($closest_chunk, $min_dist) = ($low_ix, $dist);
+    if ( $dist > $last_match[1] ) {
+      ($closest_chunk, $min_dist) = @$last_match;
+    }
+#    say STDERR "      no direct hit; closest chunk is $closest_chunk; distance between $value and [$lower, $upper] is $min_dist";
+    return ($closest_chunk, $min_dist);
   }
   else {
     die "unexpected condition";
