@@ -124,7 +124,7 @@ sub find_peak_intensity {
   # find the closest chunk
   my ($nearest_chunk, $dist) = $self->find_chunk($raw_query);
   if ($dist > $max_dist) {
-    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${max_dist} kHz of the target frequency $raw_query (M/z $query);
+    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${max_dist} kHz of the target frequency $raw_query (M/z $query)";
     return 0;
   }
 
