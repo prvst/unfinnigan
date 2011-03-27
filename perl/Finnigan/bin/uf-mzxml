@@ -22,6 +22,7 @@ my $args = new Getopt::Declare q{
   -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
   -c[entroids]				write peak centroids instead of scan profiles
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
+  -q[uiet]				suppress the instrument error messages
   <file>				input file [required]
 }
   or exit(-1);
@@ -86,7 +87,7 @@ foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT)->values;
 }
 
-say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
+# say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
 
 # ---------------------------------------------------------------------
 # Now go read the trailer. Because the trailer records are of variable
@@ -107,6 +108,11 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
   my $e = Finnigan::ScanEvent->decode(\*INPUT, $header->version)->purge_unused_data;
   next if $n < $from;
+  if ($n == $from and $e->preamble->dependent) {
+    say STDERR "Range error: cannot form valid mzXML starting with the dependent scan $n";
+    exit -1;
+  }
+
   $scan_event{$i} = $e;
   last if $n == $to;
 }
@@ -134,7 +140,9 @@ my $error_log_length = unpack 'V', $rec;
 
 foreach my $i ( 0 .. $error_log_length - 1) {
   my $e = Finnigan::Error->decode(\*INPUT);
-  say STDERR "Error: (time = " . $e->time . "): " . $e->message;
+  unless ( exists $args->{-q} ) {
+    say STDERR "Error: (time = " . $e->time . "): " . $e->message;
+  }
 }
 
 # scan hierarchy -- not used at the moment; read to skip the correct number of bytes
@@ -598,6 +606,10 @@ B<Note:> in order to form the nested structure of dependent scans required in B<
   C<Can't use an undefined value as an ARRAY reference...>
 
 To detrmine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
+
+=item B<-q[uiet]>
+
+Suppress the instrument error messages stored in the input file. Without this option, the error messages will be printed to STDERR.
 
 =head1 SEE ALSO
 
