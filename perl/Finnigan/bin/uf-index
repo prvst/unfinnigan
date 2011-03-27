@@ -263,5 +263,3 @@ uf-index -rdsn 5 ~/shared/test/sample4.raw
    show its size)
 
 =cut
-
-=cut

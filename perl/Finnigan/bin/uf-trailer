@@ -294,5 +294,3 @@ uf-trailer -drn 5 ~/shared/test/sample4.raw
   (will dump the fifth ScanEvent with relative addresses)
 
 =cut
-
-=cut
