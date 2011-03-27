@@ -298,15 +298,20 @@ my $xml = $xmlgen->mzXML(
         $xmlgen->peaks(\%peakAttr, "=== cut ==="),
         map {
           my $n = $_;
+          my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
+
           # say STDERR "  in inner map ($n)";
           my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
 
           tie my %precursorAttr, 'Tie::IxHash';
-          %precursorAttr = (
-            precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
-            precursorCharge     => $charge_state{$n-1},
-            activationMethod    => uc $Finnigan::activationMethod,
-          );
+          if ( $isMS2 ) {
+            %precursorAttr = (
+              precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
+              precursorCharge     => $charge_state{$n-1},
+              activationMethod    => uc $Finnigan::activationMethod,
+            );
+            delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
+          }
 
           tie my %peaksAttr, 'Tie::IxHash';
           %peaksAttr = (
@@ -316,14 +321,22 @@ my $xml = $xmlgen->mzXML(
             compressionType => "none",
             compressedLen   => 0,
           );
-          $xmlgen->scan(
-            $attr,
-            $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
-            $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-          )
+          if ( $isMS2 ) {
+            $xmlgen->scan(
+              $attr,
+              $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
+              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+            )
+          }
+          else { # for MS1 scans like SIM or zoom scans
+            $xmlgen->scan(
+              $attr,
+              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+            )
+          }
         } dependent_scans(\%scan_event, $n)
       );
-    } grep { $scan_event{$_ - 1}->preamble->ms_power == 1 } $from .. $to
+    } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
   )
 );
 
@@ -391,8 +404,7 @@ sub dependent_scans {
   return unless $ms_power == 1; # assume ms2 scans have no further dependents
   for ( my $i = $scan_no; 1; $i++ ) {
     last unless $scan_event{$i};
-    my $ms_power = $scan_event->{$i}->preamble->ms_power;
-    last unless $ms_power == 2;
+    last unless $scan_event->{$i}->preamble->dependent;
     push @list, $i + 1;
   }
   return @list;
@@ -415,7 +427,8 @@ sub read_scan {
   my $peaks;
   $peaks = $scan->centroids if $ph->peak_list_size;
   my $ms_power = $scan_event->{$i}->preamble->ms_power;
-  if ( $ms_power == 1 ) {
+  my $dependent = $scan_event->{$i}->preamble->dependent;
+  if ( not $dependent ) {
     $parent_scan_data = $profile ? $profile : $peaks;
     $parent_scan_data->{"scan number"} = $n;
   }
