@@ -39,12 +39,6 @@ Finnigan is a dummy parent package whose only purpose is to pull in
 all all packages in its namespace. It does no work; all work is done
 in sub-modules.
 
-Blah blah blah.
-
-=head2 EXPORT
-
-None by default.
-
 
 =head1 SEE ALSO
 
@@ -68,6 +62,5 @@ Copyright (C) 2010 by Gene Selkov
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.0 or,
 at your option, any later version of Perl 5 you may have available.
-
 
 =cut
