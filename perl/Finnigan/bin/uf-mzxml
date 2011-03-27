@@ -599,13 +599,13 @@ B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan conta
 
 =item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
 
-Selects a range of scans records to process.
+Selects a range of scans to process.
 
-B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Oherwise, the program will crash with the following message:
+B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Otherwise, the program will crash with the following message:
 
   C<Can't use an undefined value as an ARRAY reference...>
 
-To detrmine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
+To determine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
 
 =item B<-q[uiet]>
 
