@@ -186,5 +186,5 @@ is ($c->count, 580, "Scan->centroids->count");
 is ($c->list->[0]->[0], 400.212463378906, "Scan->centroids->list (Mz)");
 is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
 
-use Data::Dumper;
+#use Data::Dumper;
 #print STDERR Dumper($scan->centroids);
