@@ -53,3 +53,44 @@ while ( <> ) {
     #print;
   }
 }
+
+__END__
+=head1 NAME
+
+mzxml-unpack - convert a Finnigan raw file to mzXML
+
+=head1 SYNOPSIS
+
+mzxml-unpack [options] <file>
+
+ Options:
+
+  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
+  <file>				input file
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
+
+extract only scans with numbers between E<lt>fromE<gt> and E<lt>toE<gt>
+
+B<Note:> this option breaks the structure of the output file (the parts preceding and following the selected range of scans are not written). It is mainly useful in checking the XML syntax and the contents of a small number of scans. For extracting the scan data in tabular format, there is a more suitable tool, B<uf-scan>.
+
+=head1 DESCRIPTION
+
+B<mzxml-unpack> will read the given input file and unpack the contents of the B<scan.peaks> element. MzXML uses base64 encoding to save space; unpacking this encoding makes the data human-readable. It does not otherwise change the file structure (unless option -r is used), so in principle, it can be packed again.
+
+=head1 SEE ALSO
+
+uf-scan
+uf-mzxml
+
+=head1 EXAMPLE
+
+  mzxml-unpack sample.raw > sample-unpacked.mzXML
+
+=cut
+
+=cut

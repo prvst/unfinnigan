@@ -603,7 +603,7 @@ Selects a range of scans to process.
 
 B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Otherwise, the program will crash with the following message:
 
-  C<Can't use an undefined value as an ARRAY reference...>
+  C<Range error: cannot form valid mzXML starting with the dependent scan ###>
 
 To determine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
 
