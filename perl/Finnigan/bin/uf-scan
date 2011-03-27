@@ -195,7 +195,7 @@ END
 __END__
 =head1 NAME
 
-uf-scan - extract scan data from a Finnigan raw file "trailer"
+uf-scan - examine peak data in a single MS scan
 
 =head1 SYNOPSIS
 
@@ -203,10 +203,10 @@ uf-scan [options] file
 
  Options:
 
-  -e[xtract]                    extract the entire scan as binary data (will print by default)
+  -e[xtract]                    extract the entire scan data as a binary chunk
   -l[ist]			list the called peaks [required]
   -p[rofile]			print the scan profile as a 2-column table [required]
-  -plot				plot the profile (and the called peaks, if available) [required]
+  -plot				plot the profile (along with the called peaks, if available) [required]
   -v				convert f -> M/z [requires: -p]
   -z				add empty bins [requires: -p]
   -n[unmber] <n:+i>		select scan number <n> [required]
@@ -245,11 +245,13 @@ Used with either B<-l> or B<-p>, this option option clips the binary data chunk 
 
 =head1 DESCRIPTION
 
-B<uf-scan> can be used to list or plot the scan data for a single scan. The B<-p> option instructs B<uf-scan> to output the profile, the B<-l> options lists the peaks, and the B<-plot> option outpuns an R progarm to plot the profile overlaid by peak centroids, if both are present in the raw file, or just the profile if the centroids are not present.
+B<uf-scan> can be used to list or plot the scan data for a single scan. The B<-profile> option instructs B<uf-scan> to print the profile data, the B<-list> options lists the peaks, and the B<-plot> option writes an R script to plot the profile and peak centroids, if both kinds of data are present in the raw file, or just the profile if the centroids are not present.
+
+Options B<-profile>, B<-list> and B<-plot> are mutually exclusive.
 
 To convert the raw scan data into M/z values, use the B<-v> option.
 
-Option B<-z> adds a pair of empty bins on either side of each peak in the profile.
+Option B<-z> fills the gaps between the profile peaks with zeroes, to create a continuous table.
 
 =head1 SEE ALSO
 
@@ -259,11 +261,11 @@ uf-mzxml
 
  uf-scan -p -n 1 sample.raw
 
-  (will print all raw profile bins in the 1st scan)
+  (prints all raw profile bins in the 1st scan)
 
- uf-scan -epn 1 sample.raw
+ uf-scan -ep -n 1 sample.raw
 
-  (will extract the entire scan profile in the binary form)
+  (extracts the entire scan profile in the binary form)
 
  uf-scan -pv -n 1 sample.raw
 
@@ -271,15 +273,15 @@ uf-mzxml
 
  uf-scan -pvz -n 1 sample.raw
 
-  (same as above, but in addition, each peak will be surrounded by a pair of empty bins)
+  (same as above, but in addition, all empty bins are wirtten out as well)
 
  uf-scan -l -n 1 sample.raw
 
-  (will print the list of centroids in the 1st scan; note that B<uf-scan> will not calculate the peak centroids from the profile; it will only list the existing centroids, if they are present)
+  (will print the list of centroids in the 1st scan; note that *uf-scan* does not calculate the peak centroids from the profile; it only lists the existing centroids if they are present)
 
  uf-scan -plot -n 1 -mz 445.0 .. 445.2 sample.raw | R --vanilla --slave > plot.eps
 
-  (This command will call R to plot the profile in a range of the M/z values. If the called peaks are present, they will be shown as dots on the graph)
+  This command will call R to plot the profile in the given range of M/z values. If called peaks are present, they will be shown as dots on the graph.
 
 =cut
 
