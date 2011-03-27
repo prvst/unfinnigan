@@ -170,7 +170,7 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
       say <<END;
 p <- read.table(textConnection(profile_input), header=TRUE)
 postscript(file="", command="cat", paper="special", onefile=F, horizontal=F, width=8, height=6, pointsize=15)
-plot(p, type="l", main="converted profile ($peaks_exist)", xlab=expression(M/z), ylab="abundance")
+plot(p, type="h", main="converted profile ($peaks_exist)", xlab=expression(M/z), ylab="abundance")
 END
     }
     else {
@@ -185,7 +185,7 @@ END
 p <- read.table(textConnection(profile_input), header=TRUE)
 c <- read.table(textConnection(centroid_input), header=TRUE)
 postscript(file="", command="cat", paper="special", onefile=F, horizontal=F, width=8, height=6, pointsize=15)
-plot(p, type="l", main="software-converted profile and peak centroids", xlab=expression(M/z), ylab="abundance")
+plot(p, type="h", main="software-converted profile and peak centroids", xlab=expression(M/z), ylab="abundance")
 points(c)
 END
     }
@@ -203,6 +203,7 @@ uf-scan [options] file
 
  Options:
 
+  -e[xtract]                    extract the entire scan as binary data (will print by default)
   -l[ist]			list the called peaks [required]
   -p[rofile]			print the scan profile as a 2-column table [required]
   -plot				plot the profile (and the called peaks, if available) [required]
@@ -222,7 +223,7 @@ Print a brief help message and exits.
 
 =item B<-l[ist]>
 
-Lists the called peaks, if they are available in scan number B<-n>. If the called peaks are not present, uf-scan will print a message to that effect and exit.
+Get the peak list from the scan number B<-n>, if they are available. If the called peaks are not present, uf-scan will print a message to that effect and exit.
 
 =item B<-p[rofile]>
 
@@ -236,9 +237,9 @@ This option generates an R script to plot the profile. Prints the scan profile f
 
 Gives the number of a single scan to process
 
-=item B<-n[profile]>
+=item B<-e[xtract]>
 
-Gives the number of a single scan to process
+Used with either B<-l> or B<-p>, this option option clips the binary data chunk corresponding to either the peak list or to the scan profile and sends it to STDOUT.
 
 =back
 
@@ -259,6 +260,10 @@ uf-mzxml
  uf-scan -p -n 1 sample.raw
 
   (will print all raw profile bins in the 1st scan)
+
+ uf-scan -epn 1 sample.raw
+
+  (will extract the entire scan profile in the binary form)
 
  uf-scan -pv -n 1 sample.raw
 
