@@ -35,7 +35,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::InjectionData -- a decoder for injection parameters in a sequence table row
+Finnigan::InjectionData -- a decoder for the injection parameters in a sequence table row
 
 =head1 SYNOPSIS
 

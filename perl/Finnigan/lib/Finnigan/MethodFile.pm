@@ -73,25 +73,25 @@ __END__
 
 =head1 NAME
 
-Finnigan::MethodFile -- a decoder for MethodFile, the binary data part of RawFileInfo
+Finnigan::MethodFile -- a decoder for the outer MethodFile container
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $file_info = Finnigan::MethodFile->decode(\*INPUT);
-  say $file_info->run_header_addr;
-  $file_info->dump;
+
+  my $mf = Finnigan::MethodFile->decode(\*INPUT);
+  say $mf->header->version;
+  say $mf->container->size;
+  my $dirent = $mf->container->find($path);
 
 =head1 DESCRIPTION
 
-This fixed-size structure is a binary preamble to RawFileInfo, and it
-contains an unpacked representation of a UTC date (apparently, the
-file creation date), a set of unknown numbers, and most importantly,
-the more modern versions of this structure contain the pointers to
-ScanData? and to RunHeader, which in turn stores pointers to all data
-streams in the file.
+This object decodes the outer container for a Windows OLE2 directory
+which in turn contains a set of method files for various instruments,
+both in binary and text representations.
 
-The older version of this structure did not extend beyond the date stamp.
+The outer container also contains a name translation table mapping the
+names of the instruments into the names used inside the method files.
 
 
 =head2 EXPORT
@@ -100,7 +100,7 @@ None
 
 =head1 SEE ALSO
 
-Finnigan::RawFileInfo
+Finnigan::OLE2File
 
 =head1 AUTHOR
 

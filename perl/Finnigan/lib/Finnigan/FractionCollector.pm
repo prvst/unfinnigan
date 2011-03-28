@@ -44,8 +44,7 @@ Finnigan::FractionCollector -- a decoder for FractionCollector, a mass range obj
 
   use Finnigan;
   my $f = Finnigan::FractionCollector->decode(\*INPUT);
-  say f->low;
-  say f->high;
+  say "[" . f->low . ", " . f->high . "]";
 
 =head1 DESCRIPTION
 

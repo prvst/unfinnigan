@@ -37,7 +37,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::GenericDataHeader -- a decoder for GenericDataHeader, a decoder key for GenericRecord types
+Finnigan::GenericDataHeader -- a decoder for GenericDataHeader -- a key to decoding generic data records
 
 =head1 SYNOPSIS
 
@@ -48,6 +48,9 @@ Finnigan::GenericDataHeader -- a decoder for GenericDataHeader, a decoder key fo
 
 =head1 DESCRIPTION
 
+GenericDataHeader drives the decoding of a generic record. It stores a
+list of GenericDataDescriptor objects, each describing a field in the
+record.
 
 =head2 EXPORT
 

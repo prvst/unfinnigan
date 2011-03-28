@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 94;
+use Test::More tests => 95;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -51,6 +51,9 @@ seek INPUT, $run_header_addr, 0;
 is( tell INPUT, 777542, "seek to run header address" );
 
 my $run_header      = Finnigan::RunHeader->decode( \*INPUT, $header->version );
+my $inst_id         = Finnigan::InstID->decode( \*INPUT );
+is( $inst_id->model, 'LTQ Orbitrap XL', "InstID->model");
+
 my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 my $trailer_addr    = $run_header->trailer_addr;
 

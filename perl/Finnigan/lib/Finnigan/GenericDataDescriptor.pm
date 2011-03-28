@@ -138,6 +138,8 @@ Finnigan::GenericDataDescriptor -- a decoder for GenericDataDescriptor, a key to
 
 =head1 DESCRIPTION
 
+GenericDataDescriptor stores information about the type, size and name
+of a data element in a generic data record.
 
 =head2 EXPORT
 
