@@ -31,7 +31,7 @@ the raw files written by Thermo mass spectrometers
   use Finnigan;
 
   my $struct = Finnigan::<Structure>->read(\*STREAM);
-  say $struct->keys;
+  $struct->dump;
 
 =head1 DESCRIPTION
 

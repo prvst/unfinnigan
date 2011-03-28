@@ -32,7 +32,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::Error -- decoder for Error, an error log record
+Finnigan::Error -- the decoder for Error, an error log record
 
 =head1 SYNOPSIS
 
