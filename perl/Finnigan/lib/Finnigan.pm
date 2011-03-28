@@ -23,22 +23,25 @@ __END__
 
 =head1 NAME
 
-Finnigan - A collection of parser modules for decoding structures in
-the raw files written by Thermo mass spectrometers
+Finnigan - A collection of decoder modules for reading data from
+the raw files created by Thermo mass spectrometers
 
 =head1 SYNOPSIS
 
   use Finnigan;
 
-  my $struct = Finnigan::<Structure>->read(\*STREAM);
+  my $struct = Finnigan::Object->decode(\*STREAM);
   $struct->dump;
+
+where 'Object' is a symbol for any of the specific decoder objects,
+such as FileHeader, for example, and STREAM is an open filehandle
+positioned at the start of the structure to be decoded.
 
 =head1 DESCRIPTION
 
-Finnigan is a dummy parent package whose only purpose is to pull in
-all all packages in its namespace. It does no work; all work is done
-in sub-modules.
-
+Finnigan is a non-functional package whose only purpose is to pull in all other
+packages in the suite into its namespace. It does no work; all work is
+done in the sub-modules.
 
 =head1 SEE ALSO
 
