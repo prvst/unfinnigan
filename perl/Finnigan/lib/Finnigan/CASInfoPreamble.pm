@@ -29,7 +29,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, an autosampler descriptor
+Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, a numeric autosampler descriptor
 
 =head1 SYNOPSIS
 
@@ -39,7 +39,7 @@ Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, an autosampler descr
 
 =head1 DESCRIPTION
 
-CASInfoPreamble is fixed-length structure with some unknown data about the autosampler. It is a component of [CASInfo], which includes this preamble and a text string following it.
+CASInfoPreamble is a fixed-length structure with some unknown data about the autosampler. It is a component of [CASInfo], which consists of this numeric descriptor and a text string following it.
 
 
 =head2 EXPORT
