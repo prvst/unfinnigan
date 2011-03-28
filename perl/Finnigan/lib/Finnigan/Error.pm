@@ -43,7 +43,9 @@ Finnigan::Error -- the decoder for Error, an error log record
 
 =head1 DESCRIPTION
 
-Error is a varibale-length structure containing the timestamped error messages.
+Error is a varibale-length structure containing timestamped error
+messages. It implicitly links an error message to a scan using the
+retention time.
 
 =head2 EXPORT
 

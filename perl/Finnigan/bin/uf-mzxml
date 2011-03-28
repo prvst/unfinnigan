@@ -140,7 +140,7 @@ my $error_log_length = unpack 'V', $rec;
 
 foreach my $i ( 0 .. $error_log_length - 1) {
   my $e = Finnigan::Error->decode(\*INPUT);
-  unless ( exists $args->{-q} ) {
+  unless ( exists $args->{'-q'} ) {
     say STDERR "Error: (time = " . $e->time . "): " . $e->message;
   }
 }
