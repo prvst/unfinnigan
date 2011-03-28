@@ -75,13 +75,13 @@ Finnigan::FileHeader -- a decoder for Finnigan file headers
 
   use Finnigan;
   my $header = Finnigan::FileHeader->decode(\*INPUT);
-  say "$file: version " . $header->version . "; " . $header->audit_start->time;
+  say "$header";
 
 =head1 DESCRIPTION
 
 The key information contained in the Finnigan header is the file
-version number. Since the file structure may vary, the parsers better
-know the version number, so they can adapt themselves.
+version number. Since the file structure varies from one version to
+another, the decoders must be aware of it.
 
 =head2 EXPORT
 
