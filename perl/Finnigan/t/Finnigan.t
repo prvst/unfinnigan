@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 110;
+use Test::More tests => 112;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -69,6 +69,8 @@ isnt( $mf->container->dif->sect->[1], 0, "OLE2DIF->sect vacant" );
 is( $mf->container->data->{"fat[0]"}->{value}->sect->[1], 35, "OLE2FAT->sect (big fat)" );
 is( $mf->container->data->{"minifat[36]"}->{value}->sect->[20], 21, "OLE2FAT->sect (minifat)" );
 is( join(' ', $mf->container->get_chain(37, "big")), "37 38 39", "OLE2File->get_chain(n, 'big')" );
+is( $mf->container->data->{"property[1][1]"}->{value}->name, "Root Entry", "OLE2Property->name (test 1)" );
+is( $mf->container->data->{"property[35][1]"}->{value}->name, "Header", "OLE2Property->name (test 2)" );
 my $text_node = $mf->container->find("LTQ/Text");
 ok($text_node, "OLE2File->find");
 is( $text_node->name, "Text", "OLE2DirectoryEntry->name" );
