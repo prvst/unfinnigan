@@ -23,8 +23,8 @@ sub decode {
                 "decorator"   => ['c',            'UInt8'],
                 "left"        => ['V',            'UInt32'],
                 "right"       => ['V',            'UInt32'],
-                "child"       => ['V',            'UInt32'],   # child node (valid for storage and root types
-                "clsid"       => ['a16',          'RawBytes'], # CLSID of this storage (valid for storage and root types
+                "child"       => ['V',            'UInt32'],   # child node (valid for storage and root types)
+                "clsid"       => ['a16',          'RawBytes'], # CLSID of this storage (valid for storage and root types)
                 "flags"       => ['a4',           'RawBytes'], # user flags
                 "create time" => ['windows_time', 'TimestampWin64'],
                 "mod time"    => ['windows_time', 'TimestampWin64'],
@@ -95,12 +95,25 @@ Finnigan::OLE2Property -- a decoder for the Property structure in Microsoft OLE2
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $method_data = Finnigan::OLE2Property->decode(\*INPUT);
-  $method_data->dump;
+  my $p = Finnigan::OLE2Property->decode(\*INPUT, [9, 'UTF-16-LE']);
+  say $p->name;
 
 =head1 DESCRIPTION
 
-...
+This is an auxiliary decoder used by Finnigan::OLE2File; it is of no use on its own.
+
+The OLE2 Properties are roughly equivalent to index nodes in other filesystems.
+
+
+=head1 METHODS
+
+=head2 decode($stream, [$big_block_log_size, $charset])
+
+The constructor method
+
+=head2 stringify
+
+Returns the property name
 
 =head2 EXPORT
 
