@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 106;
+use Test::More tests => 107;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -62,9 +62,12 @@ is( $mf->translation_table->[1], 'LTQ', 'MethodFile->translation_table (value)')
 is( ($mf->instrument_name(1))[0], 'LTQ Orbitrap XL MS', 'MethodFile->instrument_name(1) (key)');
 is( ($mf->instrument_name(1))[1], 'LTQ', 'MethodFile->instrument_name(1) (value)');
 # container functions
+is( join(' ', $mf->container->get_chain(37, "big")), "37 38 39", "OLE2File->get_chain(n, 'big')");
 is( $mf->container->dif->stringify, "Double-Indirect FAT; 1/109 entries used", "OLE2DIF->stringify");
 is( $mf->container->dif->sect->[0], 0, "OLE2DIF->sect used");
 isnt( $mf->container->dif->sect->[1], 0, "OLE2DIF->sect vacant");
+use Data::Dumper;
+
 my $text_node = $mf->container->find("LTQ/Text");
 ok($text_node, "OLE2File->find");
 is( $text_node->name, "Text", "OLE2DirectoryEntry->name" );
