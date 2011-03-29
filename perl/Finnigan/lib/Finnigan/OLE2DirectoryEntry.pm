@@ -22,8 +22,8 @@ sub new {
   my $self = {file => $file, index => $index};
   bless $self, $class;
 
-  # The directory entries are organized as a red-black tree (for
-  # efficiency of acces). The following piece of code does an ordered
+  # The directory entries are organized in a red-black tree (for
+  # efficiency of access). The following piece of code does an ordered
   # traversal of such a tree and creates a new tree of
   # OLE2DirectoryEntry objects whose child lists are properly ordered,
   # to simplify the code
@@ -239,18 +239,20 @@ __END__
 
 =head1 NAME
 
-Finnigan::OLE2DirectoryEntry -- a decoder for Microsoft structured data files, a container used to store instrument methods
+Finnigan::OLE2DirectoryEntry -- a decoder for the Microsoft OLE2 directory entry
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $method_data = Finnigan::OLE2DirectoryEntry->decode(\*INPUT);
-  $method_data->dump;
+  my $dir = new Finnigan::OLE2DirectoryEntry($ole2file, 0);
+  $dir->list();
 
 =head1 DESCRIPTION
 
-...
-
+The OLE2 directory entries are organized in a red-black tree (for
+efficiency of access). The directory entry's constructor method
+B<new()> is called recursively starting from the root directory
+contained in the file's 0-th property.
 
 =head2 EXPORT
 
@@ -258,7 +260,8 @@ None
 
 =head1 SEE ALSO
 
-Finnigan::MethodFile
+Finnigan::OLE2File
+Finnigan::OLE2Property
 
 =head1 AUTHOR
 
