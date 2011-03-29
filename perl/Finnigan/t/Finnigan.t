@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 107;
+use Test::More tests => 109;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -44,7 +44,7 @@ is( $cas_info->preamble->size, 24, "CasInfoPreamble->size" );
 
 # RawFileInfo / RawFileInfoPreamble -- the root index structure; interesting information is all in the preamble
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
-is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; RunHeader addr: 777542", "RawFileInfo->stringify");
+is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; RunHeader addr: 777542", "RawFileInfo->stringify" );
 is( $rfi->size, 844, "RawFileInfo->size" );
 is( $rfi->preamble->size, 804, "RawFileInfoPreamble->size" );
 is( $rfi->preamble->data_addr, 24950, "RawFileInfoPreamble->data_addr" );
@@ -56,18 +56,18 @@ my $mf = Finnigan::MethodFile->decode(\*INPUT);
 is( $mf->size, 3646, "MethodFile->size" );
 is( $mf->file_size, 20992, "MethodFile->file_size" );
 # the entire translation table
-is( $mf->translation_table->[0], 'LTQ Orbitrap XL MS', 'MethodFile->translation_table (key)');
+is( $mf->translation_table->[0], 'LTQ Orbitrap XL MS', 'MethodFile->translation_table (key)' );
 is( $mf->translation_table->[1], 'LTQ', 'MethodFile->translation_table (value)');
 # name translation for the first instrument
-is( ($mf->instrument_name(1))[0], 'LTQ Orbitrap XL MS', 'MethodFile->instrument_name(1) (key)');
+is( ($mf->instrument_name(1))[0], 'LTQ Orbitrap XL MS', 'MethodFile->instrument_name(1) (key)' );
 is( ($mf->instrument_name(1))[1], 'LTQ', 'MethodFile->instrument_name(1) (value)');
 # container functions
-is( join(' ', $mf->container->get_chain(37, "big")), "37 38 39", "OLE2File->get_chain(n, 'big')");
-is( $mf->container->dif->stringify, "Double-Indirect FAT; 1/109 entries used", "OLE2DIF->stringify");
-is( $mf->container->dif->sect->[0], 0, "OLE2DIF->sect used");
-isnt( $mf->container->dif->sect->[1], 0, "OLE2DIF->sect vacant");
-use Data::Dumper;
-
+is( $mf->container->dif->stringify, "Double-Indirect FAT; 1/109 entries used", "OLE2DIF->stringify" );
+is( $mf->container->dif->sect->[0], 0, "OLE2DIF->sect used" );
+isnt( $mf->container->dif->sect->[1], 0, "OLE2DIF->sect vacant" );
+is( $mf->container->data->{"fat[0]"}->{value}->sect->[1], 35, "OLE2FAT->sect (big fat)" );
+is( $mf->container->data->{"minifat[36]"}->{value}->sect->[20], 21, "OLE2FAT->sect (minifat)" );
+is( join(' ', $mf->container->get_chain(37, "big")), "37 38 39", "OLE2File->get_chain(n, 'big')" );
 my $text_node = $mf->container->find("LTQ/Text");
 ok($text_node, "OLE2File->find");
 is( $text_node->name, "Text", "OLE2DirectoryEntry->name" );
