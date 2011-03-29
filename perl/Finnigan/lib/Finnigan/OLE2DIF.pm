@@ -51,7 +51,7 @@ Finnigan::OLE2DIF -- a decoder for Double-Indirect FAT, a block allocation struc
 
   use Finnigan;
 
-  my $dif = Finnigan::OLE2DIF->decode(\*INPUT, $start, $count);
+  my $dif = Finnigan::OLE2DIF->decode(\*INPUT, [$start, $count]);
   say $dif->stringify
   say $dif->sect->[0]; # must be 0 if used
 
@@ -70,7 +70,6 @@ None
 
 =head1 SEE ALSO
 
-Finnigan::MethodFile
 Finnigan::OLE2File
 
 =head1 AUTHOR

@@ -47,7 +47,7 @@ sub decode {
                        [$self->header->dif_start, $self->header->dif_count],
                       );
 
-  $self->{"block ref addr"} = 
+  $self->{"block ref addr"} =
     $self->{addr}
       + $self->{data}->{magic}->{size}
         + $self->{data}->{header}->{size}
