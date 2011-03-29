@@ -85,18 +85,21 @@ __END__
 
 =head1 NAME
 
-Finnigan::OLE2Header -- a decoder for Microsoft OLE2 header structure
+Finnigan::OLE2Header -- a decoder for the Microsoft OLE2 header structure
 
 =head1 SYNOPSIS
 
   use Finnigan;
   my $header = Finnigan::OLE2Header->decode(\*INPUT);
-  $header->dump;
+  say "$header";
 
 =head1 DESCRIPTION
 
-...
+This is an auxiliary decoder used by Finnigan::OLE2File; it is of no use on its own.
 
+The OLE2 header is the first the first object to be decoded on the way
+to parsing the embedded filesystem. It contains the key parameters that
+determine the shape of the filesystem.
 
 =head2 EXPORT
 
