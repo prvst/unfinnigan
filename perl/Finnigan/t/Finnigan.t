@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 109;
+use Test::More tests => 110;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -62,6 +62,7 @@ is( $mf->translation_table->[1], 'LTQ', 'MethodFile->translation_table (value)')
 is( ($mf->instrument_name(1))[0], 'LTQ Orbitrap XL MS', 'MethodFile->instrument_name(1) (key)' );
 is( ($mf->instrument_name(1))[1], 'LTQ', 'MethodFile->instrument_name(1) (value)');
 # container functions
+is( $mf->container->header->stringify, "Version 3.62; block(s) in FAT chain: 1; in mini-FAT chain: 1; in DIF chain: 0", "OLE2Header->stringify" );
 is( $mf->container->dif->stringify, "Double-Indirect FAT; 1/109 entries used", "OLE2DIF->stringify" );
 is( $mf->container->dif->sect->[0], 0, "OLE2DIF->sect used" );
 isnt( $mf->container->dif->sect->[1], 0, "OLE2DIF->sect vacant" );
