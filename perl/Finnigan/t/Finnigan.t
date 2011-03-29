@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 113;
+use Test::More tests => 114;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -95,6 +95,7 @@ is( tell INPUT, $run_header_addr, "seek to run header address" );
 
 # RunHeader
 my $run_header      = Finnigan::RunHeader->decode( \*INPUT, $header->version );
+is( $run_header->self_addr, $run_header_addr, "RunHeader->self_addr" );
 my $trailer_addr    = $run_header->trailer_addr;
 is( $trailer_addr, 832082, "RunHeader->trailer_addr" );
 my $sample_info = $run_header->sample_info;
