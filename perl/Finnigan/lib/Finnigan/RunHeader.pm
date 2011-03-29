@@ -63,7 +63,7 @@ sub sample_info {
 }
 
 sub self_addr {
-  shift->{data}->{"self addr"}->{value};
+  shift->{data}->{"own addr"}->{value};
 }
 
 sub trailer_addr {
