@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 95;
+use Test::More tests => 106;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -13,40 +13,66 @@ BEGIN { use_ok('Finnigan') };
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
+# set-up
 my $file = "t/100225.raw";
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
+
+# The following objects will be tested in the order they occur
+# in the input file, unless a look-ahead is necessary.
+
+# FileHeader
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 is( $header->version, 63, "FileHeader->version" );
 is( $header->size, 1356, "FileHeader->size" );
 is( $header->audit_start->time, "2010-02-25 09:02:27", "AuditTag->time" );
 
+# SeqRow / InjectionData -- sample data
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 is( $seq_row->size, 260, "SeqRow->size" );
 is( $seq_row->file_name, 'C:\Xcalibur\calsolution\100225.raw', "SeqRow->file_name" );
 is( $seq_row->injection->size, 64, "InjectionData->size" );
 is( $seq_row->injection->n, 1, "InjectionData->n" );
+# untested in SeqRow::InjectionData: volume, injected volume, internal standard amount, dilution factor, the unknowns
 
+# CASInfo / CASInfoPreamble -- autosampler data
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 is( $cas_info->size, 28, "CasInfo->size" );
 is( $cas_info->preamble->size, 24, "CasInfoPreamble->size" );
+# untested in CASInfo: text
+# untested in CASInfo::Preamble: number of wells; the unknowns
 
+# RawFileInfo / RawFileInfoPreamble -- the root index structure; interesting information is all in the preamble
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; RunHeader addr: 777542", "RawFileInfo->stringify");
 is( $rfi->size, 844, "RawFileInfo->size" );
 is( $rfi->preamble->size, 804, "RawFileInfoPreamble->size" );
 is( $rfi->preamble->data_addr, 24950, "RawFileInfoPreamble->data_addr" );
 is( $rfi->preamble->run_header_addr, 777542, "RawFileInfoPreamble->run_header_addr" );
+is( $rfi->{data}->{"unknown text"}->{value}, 'DB23HPD1', "RawFileInfo->{unknown text}" );
 
-my $data_addr       = $rfi->preamble->data_addr;
-my $run_header_addr = $rfi->preamble->run_header_addr;
-
+# MethodFile / OLE2File
 my $mf = Finnigan::MethodFile->decode(\*INPUT);
 is( $mf->size, 3646, "MethodFile->size" );
 is( $mf->file_size, 20992, "MethodFile->file_size" );
-is( $mf->container->find("LTQ/Text")->name, "Text", "OLE2DirectoryEntry->find" );
-is( length $mf->container->find("LTQ/Text")->data, 9722, "OLE2DirectoryEntry->data" );
+# the entire translation table
+is( $mf->translation_table->[0], 'LTQ Orbitrap XL MS', 'MethodFile->translation_table (key)');
+is( $mf->translation_table->[1], 'LTQ', 'MethodFile->translation_table (value)');
+# name translation for the first instrument
+is( ($mf->instrument_name(1))[0], 'LTQ Orbitrap XL MS', 'MethodFile->instrument_name(1) (key)');
+is( ($mf->instrument_name(1))[1], 'LTQ', 'MethodFile->instrument_name(1) (value)');
+# container functions
+is( $mf->container->dif->stringify, "Double-Indirect FAT; 1/109 entries used", "OLE2DIF->stringify");
+is( $mf->container->dif->sect->[0], 0, "OLE2DIF->sect used");
+isnt( $mf->container->dif->sect->[1], 0, "OLE2DIF->sect vacant");
+my $text_node = $mf->container->find("LTQ/Text");
+ok($text_node, "OLE2File->find");
+is( $text_node->name, "Text", "OLE2DirectoryEntry->name" );
+is( length $text_node->data, 9722, "OLE2DirectoryEntry->data length" );
+like($text_node->data, qr/S\0e\0g\0m\0e\0n\0t\0 \0001\0 \0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0/m, 'OLE2DirectoryEntry->data'); # it is UTF-16
 
 # fast-forward to RunHeader
+my $run_header_addr = $rfi->preamble->run_header_addr;
 seek INPUT, $run_header_addr, 0;
 is( tell INPUT, 777542, "seek to run header address" );
 
@@ -146,6 +172,7 @@ $pr = $scan_event->precursors->[0]->stringify;
 is ($pr, '445.12@ecd35.00', "ScanEvent->precursors (3: activation method)");
 
 # read the first scan
+my $data_addr = $rfi->preamble->data_addr;
 seek INPUT, $data_addr, 0;
 is( tell INPUT, 24950, "seek to scan data address" );
 
