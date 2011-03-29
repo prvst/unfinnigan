@@ -242,18 +242,66 @@ __END__
 
 =head1 NAME
 
-Finnigan::OLE2File -- a decoder for Microsoft structured data files, a container used to store instrument methods
+Finnigan::OLE2File -- a decoder for Microsoft structured data files (OLE2 a.k.a. CDF)
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $method_data = Finnigan::OLE2File->decode(\*INPUT);
-  $method_data->dump;
+  my $container = Finnigan::OLE2File->decode(\*INPUT);
+  my $analyzer_method_text = $container->find("LTQ/Text")->data;
 
 =head1 DESCRIPTION
 
-...
+Thermo uses the Microsoft OLE2 container to store the instrument
+method files. This container has a hirerachical structure based on a
+FAT filesystem. It seems like there are always two levels of hierarchy
+used in the method container: one directory node for each istrument,
+each directory containing one to three leaf nodes (files) named Data,
+Text, or Header. The Header file exists only in the first directory
+corresponding to the mass analyser. Other directories contain either
+Text and Data, or just Data. It seems like Text is simply a
+human-readable representation of Data, but this conjectures has not
+been verified because the structure of the Data files remains unknown.
 
+Finnigan::OLE2File decodes the container structure and allows the
+extraction of the leaf nodes -- Header, Data, and Text.
+
+=head1 METHODS
+
+=head2 decode($stream)
+
+The constructor methad
+
+=head2 list()
+
+Prints the directory listing of the entire OLE2 container to
+STDOUT. A typical output may look like this:
+
+LTQ 
+  Data (7512 bytes)
+  Text (9946 bytes)
+  Header (1396 bytes)
+
+EksigentNanoLcCom_DLL 
+  Data (2898 bytes)
+  Text (1924 bytes)
+
+NanoLC-AS1 Autosampler 
+  Data (154 bytes)
+
+EksigentNanoLc_Channel2 
+  Data (3028 bytes)
+  Text (2398 bytes)
+
+This method is not useful as part of the API (directory listings are
+better understood by humans). But once the path to a node is known, it
+can be retrieved with the B<find> method.
+
+=head2 find($path)
+
+Get the directory entry (Finnigan::OLE2DirectoryEntry) matching the
+path supplied in the only argument. The directory entry's B<data>
+method needs to be called in order to extract the node data.
 
 =head2 EXPORT
 

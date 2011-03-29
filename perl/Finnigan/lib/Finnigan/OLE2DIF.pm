@@ -50,13 +50,19 @@ Finnigan::OLE2DIF -- a decoder for Double-Indirect FAT, a block allocation struc
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $method_data = Finnigan::OLE2DIF->decode(\*INPUT);
-  $method_data->dump;
+
+  my $dif = Finnigan::OLE2DIF->decode(\*INPUT, $start, $count);
+  say $dif->stringify
+  say $dif->sect->[0]; # must be 0 if used
 
 =head1 DESCRIPTION
 
-DIF == Double-Indirect File Allocation Table
+This is an auxiliary decoder used by Finnigan::OLE2File; it is of no
+use otherwise. It reads a specified number of 4-byte intergers into an
+array that is to be interpreted as a sector allocation table by the
+caller of the B<sect> method.
 
+DIF == Double-Indirect File Allocation Table
 
 =head2 EXPORT
 
