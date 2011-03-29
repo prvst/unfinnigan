@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 112;
+use Test::More tests => 113;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -47,9 +47,12 @@ my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; RunHeader addr: 777542", "RawFileInfo->stringify" );
 is( $rfi->size, 844, "RawFileInfo->size" );
 is( $rfi->preamble->size, 804, "RawFileInfoPreamble->size" );
-is( $rfi->preamble->data_addr, 24950, "RawFileInfoPreamble->data_addr" );
+my $data_addr = $rfi->preamble->data_addr;
+is( $data_addr, 24950, "RawFileInfoPreamble->data_addr" );
 is( $rfi->preamble->run_header_addr, 777542, "RawFileInfoPreamble->run_header_addr" );
 is( $rfi->{data}->{"unknown text"}->{value}, 'DB23HPD1', "RawFileInfo->{unknown text}" );
+my $run_header_addr = $rfi->preamble->run_header_addr;
+is( $run_header_addr, 777542, "RawFileInfoPreamble->run_header_addr" );
 
 # MethodFile / OLE2File
 my $mf = Finnigan::MethodFile->decode(\*INPUT);
@@ -77,27 +80,37 @@ is( $text_node->name, "Text", "OLE2DirectoryEntry->name" );
 is( length $text_node->data, 9722, "OLE2DirectoryEntry->data length" );
 like($text_node->data, qr/S\0e\0g\0m\0e\0n\0t\0 \0001\0 \0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0/m, 'OLE2DirectoryEntry->data'); # it is UTF-16
 
+# this test does not work; reading stopst 2560 bytes short of $data_addr (probably because of unused blocks)
+#is( tell INPUT, $data_addr, "should have arrived at the data section after reading the method file");
+
+#------------------------------------------------------------
+# This is where the sequence is interrupted; we have (almost)
+# reached the data section, but the scanindex near the end
+# of the file must be read first.
+#------------------------------------------------------------
+
 # fast-forward to RunHeader
-my $run_header_addr = $rfi->preamble->run_header_addr;
 seek INPUT, $run_header_addr, 0;
-is( tell INPUT, 777542, "seek to run header address" );
+is( tell INPUT, $run_header_addr, "seek to run header address" );
 
+# RunHeader
 my $run_header      = Finnigan::RunHeader->decode( \*INPUT, $header->version );
-my $inst_id         = Finnigan::InstID->decode( \*INPUT );
-is( $inst_id->model, 'LTQ Orbitrap XL', "InstID->model");
-
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 my $trailer_addr    = $run_header->trailer_addr;
-
-is( $run_header->sample_info->start_time, 0.00581833333333333, "RunHeader->sample_info->start_time" );
-is( $run_header->sample_info->end_time, 0.242753333333333, "RunHeader->sample_info->end_time" );
-is( $scan_index_addr, 829706, "RunHeader->sample_info->scan_index_addr" );
 is( $trailer_addr, 832082, "RunHeader->trailer_addr" );
 
+# SampleInfo
+is( $run_header->sample_info->start_time, 0.00581833333333333, "RunHeader->sample_info->start_time" );
+is( $run_header->sample_info->end_time, 0.242753333333333, "RunHeader->sample_info->end_time" );
 my $first_scan = $run_header->sample_info->first_scan;
 my $last_scan  = $run_header->sample_info->last_scan;
 is( $first_scan, 1, "RunHeader->sample_info->first_scan" );
 is( $last_scan, 33, "RunHeader->sample_info->last_scan" );
+my $scan_index_addr = $run_header->sample_info->scan_index_addr;
+is( $scan_index_addr, 829706, "RunHeader->sample_info->scan_index_addr" );
+
+# InstID
+my $inst_id         = Finnigan::InstID->decode( \*INPUT );
+is( $inst_id->model, 'LTQ Orbitrap XL', "InstID->model");
 
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
@@ -178,7 +191,6 @@ $pr = $scan_event->precursors->[0]->stringify;
 is ($pr, '445.12@ecd35.00', "ScanEvent->precursors (3: activation method)");
 
 # read the first scan
-my $data_addr = $rfi->preamble->data_addr;
 seek INPUT, $data_addr, 0;
 is( tell INPUT, 24950, "seek to scan data address" );
 
