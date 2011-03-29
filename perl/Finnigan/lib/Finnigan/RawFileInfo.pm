@@ -6,6 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
 
 sub decode {
   my ($class, $stream, $version) = @_;
@@ -27,6 +28,10 @@ sub decode {
 
 sub preamble {
   shift->{data}->{preamble}->{value};
+}
+
+sub stringify {
+  shift->preamble->stringify;
 }
 
 1;

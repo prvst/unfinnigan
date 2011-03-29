@@ -85,13 +85,7 @@ if ( $option_dump ) {
   }
 }
 else {
-  say "$file: "
-    . $rfi->preamble->timestamp
-      . "; "
-	. "data addr: " . $rfi->preamble->data_addr
-	  . "; "
-	    . "RunHeader addr: " . $rfi->preamble->run_header_addr
-	  ;
+  say "$file: $rfi";
 }
 
 __END__

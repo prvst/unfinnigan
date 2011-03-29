@@ -6,6 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
 
 sub decode {
   my ($class, $stream, $version) = @_;
@@ -71,6 +72,16 @@ sub run_header_addr {
 
 sub data_addr {
   shift->{data}->{"data addr"}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+  return $self->timestamp
+      . "; "
+	. "data addr: " . $self->data_addr
+	  . "; "
+	    . "RunHeader addr: " . $self->run_header_addr
+	  ;
 }
 
 1;
