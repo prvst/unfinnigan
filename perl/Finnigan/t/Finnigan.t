@@ -97,16 +97,17 @@ is( tell INPUT, $run_header_addr, "seek to run header address" );
 my $run_header      = Finnigan::RunHeader->decode( \*INPUT, $header->version );
 my $trailer_addr    = $run_header->trailer_addr;
 is( $trailer_addr, 832082, "RunHeader->trailer_addr" );
+my $sample_info = $run_header->sample_info;
 
 # SampleInfo
-is( $run_header->sample_info->start_time, 0.00581833333333333, "RunHeader->sample_info->start_time" );
-is( $run_header->sample_info->end_time, 0.242753333333333, "RunHeader->sample_info->end_time" );
-my $first_scan = $run_header->sample_info->first_scan;
-my $last_scan  = $run_header->sample_info->last_scan;
-is( $first_scan, 1, "RunHeader->sample_info->first_scan" );
-is( $last_scan, 33, "RunHeader->sample_info->last_scan" );
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
-is( $scan_index_addr, 829706, "RunHeader->sample_info->scan_index_addr" );
+is( $sample_info->start_time, 0.00581833333333333, "SampleInfo->start_time" );
+is( $sample_info->end_time, 0.242753333333333, "SampleInfo->end_time" );
+my $first_scan = $sample_info->first_scan;
+my $last_scan  = $sample_info->last_scan;
+is( $first_scan, 1, "SampleInfo->first_scan" );
+is( $last_scan, 33, "SampleInfo->last_scan" );
+my $scan_index_addr = $sample_info->scan_index_addr;
+is( $scan_index_addr, 829706, "SampleInfo->scan_index_addr" );
 
 # InstID
 my $inst_id         = Finnigan::InstID->decode( \*INPUT );
