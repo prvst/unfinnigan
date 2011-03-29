@@ -118,20 +118,17 @@ Finnigan::RunHeader -- decoder for RunHeader, the primary file index structure
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $file_info = Finnigan::RunHeader->decode(\*INPUT);
-  say $file_info->first_scan;
-  say $file_info->last_scan;
-  $file_info->dump;
+  my $rh = Finnigan::RunHeader->decode(\*INPUT, $version);
+  my $first_scan_number = $rh->first_scan;
+  my $last_scan_number = $rh->last_scan;
+  my $scan_index_addr = $rh->sample_info->scan_index_addr;
 
 =head1 DESCRIPTION
 
-RunHeader is presently a static (fixed-size) structure containing data
+Decodes RunHeader, the static (fixed-size) structure containing data
 stream lengths and addresses, as well as some unidentified data. Every
 data stream in the file has its address stored in RunHeader or in its
-historical antecendent SampleInfo, which it now includes.
-
-The earlier version of RunHeader was much smaller and contained a few
-variable-length strings.
+historical antecedent SampleInfo, which it now includes.
 
 =head2 EXPORT
 
