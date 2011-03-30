@@ -25,6 +25,10 @@ sub n {
 }
 
 sub fields {
+  shift->{data}->{"field"}->{value};
+}
+
+sub labels {
   my @list;
   foreach my $f ( @{shift->{data}->{"field"}->{value}} ) {
     push @list, $f->definition;
