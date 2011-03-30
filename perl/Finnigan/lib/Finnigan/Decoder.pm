@@ -212,8 +212,7 @@ sub decode {
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
           or die "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
-        $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
-        $value =~ s/\0+$//;
+        ($value) = split /\0/, Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec)); # decode and truncate at 0
       }
       elsif ( substr($type, 0, 9) eq 'UTF-16-BE' ) {
         confess "UTF-16-BE not implemented";
