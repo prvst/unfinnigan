@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 114;
+use Test::More tests => 125;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -93,22 +93,37 @@ like($text_node->data, qr/S\0e\0g\0m\0e\0n\0t\0 \0001\0 \0I\0n\0f\0o\0r\0m\0a\0t
 seek INPUT, $run_header_addr, 0;
 is( tell INPUT, $run_header_addr, "seek to run header address" );
 
-# RunHeader
-my $run_header      = Finnigan::RunHeader->decode( \*INPUT, $header->version );
+# RunHeader / SampleInfo
+my $run_header = Finnigan::RunHeader->decode( \*INPUT, $header->version );
 is( $run_header->self_addr, $run_header_addr, "RunHeader->self_addr" );
-my $trailer_addr    = $run_header->trailer_addr;
+my $trailer_addr = $run_header->trailer_addr;
 is( $trailer_addr, 832082, "RunHeader->trailer_addr" );
+my $params_addr = $run_header->params_addr;
+is( $params_addr, 838794, "RunHeader->params_addr" );
+is( $run_header->ntrailer, 33, "RunHeader->ntrailer" );
+is( $run_header->nparams, 33, "RunHeader->nparams" );
+is( $run_header->nsegs, 1, "RunHeader->nsegs" );
 my $sample_info = $run_header->sample_info;
 
 # SampleInfo
+my $first_scan = $sample_info->first_scan;
+is( $first_scan, 1, "SampleInfo->first_scan" );
+my $last_scan  = $sample_info->last_scan;
+is( $last_scan, 33, "SampleInfo->last_scan" );
+my $inst_log_length = $sample_info->inst_status_samples;
+is( $inst_log_length, 17, "SampleInfo->inst_status_samples" );
+is( $sample_info->max_ion_current, 11508917, "SampleInfo->max_ion_current" );
+is( $sample_info->low_mz, 100, "SampleInfo->low_mz" );
+is( $sample_info->high_mz, 2000, "SampleInfo->high_mz" );
 is( $sample_info->start_time, 0.00581833333333333, "SampleInfo->start_time" );
 is( $sample_info->end_time, 0.242753333333333, "SampleInfo->end_time" );
-my $first_scan = $sample_info->first_scan;
-my $last_scan  = $sample_info->last_scan;
-is( $first_scan, 1, "SampleInfo->first_scan" );
-is( $last_scan, 33, "SampleInfo->last_scan" );
 my $scan_index_addr = $sample_info->scan_index_addr;
 is( $scan_index_addr, 829706, "SampleInfo->scan_index_addr" );
+is( $sample_info->data_addr, $data_addr, "SampleInfo->data_addr" );
+my $inst_log_addr = $sample_info->inst_log_addr;
+is( $inst_log_addr, 792726, "SampleInfo->inst_log_addr" );
+my $error_log_addr = $sample_info->error_log_addr;
+is( $error_log_addr, 803810, "SampleInfo->error_log_addr" );
 
 # InstID
 my $inst_id         = Finnigan::InstID->decode( \*INPUT );
