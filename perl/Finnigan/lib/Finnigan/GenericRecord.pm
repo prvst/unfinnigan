@@ -14,7 +14,7 @@ sub decode {
   # this answers the need to preserve order and to introduce gaps and
   # section titles commanded by the GenericHeader but not present in 
   # the actual record.
-  my $self = Finnigan::Decoder->read($stream, $header->field_templates);
+  my $self = Finnigan::Decoder->read($stream, ['0|time' => ['f', 'Float32'], @{$header->field_templates}]);
   return bless $self, $class;
 }
 
