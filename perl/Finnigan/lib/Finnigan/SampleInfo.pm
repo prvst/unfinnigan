@@ -75,6 +75,14 @@ sub scan_index_addr {
   shift->{data}->{"scan index addr"}->{value};
 }
 
+sub data_addr {
+  shift->{data}->{"data addr"}->{value};
+}
+
+sub inst_log_addr {
+  shift->{data}->{"inst log addr"}->{value};
+}
+
 sub error_log_addr {
   shift->{data}->{"error log addr"}->{value};
 }
@@ -89,10 +97,13 @@ Finnigan::SampleInfo -- decoder for SampleInfo, the primary file index structure
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $file_info = Finnigan::SampleInfo->decode(\*INPUT);
-  say $file_info->first_scan;
-  say $file_info->last_scan;
-  $file_info->dump;
+  my $rh = Finnigan::RunHeader->decode(\*INPUT, $version);
+  my $si = $rh->sample_info; # calls Finnigan::SampleInfo->decode
+  say $si->first_scan;
+  say $si->last_scan;
+  say $si->tot_ion_current;
+  my $scan_index_addr = $si->scan_index_addr;
+  . . .
 
 =head1 DESCRIPTION
 
