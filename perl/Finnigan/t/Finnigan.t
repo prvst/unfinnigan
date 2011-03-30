@@ -83,6 +83,13 @@ like($text_node->data, qr/S\0e\0g\0m\0e\0n\0t\0 \0001\0 \0I\0n\0f\0o\0r\0m\0a\0t
 # this test does not work; reading stopst 2560 bytes short of $data_addr (probably because of unused blocks)
 #is( tell INPUT, $data_addr, "should have arrived at the data section after reading the method file");
 
+# Read the first data packet; do it using the granular decoders first, then rewind and
+# use the monolithic decoder
+seek INPUT, $data_addr, 0;
+my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+diag($ph->layout);
+diag($ph->profile_size);
+
 #------------------------------------------------------------
 # This is where the sequence is interrupted; we have (almost)
 # reached the data section, but the scanindex near the end
