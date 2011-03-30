@@ -30,7 +30,7 @@ sub fields {
 
 sub field_templates {
   my @list;
-  my $ord = 0;
+  my $ord = 1;
   foreach my $f ( @{shift->{data}->{"field"}->{value}} ) {
     push @list, $f->definition($ord++);
   }
