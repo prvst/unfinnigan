@@ -120,7 +120,7 @@ sub definition {
 
   # wide string, zero-terminated
   if ( $type == 0xD ) {
-    my $l = $self->length;
+    my $l = $self->length * 2;
     return $self->ordinal($ord) => ['string', "UTF-16-LE:$l"];
   }
 
