@@ -156,6 +156,20 @@ sub decode {
   my $value;
   foreach my $i ( 0 .. @$fields/2 - 1 ) {
     my $name = $fields->[2*$i];
+    unless ( $fields->[2*$i+1] ) {
+      # it is a spacer in the human-readable generic record
+      $self->{data}->{$name} = {
+			      seq => $current_element_number + $i,
+			      addr => $current_addr,
+			      size => 0,
+			      type => 'spacer',
+			      value => '',
+			     };
+      
+      $self->{current_element_number} = $i;
+      next;
+    }
+
     my ($template, $type) = @{$fields->[2*$i+1]};
 
     confess qq(key "$name" already exists) if $self->{data}->{$name};
