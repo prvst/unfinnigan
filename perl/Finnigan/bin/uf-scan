@@ -205,6 +205,7 @@ uf-scan [options] file
 
  Options:
 
+  -d[ump]                       dump the packet header
   -e[xtract]                    extract the entire scan data as a binary chunk
   -l[ist]			list the called peaks [required]
   -p[rofile]			print the scan profile as a 2-column table [required]
