@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 125;
+use Test::More tests => 88;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -83,18 +83,14 @@ like($text_node->data, qr/S\0e\0g\0m\0e\0n\0t\0 \0001\0 \0I\0n\0f\0o\0r\0m\0a\0t
 # this test does not work; reading stopst 2560 bytes short of $data_addr (probably because of unused blocks)
 #is( tell INPUT, $data_addr, "should have arrived at the data section after reading the method file");
 
-# Read the first data packet; do it using the granular decoders first, then rewind and
-# use the monolithic decoder
-seek INPUT, $data_addr, 0;
-my $ph = Finnigan::PacketHeader->decode(\*INPUT);
-diag($ph->layout);
-diag($ph->profile_size);
+#---------------------------------------------------------------------------------
+#  S K I P    F O R W A R D
+#---------------------------------------------------------------------------------
 
-#------------------------------------------------------------
-# This is where the sequence is interrupted; we have (almost)
-# reached the data section, but the scanindex near the end
-# of the file must be read first.
-#------------------------------------------------------------
+# This is where the sequence breaks. The file pointer is now near the start of
+# scan data, but any operation with the scan data involving conversion to M/z
+# will require a trip to the ScanEvent stream, whose address is stored in 
+# RunHeader, also downstream from the scan data.
 
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
@@ -117,8 +113,6 @@ my $first_scan = $sample_info->first_scan;
 is( $first_scan, 1, "SampleInfo->first_scan" );
 my $last_scan  = $sample_info->last_scan;
 is( $last_scan, 33, "SampleInfo->last_scan" );
-my $inst_log_length = $sample_info->inst_status_samples;
-is( $inst_log_length, 17, "SampleInfo->inst_status_samples" );
 is( $sample_info->max_ion_current, 11508917, "SampleInfo->max_ion_current" );
 is( $sample_info->low_mz, 100, "SampleInfo->low_mz" );
 is( $sample_info->high_mz, 2000, "SampleInfo->high_mz" );
@@ -129,12 +123,124 @@ is( $scan_index_addr, 829706, "SampleInfo->scan_index_addr" );
 is( $sample_info->data_addr, $data_addr, "SampleInfo->data_addr" );
 my $inst_log_addr = $sample_info->inst_log_addr;
 is( $inst_log_addr, 792726, "SampleInfo->inst_log_addr" );
+my $inst_log_length = $sample_info->inst_log_length;
+is( $inst_log_length, 17, "SampleInfo->inst_log_length" );
 my $error_log_addr = $sample_info->error_log_addr;
 is( $error_log_addr, 803810, "SampleInfo->error_log_addr" );
+
+# -------------------------------------------------------------------------------
+# With all pointers now on hand, we could go ahead and read the ScanEvent stream 
+# and return to the data, but for consistency of testing, it is better to keep
+# trudging along in the same direction until the end of file is reached, then
+# return to the data. Smart programs will know which prats of the file are
+# worth reading for their particular purpose.
 
 # InstID
 my $inst_id         = Finnigan::InstID->decode( \*INPUT );
 is( $inst_id->model, 'LTQ Orbitrap XL', "InstID->model");
+
+# Instrument Log -- use generic decoders.
+# The only way to reach the instrument log header is to read
+# RunHeader and InstID prior to it, because there is no pointer
+# to it anywhere in the file. The instrument log address in
+# SampleInfo points at the first instrument log record following
+# the header.
+my $inst_log_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+is( $inst_log_header->n, 158, "GenericDataHeader->n (Instrument Log)" );
+# only types 0, 3, 4, 6, 9, 10, 13 in this file
+is( $inst_log_header->fields->[0]->type, 0, "GenericDataHeader->fields, GenericDataDescriptor->type 0" );
+is( $inst_log_header->fields->[0]->length, 0, "GenericDataHeader->fields, GenericDataDescriptor->lenth 0" );
+is( $inst_log_header->fields->[0]->label, "API SOURCE", "GenericDataHeader->fields, GenericDataDescriptor->label 0" );
+is( $inst_log_header->fields->[3]->type, 3, "GenericDataHeader->fields, GenericDataDescriptor->type 3" );
+is( $inst_log_header->fields->[3]->length, 0, "GenericDataHeader->fields, GenericDataDescriptor->lenth 3" );
+is( $inst_log_header->fields->[3]->label, "Vaporizer Thermocouple OK:", "GenericDataHeader->fields, GenericDataDescriptor->label 3" );
+is( $inst_log_header->fields->[16]->type, 4, "GenericDataHeader->fields, GenericDataDescriptor->type 4" );
+is( $inst_log_header->fields->[16]->length, 0, "GenericDataHeader->fields, GenericDataDescriptor->lenth 4" );
+is( $inst_log_header->fields->[16]->label, "Ion Gauge Status:", "GenericDataHeader->fields, GenericDataDescriptor->label 4" );
+is( $inst_log_header->fields->[31]->type, 6, "GenericDataHeader->fields, GenericDataDescriptor->type 6" );
+is( $inst_log_header->fields->[31]->length, 0, "GenericDataHeader->fields, GenericDataDescriptor->lenth 6" );
+is( $inst_log_header->fields->[31]->label, "Power (Watts):", "GenericDataHeader->fields, GenericDataDescriptor->label 6" );
+is( $inst_log_header->fields->[29]->type, 9, "GenericDataHeader->fields, GenericDataDescriptor->type 9" );
+is( $inst_log_header->fields->[29]->length, 0, "GenericDataHeader->fields, GenericDataDescriptor->lenth 9" );
+is( $inst_log_header->fields->[29]->label, "Life (hours):", "GenericDataHeader->fields, GenericDataDescriptor->label 9" );
+is( $inst_log_header->fields->[53]->type, 10, "GenericDataHeader->fields, GenericDataDescriptor->type 10" );
+is( $inst_log_header->fields->[53]->length, 2, "GenericDataHeader->fields, GenericDataDescriptor->lenth 10" );
+is( $inst_log_header->fields->[53]->label, "Multipole 00 Offset (V):", "GenericDataHeader->fields, GenericDataDescriptor->label 10" );
+is( $inst_log_header->fields->[28]->type, 13, "GenericDataHeader->fields, GenericDataDescriptor->type 13" );
+is( $inst_log_header->fields->[28]->length, 14, "GenericDataHeader->fields, GenericDataDescriptor->lenth 13" );
+is( $inst_log_header->fields->[28]->label, "Status:", "GenericDataHeader->fields, GenericDataDescriptor->label 13" );
+is( tell INPUT, $inst_log_addr, "should have arrived at the start of the instrument log" );
+# read the last log record (almost a guarantee that all prior records are intact)
+my $inst_log_record;
+foreach my $i (0 .. $inst_log_length - 1) {
+  $inst_log_record = Finnigan::GenericRecord->decode(\*INPUT, $inst_log_header);
+}
+is( $inst_log_record->data->{"1|API SOURCE"}->{value}, "", "GenericRecord->decode (Instrument Log, 17.1, type 0)" );
+is( $inst_log_record->data->{"4|Vaporizer Thermocouple OK:"}->{value}, 0, "GenericRecord->decode (Instrument Log, 17.4, type 3)" );
+is( $inst_log_record->data->{"17|Ion Gauge Status:"}->{value}, 1, "GenericRecord->decode (Instrument Log, 17.17, type 4)" );
+is( $inst_log_record->data->{"32|Power (Watts):"}->{value}, 69, "GenericRecord->decode (Instrument Log, 17.32, type 6)" );
+is( $inst_log_record->data->{"30|Life (hours):"}->{value}, 18398, "GenericRecord->decode (Instrument Log, 17.30, type 9)" );
+is( $inst_log_record->data->{"54|Multipole 00 Offset (V):"}->{value}, -2.0935959815979, "GenericRecord->decode (Instrument Log, 17.54, type 10)" );
+is( $inst_log_record->data->{"29|Status:"}->{value}, "Running", "GenericRecord->decode (Instrument Log, 17.29, type 13)" );
+is( $inst_log_record->data->{"158|Divert/Inject valve:"}->{value}, "Inject", "GenericRecord->decode (Instrument Log, 17.158, last item)" );
+# foreach my $key (sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$inst_log_record->data}) {
+#   print STDERR "$key -> " . $inst_log_record->data->{$key}->{value} . "\n";
+# }
+
+is( tell INPUT, $error_log_addr, "should have arrived at the start of the error log" );
+
+__END__
+
+# Read the first ScanEvent record and get the converter. More tests
+# for ScanEvent itself later ...
+seek INPUT, $trailer_addr + 4, 0; # skip the events count
+my $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
+my $converter = $scan_event->converter;
+is (&$converter(1), 38518081.414831, "ScanEvent->converter");
+
+# back to the first ScanDataPacket
+seek INPUT, $data_addr, 0;
+is( tell INPUT, 24950, "seek to scan data address" );
+
+# PacketHeader
+my $ph = Finnigan::PacketHeader->decode( \*INPUT );
+is ($ph->{data}->{"unknown long[1]"}->{value}, 1, "PacketHeader->{unknown long[1]}");
+is ($ph->profile_size, 5624, "PacketHeader->profile_size");
+is ($ph->peak_list_size, 1161, "PacketHeader->peak_list_size");
+is ($ph->layout, 128, "PacketHeader->layout");
+is ($ph->descriptor_list_size, 580, "PacketHeader->descriptor_list_size");
+is ($ph->size_of_unknown_stream, 581, "PacketHeader->size_of_unkonwn_stream");
+is ($ph->size_of_triplet_stream, 27, "PacketHeader->size_of_triplet_stream");
+is ($ph->{data}->{"unknown long[2]"}->{value}, 0, "PacketHeader->{unknown long[2]}");
+is ($ph->low_mz, 400.0, "PacketHeader->low_mz");
+is ($ph->high_mz, 2000.0, "PacketHeader->high_mz");
+
+my $profile = Finnigan::Profile->decode( \*INPUT, $ph->layout );
+is ($profile->first_value, 344.543619791667, "Profile->first_value");
+is ($profile->peak_count, 580, "Profile->peak_count");
+is ($profile->nbins, 293046, "Profile->nbins");
+$profile->set_converter( $converter ); # from ScanEvent 1 above
+my $bins = $profile->bins;
+is ($bins->[0]->[0], 400.209152455266, "Profile->bins (Mz)");
+is ($bins->[0]->[1], 447.530578613281, "Profile->bins (signal)");
+__END__
+
+# back to the first scan; read with compound decoder
+seek INPUT, $data_addr, 0;
+is( tell INPUT, 24950, "seek to scan data address (2)" );
+
+my $scan = Finnigan::Scan->decode( \*INPUT );
+is ( $scan->header->profile_size, 5624, "Scan->header->profile_size");
+$profile = $scan->profile;
+$profile->set_converter( $converter ); # from ScanEvent 1 above
+$bins = $profile->bins;
+is ($bins->[0]->[0], 400.209152455266, "Scan->profile->bins (Mz)");
+is ($bins->[0]->[1], 447.530578613281, "Scan->profile->bins (signal)");
+
+my $c = $scan->centroids;
+is ($c->count, 580, "Scan->centroids->count");
+is ($c->list->[0]->[0], 400.212463378906, "Scan->centroids->list (Mz)");
+is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
 
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
@@ -214,49 +320,3 @@ $Finnigan::activationMethod = 'ecd';
 $pr = $scan_event->precursors->[0]->stringify;
 is ($pr, '445.12@ecd35.00', "ScanEvent->precursors (3: activation method)");
 
-# read the first scan
-seek INPUT, $data_addr, 0;
-is( tell INPUT, 24950, "seek to scan data address" );
-
-my $ph = Finnigan::PacketHeader->decode( \*INPUT );
-is ($ph->{data}->{"unknown long[1]"}->{value}, 1, "PacketHeader->{unknown long[1]}");
-is ($ph->profile_size, 5624, "PacketHeader->profile_size");
-is ($ph->peak_list_size, 1161, "PacketHeader->peak_list_size");
-is ($ph->layout, 128, "PacketHeader->layout");
-is ($ph->descriptor_list_size, 580, "PacketHeader->descriptor_list_size");
-is ($ph->size_of_unknown_stream, 581, "PacketHeader->size_of_unkonwn_stream");
-is ($ph->size_of_triplet_stream, 27, "PacketHeader->size_of_triplet_stream");
-is ($ph->{data}->{"unknown long[2]"}->{value}, 0, "PacketHeader->{unknown long[2]}");
-is ($ph->low_mz, 400.0, "PacketHeader->low_mz");
-is ($ph->high_mz, 2000.0, "PacketHeader->high_mz");
-
-my $profile = Finnigan::Profile->decode( \*INPUT, $ph->layout );
-is ($profile->first_value, 344.543619791667, "Profile->first_value");
-is ($profile->step, -1/(3*512), "Profile->step");
-is ($profile->peak_count, 580, "Profile->peak_count");
-is ($profile->nbins, 293046, "Profile->nbins");
-
-$profile->set_converter( $converter ); # from ScanEvent 1 above
-my $bins = $profile->bins;
-is ($bins->[0]->[0], 400.209152455266, "Profile->bins (Mz)");
-is ($bins->[0]->[1], 447.530578613281, "Profile->bins (signal)");
-
-# back to the first scan; read with compound decoder
-seek INPUT, $data_addr, 0;
-is( tell INPUT, 24950, "seek to scan data address (2)" );
-
-my $scan = Finnigan::Scan->decode( \*INPUT );
-is ( $scan->header->profile_size, 5624, "Scan->header->profile_size");
-$profile = $scan->profile;
-$profile->set_converter( $converter ); # from ScanEvent 1 above
-$bins = $profile->bins;
-is ($bins->[0]->[0], 400.209152455266, "Scan->profile->bins (Mz)");
-is ($bins->[0]->[1], 447.530578613281, "Scan->profile->bins (signal)");
-
-my $c = $scan->centroids;
-is ($c->count, 580, "Scan->centroids->count");
-is ($c->list->[0]->[0], 400.212463378906, "Scan->centroids->list (Mz)");
-is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
-
-#use Data::Dumper;
-#print STDERR Dumper($scan->centroids);
