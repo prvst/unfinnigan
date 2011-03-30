@@ -114,7 +114,7 @@ sub definition {
   }
 
   # wide string, zero-terminated
-  if ( $type == 0xC ) {
+  if ( $type == 0xD ) {
     my $l = $self->length;
     return $self->label => ['string', "UTF-16-LE:$l"];
   }
