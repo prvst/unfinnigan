@@ -66,35 +66,20 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanIndexEntry -- decoder for ScanIndexEntry, a linked list item pointing to scan data
+Finnigan::PacketHeader -- decoder for PacketHeader, a substructure of ScanDataPaket
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
-  say $entry->offset; # returns an offset from the start of scan data stream 
-  say $entry->data_size;
-  $entry->dump;
+  my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+  say $ph->layout;
+  say $ph->profile_size;
 
 =head1 DESCRIPTION
 
-ScanIndexEntry is a static (fixed-size) structure containing the
-pointer to a scan, the scan's data size and some auxiliary information
-about the scan.
-
-ScanIndexEntry elements seem to form a linked list. Each
-ScanIndexEntry contains the index of the next entry.
-
-Although in all observed instances the scans were sequential and their
-indices could be ignored, it may not always be the case.
-
-It is not clear whether scan index numbers start at 0 or at 1. If they
-start at 0, the list link index must point to the next item. If they
-start at 1, then "index" will become "previous" and "next" becomes
-"index" -- the list will be linked from tail to head. Although
-observations are lacking, I am inclined to interpret it as a
-forward-linked list, simply from common sense.
-
+Calling this decoder is a pre-requisite to reading any scan data. It
+reads the data packet layout indicator and the sizes of the data
+streams included in the packet.
 
 =head2 EXPORT
 
