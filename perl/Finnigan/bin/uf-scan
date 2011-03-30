@@ -10,9 +10,8 @@ use Finnigan;
 
 my $args = new Getopt::Declare q{
   [strict]
-  [mutex: -p -l]
-  [mutex: -p -plot]
-  [mutex: -plot -l]
+  [mutex: -d -e -l -p -plot]
+  -d[ump]			dump the header [required]
   -e[xtract]			extract the entire scan as binary data (will print by default)
   -l[ist]			print or extract the peak list [required]
   -p[rofile]			print or extract the scan profile as a 2-column table [required]
@@ -105,6 +104,9 @@ $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
 my $peaks;
 $peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
 
+if ( exists $args->{-d} ) {
+  $ph->dump(style => 'wiki', relative => 1);
+}
 if ( exists $args->{-l} ) {
   if ( $peaks ) {
     if ( exists $args->{-e} ) {
