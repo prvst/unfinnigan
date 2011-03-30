@@ -47,7 +47,7 @@ sub last_scan {
   shift->{data}->{"last scan number"}->{value};
 }
 
-sub inst_status_samples {
+sub inst_log_length {
   shift->{data}->{"inst log length"}->{value};
 }
 
