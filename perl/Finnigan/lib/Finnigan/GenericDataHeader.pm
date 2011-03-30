@@ -28,10 +28,11 @@ sub fields {
   shift->{data}->{"field"}->{value};
 }
 
-sub labels {
+sub field_templates {
   my @list;
+  my $ord = 0;
   foreach my $f ( @{shift->{data}->{"field"}->{value}} ) {
-    push @list, $f->definition;
+    push @list, $f->definition($ord++);
   }
   return \@list;
 }
