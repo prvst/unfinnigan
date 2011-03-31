@@ -93,10 +93,10 @@ sub iterate_scalar {
           or die "could not read all $nchars 2-byte characters of $name at $current_addr";
         $nbytes += 4; # total string length
 
-	$size += $nbytes;
-	$current_addr += $nbytes;
+        $size += $nbytes;
+        $current_addr += $nbytes;
 
-	push @{$self->{data}->{$name}->{value}}, Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
+        push @{$self->{data}->{$name}->{value}}, Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
       }
     }
     else {
@@ -107,26 +107,26 @@ sub iterate_scalar {
     my $template_length = length(pack($template,()));
     if ( substr($template, 0, 3) eq 'U0C' ) {
       foreach $i ( 1 .. $count ) {
-	$nbytes = CORE::read $stream, $rec, $template_length;
-	$nbytes == $template_length
-	  or die "could not read all $template_length bytes of $name at $current_addr";
+        $nbytes = CORE::read $stream, $rec, $template_length;
+        $nbytes == $template_length
+          or die "could not read all $template_length bytes of $name at $current_addr";
 
-	$size += $nbytes;
-	$current_addr += $nbytes;
+        $size += $nbytes;
+        $current_addr += $nbytes;
 
-	push @{$self->{data}->{$name}->{value}}, pack ( "C*", unpack $template, $rec );
+        push @{$self->{data}->{$name}->{value}}, pack ( "C*", unpack $template, $rec );
       }
     }
     else {
       foreach $i ( 1 .. $count ) {
-	$nbytes = CORE::read $stream, $rec, $template_length;
-	$nbytes == $template_length
-	  or die "could not read all $template_length bytes of $name at $current_addr";
+        $nbytes = CORE::read $stream, $rec, $template_length;
+        $nbytes == $template_length
+          or die "could not read all $template_length bytes of $name at $current_addr";
 
-	$size += $nbytes;
-	$current_addr += $nbytes;
+        $size += $nbytes;
+        $current_addr += $nbytes;
 
-	push @{$self->{data}->{$name}->{value}}, unpack ( $template, $rec );
+        push @{$self->{data}->{$name}->{value}}, unpack ( $template, $rec );
       }
     }
   }
@@ -159,12 +159,12 @@ sub decode {
     unless ( $fields->[2*$i+1] ) {
       # it is a spacer in the human-readable generic record
       $self->{data}->{$name} = {
-			      seq => $current_element_number + $i,
-			      addr => $current_addr,
-			      size => 0,
-			      type => 'spacer',
-			      value => '',
-			     };
+            seq => $current_element_number + $i,
+            addr => $current_addr,
+            size => 0,
+            type => 'spacer',
+            value => '',
+           };
       
       $self->{current_element_number} = $i;
       next;
@@ -192,6 +192,8 @@ sub decode {
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
           or die "could not read all $nchars 2-byte characters of $name at $current_addr";
+        $rec =~ s/\xb0/\*/; # remove the degree sign
+        #print(STDERR (ord > 127 ? sprintf("<%02X>", ord) : $_)) for(split //, $rec); print STDERR "\n";
         $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
         $nbytes += 4;
       }
@@ -225,30 +227,30 @@ sub decode {
       my $bytes_to_read = 8;
       $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
-	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+        or die "could not read all $bytes_to_read bytes of $name at $current_addr";
       $value = windows_datetime_in_bytes(unpack "W*", $rec);
     }
     else {
       my $bytes_to_read = length(pack($template,()));
       $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
-	or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+        or die "could not read all $bytes_to_read bytes of $name at $current_addr";
 
       if ( substr($template, 0, 3) eq 'U0C' ) {
-	$value = pack "C*", unpack $template, $rec;
+        $value = pack "C*", unpack $template, $rec;
       }
       else {
-	$value = unpack $template, $rec;
+        $value = unpack $template, $rec;
       }
     }
 
     $self->{data}->{$name} = {
-			      seq => $current_element_number + $i,
-			      addr => $current_addr,
-			      size => $nbytes,
-			      type => $type,
-			      value => $value,
-			     };
+            seq => $current_element_number + $i,
+            addr => $current_addr,
+            size => $nbytes,
+            type => $type,
+            value => $value,
+           };
 
     $current_addr = tell $stream;
     $self->{size} += $nbytes;
@@ -315,13 +317,13 @@ sub dump {
         $value .= " ..." if $len > 16;
       }
       say "  <tr>"
-	. " <td>" . $offset . "</td>"
-	  . " <td>" . $self->item($key)->{size} . "</td>"
-	    . " <td>" . $type . "</td>"
-	      . " <td>" . $key . "</td>"
-		. " <td>$value</td>"
-		  . " </tr>"
-		    ;
+        . " <td>" . $offset . "</td>"
+          . " <td>" . $self->item($key)->{size} . "</td>"
+            . " <td>" . $type . "</td>"
+              . " <td>" . $key . "</td>"
+                . " <td>$value</td>"
+                  . " </tr>"
+                    ;
     }
     say "</table>";
   }
@@ -334,11 +336,11 @@ sub dump {
       $type =~ s/^Finnigan:://;
       $type =~ s/\[\]/\`[]\`/;
       if ($self->item($key)->{type} eq 'UTF16LE'
-	  and substr($value, 0, 2) eq "\x00\x00") {
-	$value =~ s/\x00/00 /g;
-	if (length($value) > 20) {
-	  $value = substr($value, 0, 30) . "...";
-	}
+          and substr($value, 0, 2) eq "\x00\x00") {
+        $value =~ s/\x00/00 /g;
+        if (length($value) > 20) {
+          $value = substr($value, 0, 30) . "...";
+        }
       }
       if ( ref $value eq 'ARRAY' ) {
         $value = join ", ", map {"$_"} @$value;
@@ -351,12 +353,12 @@ sub dump {
         $value .= " ..." if $len > 16;
       }
       say "|| " . join(" || ",
-		       $offset,
-		       $self->item($key)->{size},
-		       $type,
-		       "\`$key\`",
-		       "\`$value\`"
-		      ). " ||";
+           $offset,
+           $self->item($key)->{size},
+           $type,
+           "\`$key\`",
+           "\`$value\`"
+          ). " ||";
     }
   }
   else {
@@ -376,12 +378,12 @@ sub dump {
         $value .= " ..." if $len > 16;
       }
       say join("\t",
-	       $offset,
-	       $self->item($key)->{size},
-	       $type,
-	       $key,
-	       "$value"
-	      );
+         $offset,
+         $self->item($key)->{size},
+         $type,
+         $key,
+         "$value"
+        );
     }
   }
 }
@@ -416,13 +418,13 @@ Finnigan::Decoder - a generic binary structure decoder
   use Finnigan;
 
   my $fields = [
-		short_int => 'v',
-		long_int => 'V',
-		ascii_string => 'C60',
-		wide_string => 'U0C18',
-		audit_tag => 'object=Finnigan::AuditTag',
-		time => 'windows_time',
-	       ];
+    short_int => 'v',
+    long_int => 'V',
+    ascii_string => 'C60',
+    wide_string => 'U0C18',
+    audit_tag => 'object=Finnigan::AuditTag',
+    time => 'windows_time',
+  ];
 
   my $data = Finnigan::Decoder->read(\*STREAM, $fields);
 
@@ -469,9 +471,9 @@ to version-sensitive decoders.
 Here is an example of the template list for a simple decoder:
 
   my $fields = [
-		"mz"        => ['f', 'Float32'],
-		"abundance" => ['f', 'Float32'],
-	       ];
+    "mz"        => ['f', 'Float32'],
+    "abundance" => ['f', 'Float32'],
+  ];
 
 =item C<sub decode($stream, $fields, $any_arg)>
 
@@ -532,6 +534,5 @@ Copyright (C) 2010 by Gene Selkov
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.0 or,
 at your option, any later version of Perl 5 you may have available.
-
 
 =cut
