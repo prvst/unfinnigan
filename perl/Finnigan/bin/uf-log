@@ -18,7 +18,7 @@ my $args = new Getopt::Declare q{
   -a[ll]			dump all field descriptors [requires: -d]
   -s[ize]			print record size [requires: -d]
   -n[unmber] <n:0+n>		extract the log entry number <n>
-  -h[tml]			pormat as html
+  -h[tml]			format as html
   -w[iki]			format as a wiki table format
   -r[elative]			show relative addersess in dump [requires: -d]
   <file>			input file [required]
@@ -49,7 +49,6 @@ my $inst_log_length = $run_header->sample_info->inst_log_length;
 
 # can't FF; have to read the istrument IDs to reach the InstrumentLog
 my $inst_id  = Finnigan::InstID->decode( \*INPUT );
-say $inst_id->model;
 
 # now at the start of InstrumentLog
 my $inst_log_header = Finnigan::GenericDataHeader->decode(\*INPUT);
@@ -93,125 +92,60 @@ if ( $args->{'-header'} ) {
     }
   }
   else {
-    $inst_log_header->dump(filter => ['n']);
     foreach my $i (0 .. $inst_log_header->n - 1) {
-      $inst_log_header->field($i)->dump;
+      say $inst_log_header->field($i)->type
+	. "\t" . $inst_log_header->field($i)->length
+	  . "\t" . $inst_log_header->field($i)->label
     }
   }
 }
 else {
   # do the records
   my $inst_log_record;
-  foreach my $i (0 .. $inst_log_length - 1) {
+  my @range = 0 .. $inst_log_length - 1;
+  if ( exists $args->{-n}) {
+    my $n = $args->{-n}{"<n>"};
+    if ($n - 1 < $range[0] or $n - 1 > $range[-1]) {
+      say STDERR "Record number $n is out of range. The file $file has only $inst_log_length log records";
+      exit -1;
+    }
+    @range = ($n - 1);
+    say STDERR "new range is @range";
+  }
+  foreach my $i (@range) {
     $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
-  }
-
-  use Data::Dumper;
-  print Dumper($inst_log_record);
-}
-__END__
-else {
-  if ( $args->{-a} ) {
-    # An alternative way to read all entries (assuming there ever are
-    # more of them than the number between the first and the last
-    # scans specified in SampleInfo) is to read everything between the
-    # start address of ScanIndex and the address of the stream
-    # following it. Since ScanIndexEntry is a static structure, the
-    # number of entries is obtained by dividing the address offset by
-    # the entry size
-
-    my $trailer_addr = $run_header->trailer_addr;
-    my $stream_size = $trailer_addr - $scan_index_addr;
-    die "nothing to read" unless $stream_size > 0;
-
-    # Read one record and measure its size. We know it's 72, but
-    # better be indirect, and there is no time to add a recursive size
-    # method to Decoder, to calculate the expected size.
-    my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
-    print_as_table_row($entry);
-    my $record_size = $entry->size;
-
-    my $nrecords = $stream_size / $record_size;
-    die "can't fit the whole number of $record_size\-byte records between $scan_index_addr and $trailer_addr" if $stream_size % $record_size;
-    foreach my $n ( 2 .. $nrecords ) {
-      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
+    my $j = 0;
+    foreach my $field ($inst_log_record->fields) {
+      say $i + 1
+	. "\t" . $inst_log_record->time
+	  . "\t" .$inst_log_header->field($j)->label
+	    . "\t" . $field->{value};
+      $j++;
     }
   }
-  else {
-    # unless option --all is given, assume the index range specfied in SampleInfo is wanted
 
-    # this code is not fool-proof and is not finished! It assumes that
-    # there are exactly as many entries in ScanIndex as would fit
-    # between $first_scan and $last_scan. In other words, the internal
-    # indices and links are not checked.
-    my $first_scan = $run_header->sample_info->first_scan;
-    my $last_scan = $run_header->sample_info->last_scan;
-    my $from = exists $args->{-range} ? $args->{-range}{"<from>"} : $first_scan;
-    my $to = exists $args->{-range} ? $args->{-range}{"<to>"} : $last_scan;
-
-    if ( $from > $first_scan) {
-      my $size = 72; # this may be wrong!
-      seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
-    }
-    foreach my $index ($from - 1 .. $to - 1) {
-      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
-    }
-  }
-}
-
-sub print_as_table_row {
-  my $index_entry = shift;
-  my $unknown = $index_entry->unknown;
-  if ( exists $args->{-f} ) {
-    if ( $args->{-f}->{'<type>'} eq 'bin' ) {
-      $unknown = sprintf "%b", $unknown;
-    }
-    elsif ( $args->{-f}->{'<type>'} eq 'hex' ) {
-      $unknown = sprintf "0x%08x", $unknown;
-    }
-    elsif ( $args->{-f}->{'<type>'} eq 'ms' ) {
-      $unknown = {21 => 'MS1', 18 => 'MS2', 19 => 'MS2*'}->{$unknown};
-    }
-    else {
-      die "unkonwn format: " . $args->{-f}->{'<type>'};
-    }
-  }
-  say $index_entry->index . "\t"
-    . $index_entry->next . "\t"
-      . $index_entry->scan_segment . "\t"
-	. $index_entry->scan_event . "\t"
-	  . $index_entry->offset . "\t"
-	    . $index_entry->data_size . "\t"
-	      . $unknown . "\t"
-		. $index_entry->start_time . "\t"
-		  . $index_entry->low_mz . "\t"
-		    . $index_entry->high_mz . "\t"
-		      . $index_entry->base_intensity . "\t"
-			. $index_entry->base_mz . "\t"
-			  . $index_entry->total_current
 }
 
 __END__
 =head1 NAME
 
-uf-index - decode the ScanIndexEntry structures in a Finnigan raw file
+uf-log - list or dump the instrument log entries in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-index [options] file
+uf-log [options] file
 
  Options:
 
-  -a[ll]                        process all existing index entries
-  -n[unmber] <n>                get one index entry number <n>
-  -range <from> .. <to>         extract all entries with numbers between <from> and <to>
-  -d[ump]                       dump all data in each index entry 
-  -s[ize]                       print record size 
-  -h[tml]                       dump as html 
-  -w[iki]                       dump in wiki table format 
-  -r[elative]                   show relative addersess in dump 
-  -f[ormat] <type>              format the unknown long as 'bin', 'hex', or 'ms' (for MS level)
-  <file>                        input file 
+  -header			extract the log header (record structure)
+  -d[ump]			dump the requested feature with file seek addresses
+  -a[ll]			dump all field descriptors [requires: -d]
+  -s[ize]			print record size [requires: -d]
+  -n[unmber] <n:0+n>		extract the log entry number <n>
+  -h[tml]			format as html
+  -w[iki]			format as a wiki table format
+  -r[elative]			show relative addersess in dump [requires: -d]
+  <file>			input file [required]
 
 =head1 OPTIONS
 
@@ -219,21 +153,18 @@ uf-index [options] file
 
 =item B<-help>
 
-Print a brief help message and exits.
+Print a brief help message and exit.
 
 =item B<-d[ump]>
 
-Prints a table listing all fields in the ScanIndexEntry records, with their seek
-addresses, sizes, names and values. Individual entries can be selected
-with the B<-n[umber]> option or with the B<-range> option.
+Prints a table listing all fields in the requested object (a log entry
+or the file header), with their seek addresses, sizes, names and
+values. Individual entries can be selected with the B<-n[umber]>
+option.
 
 =item B<-n[umber]>
 
-Gives the number of a single ScanIndexEntry to process
-
-=item B<-r[ange]>
-
-Selects a range of the ScanIndexEntry records to process
+Gives the number of a single InstrumentLogRecord to extract
 
 =item B<-h[tml]>
 
@@ -255,43 +186,49 @@ show the absolute seek address. (works with the -d[ump] option)
 
 =item B<-a[ll]>
 
-Process all entries, including those that may lie outside the declared
-range. It appears as though it can be possible to find more index
-entries in the file than would fit between the first and the last scan
-numbers specified in RunHeader/SampleInfo. In that case, in the
-absence of the -all option, the entries will be enumerated according
-to ScanIndex, which will be treated as a linked list -- starting with
-the entry whose index matches the first scan number.
+Dump all GenericDataDescriptor entries in the file header (requires B<-header>)
 
 =back
 
 =head1 DESCRIPTION
 
-B<uf-index> can be used to dump the scan index entries from a Finnigan
-raw file.
+B<uf-log> can be used to examine the instrument log stream in a
+Finnigan raw file. The instrument log records typically contain more
+than a hundred parameters, including operational data on the pumps,
+power supplies, ion optics and injectors -- everything that may be
+useful in the auditing of the instrument's performance.
 
+Each record is timestamped with the current retention time of the
+sample.
 
 =head1 SEE ALSO
 
-Finnigan::ScanIndexRecord
+Finnigan::InstrumentLog
+Finnigan::InstrumentLogRecord
 
 =head1 EXAMPLES
 
-uf-index sample.raw 
+uf-log sample.raw 
 
-  (will print all index entries in the file in a tabular form)
+  (will list all log records in the tabular form: <record number, time, label, value>)
 
-uf-index -range 1..5 sample.raw
+uf-log -n 5 sample.raw
 
-  (will print the first five records)
+  (will print the fifth log record)
 
-uf-index -range 1..5 -format bin sample.raw
+uf-log -header sample.raw
 
-  (will show individual bits in the scan type word)
+  (will print the contents of the file header in the tabular form: <type, length, label>)
 
-uf-index -rdsn 5 ~/shared/test/sample4.raw 
+uf-log -header -dw sample.raw
 
-  (will dump the fifth index entry with relative addresses and will
-   show its size)
+  (will dump the header in the compact wiki format, with a stringified
+  GenericDataDescriptor list)
+
+uf-log -header -daw sample.raw
+
+  (will dump the header in the extended wiki format, showing the
+  location of echa GenericDataDescriptor's element)
+
 
 =cut
