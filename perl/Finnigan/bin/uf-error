@@ -5,18 +5,25 @@ use warnings;
 use feature qw/state say/;
 use 5.010;
 
-use Getopt::Declare;
 use Finnigan;
 
-my $args = new Getopt::Declare q{
-  <file>	input file [required]
-}
-  or exit(-1);
-
-my $file = $args->{"<file>"};
--e $file or die "file '$file' does not exist";
--f $file or die "'$file' is not a plain file";
--s $file or die "'$file' has zero size";
+@ARGV == 1 or do {
+  say STDERR "Usage: $0 <file>";
+  exit -1;
+};
+my $file = $ARGV[0];
+-e $file or do {
+  say STDERR "file '$file' does not exist";
+  exit -1;
+};
+-f $file or do {
+  say STDERR "'$file' is not a plain file";
+  exit -1;
+};
+-s $file or do {
+  say STDERR "'$file' has zero size";
+  exit -1;
+};
 
 # -----------------------------------------------------------------------------
 open INPUT, "<$file" or die "can't open '$file': $!";
@@ -39,16 +46,19 @@ seek INPUT, $error_log_addr, 0;
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
 exit 0 unless $error_log_length;
 
-say $error_log_length;
+foreach my $i ( 0 .. $error_log_length - 1) {
+  my $e = Finnigan::Error->decode(\*INPUT);
+  say STDERR $e->time . "\t" . $e->message;
+}
 
 __END__
 =head1 NAME
 
-uf-log - list or dump the instrument log entries in a Finnigan raw file
+uf-error - print the error log entries from a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-log [options] file
+uf-log file
 
  Options:
 
