@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 88;
+use Test::More tests => 89;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -173,16 +173,17 @@ is( tell INPUT, $inst_log_addr, "should have arrived at the start of the instrum
 # read the last log record (almost a guarantee that all prior records are intact)
 my $inst_log_record;
 foreach my $i (0 .. $inst_log_length - 1) {
-  $inst_log_record = Finnigan::GenericRecord->decode(\*INPUT, $inst_log_header);
+  $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
 }
-is( $inst_log_record->data->{"1|API SOURCE"}->{value}, "", "GenericRecord->decode (Instrument Log, 17.1, type 0)" );
-is( $inst_log_record->data->{"4|Vaporizer Thermocouple OK:"}->{value}, 0, "GenericRecord->decode (Instrument Log, 17.4, type 3)" );
-is( $inst_log_record->data->{"17|Ion Gauge Status:"}->{value}, 1, "GenericRecord->decode (Instrument Log, 17.17, type 4)" );
-is( $inst_log_record->data->{"32|Power (Watts):"}->{value}, 69, "GenericRecord->decode (Instrument Log, 17.32, type 6)" );
-is( $inst_log_record->data->{"30|Life (hours):"}->{value}, 18398, "GenericRecord->decode (Instrument Log, 17.30, type 9)" );
-is( $inst_log_record->data->{"54|Multipole 00 Offset (V):"}->{value}, -2.0935959815979, "GenericRecord->decode (Instrument Log, 17.54, type 10)" );
-is( $inst_log_record->data->{"29|Status:"}->{value}, "Running", "GenericRecord->decode (Instrument Log, 17.29, type 13)" );
-is( $inst_log_record->data->{"158|Divert/Inject valve:"}->{value}, "Inject", "GenericRecord->decode (Instrument Log, 17.158, last item)" );
+is( $inst_log_record->time, 0.269295006990433, "InstrumentLogRecord->time" );
+is( $inst_log_record->data->{"1|API SOURCE"}->{value}, "", "InstrumentLogRecord->decode (Instrument Log, 17.1, type 0)" );
+is( $inst_log_record->data->{"4|Vaporizer Thermocouple OK:"}->{value}, 0, "InstrumentLogRecord->decode (Instrument Log, 17.4, type 3)" );
+is( $inst_log_record->data->{"17|Ion Gauge Status:"}->{value}, 1, "InstrumentLogRecord->decode (Instrument Log, 17.17, type 4)" );
+is( $inst_log_record->data->{"32|Power (Watts):"}->{value}, 69, "InstrumentLogRecord->decode (Instrument Log, 17.32, type 6)" );
+is( $inst_log_record->data->{"30|Life (hours):"}->{value}, 18398, "InstrumentLogRecord->decode (Instrument Log, 17.30, type 9)" );
+is( $inst_log_record->data->{"54|Multipole 00 Offset (V):"}->{value}, -2.0935959815979, "InstrumentLogRecord->decode (Instrument Log, 17.54, type 10)" );
+is( $inst_log_record->data->{"29|Status:"}->{value}, "Running", "InstrumentLogRecord->decode (Instrument Log, 17.29, type 13)" );
+is( $inst_log_record->data->{"158|Divert/Inject valve:"}->{value}, "Inject", "InstrumentLogRecord->decode (Instrument Log, 17.158, last item)" );
 # foreach my $key (sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$inst_log_record->data}) {
 #   print STDERR "$key -> " . $inst_log_record->data->{$key}->{value} . "\n";
 # }

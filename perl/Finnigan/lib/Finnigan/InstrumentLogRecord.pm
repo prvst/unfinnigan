@@ -1,4 +1,4 @@
-package Finnigan::GenericRecord;
+package Finnigan::InstrumentLogRecord;
 
 use strict;
 use warnings;
@@ -15,16 +15,17 @@ sub decode {
   # section titles commanded by the GenericDataHeader but not present
   # in the actual record. The field_templates() method of
   # GenericDataHeader modifies all keys by adding ordinals to them.
-
-  # To decode a combination of specific and generic content, simply
-  # create a copy of this object and in it, combine
-  # $header->field_templates with specific fields and call
-  # Decoder->read. Just make sure the specific fields' keys start with
-  # a number and have the form 'x|key', and that number is unique in
-  # each field (does not co-incide with the range of numbers in the
-  # header (which is 1 .. n).
-  my $self = Finnigan::Decoder->read($stream, $header->field_templates});
+  my $self = Finnigan::Decoder->read($stream,
+				     [
+				      '0|time' => ['f', 'Float32'],
+				      @{$header->field_templates}    # Generic record
+				     ]
+				    );
   return bless $self, $class;
+}
+
+sub time {
+  shift->{data}->{'0|time'}->{value};
 }
 
 1;
@@ -32,18 +33,22 @@ __END__
 
 =head1 NAME
 
-Finnigan::GenericRecord -- a decoder for data structures defined by GenericDataHeader
+Finnigan::InstrumentLogRecord -- the decoder for a single Instrument Log record
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::GenericRecord->decode(\*INPUT, $header);
+  my $entry = Finnigan::InstrumentLogRecord->decode(\*INPUT, $header);
+  say $entry->time;
 
 =head1 DESCRIPTION
 
-Finnigan::GenericRecord is a pass-through decorder that only passes
-the field definitions it obtains from the header
-(Finnigan::GenericDataHeader) to Finnigan::Decoder.
+This decoder is prototyped on Finnigan::GenericRecord, which is a
+pass-through decorder that only passes the field definitions it
+obtains from the header (Finnigan::GenericDataHeader) to
+Finnigan::Decoder. It is essentially a copy of the
+Finnigan::GenericRecord code with one specific field (retention time)
+prepended to the template list.
 
 Because Thermo's GenericRecord objects are odered and may have
 "virtual" gaps and section titles in them, the Finnigan::Decoder's
