@@ -45,9 +45,15 @@ Finnigan::InstrumentLogRecord -- the decoder for a single Instrument Log record
 
 =head1 SYNOPSIS
 
-  use Finnigan;
   my $entry = Finnigan::InstrumentLogRecord->decode(\*INPUT, $header);
-  say $entry->time;
+  use Finnigan;
+  my $i = 0;
+  foreach my $field ($entry->fields) {
+    say $entry->time
+      . "\t" . $header->field($i)->label
+        . "\t" . $field->{value};
+    $j++;
+  }
 
 =head1 DESCRIPTION
 
@@ -59,11 +65,11 @@ Finnigan::GenericRecord code with one specific field (retention time)
 prepended to the template list.
 
 Because Thermo's GenericRecord objects are odered and may have
-"virtual" gaps and section titles in them, the Finnigan::Decoder's
+"virtual" spacers and section titles in them, the Finnigan::Decoder's
 method of stashing the decoded data into a hash is not directly
 applicable. A GenericRecord may have duplicate keys and the key order
 needs to be preserved. That is why Finnigan::GenericRecord relies on
-the B<field_templates> method of Finnigan::GenericHeader to insert
+the B<field_templates> method of Finnigan::GenericDataHeader to insert
 ordinal numbers into the keys.
 
 =head2 EXPORT

@@ -37,7 +37,7 @@ Finnigan::GenericRecord -- a decoder for data structures defined by GenericDataH
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::GenericRecord->decode(\*INPUT, $header);
+  my $record = Finnigan::GenericRecord->decode(\*INPUT, $header);
 
 =head1 DESCRIPTION
 
@@ -50,7 +50,7 @@ Because Thermo's GenericRecord objects are odered and may have
 method of stashing the decoded data into a hash is not directly
 applicable. A GenericRecord may have duplicate keys and the key order
 needs to be preserved. That is why Finnigan::GenericRecord relies on
-the B<field_templates> method of Finnigan::GenericHeader to insert
+the B<field_templates> method of Finnigan::GenericDataHeader to insert
 ordinal numbers into the keys.
 
 =head2 EXPORT

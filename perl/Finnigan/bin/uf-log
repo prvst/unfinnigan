@@ -15,12 +15,12 @@ my $args = new Getopt::Declare q{
   [mutex: -header -n]
   -header			extract the log header (record structure)
   -d[ump]			dump the requested feature with file seek addresses
-  -a[ll]			dump all field descriptors [requires: -d]
+  -a[ll]			detailed dump of all field descriptors [requires: -d]
   -s[ize]			print record size [requires: -d]
   -n[unmber] <n:0+n>		extract the log entry number <n>
   -h[tml]			format as html
-  -w[iki]			format as a wiki table format
-  -r[elative]			show relative addersess in dump [requires: -d]
+  -w[iki]			format as a wiki table
+  -r[elative]			show relative addersess in the dump [requires: -d]
   <file>			input file [required]
 }
   or exit(-1);
@@ -61,41 +61,41 @@ if ( $args->{'-header'} ) {
     }
     if ( exists $args->{-a}) {
       if ( exists $args->{-h} ) {
-	$inst_log_header->dump(style => 'html', filter => ['n']);
-	foreach my $i (0 .. $inst_log_header->n - 1) {
-	  $inst_log_header->field($i)->dump(style => 'html', header => undef);
-	}
+        $inst_log_header->dump(style => 'html', filter => ['n']);
+        foreach my $i (0 .. $inst_log_header->n - 1) {
+          $inst_log_header->field($i)->dump(style => 'html', header => undef);
+        }
       }
       elsif ( exists $args->{-w} ) {
-	$inst_log_header->dump(style => 'wiki', filter => ['n']);
-	foreach my $i (0 .. $inst_log_header->n - 1) {
-	  $inst_log_header->field($i)->dump(style => 'wiki', header => undef);
-	}
+        $inst_log_header->dump(style => 'wiki', filter => ['n']);
+        foreach my $i (0 .. $inst_log_header->n - 1) {
+          $inst_log_header->field($i)->dump(style => 'wiki', header => undef);
+        }
       }
       else {
-	$inst_log_header->dump(relative => exists $args->{-r}, filter => ['n']);
-	foreach my $i (0 .. $inst_log_header->n - 1) {
-	  $inst_log_header->field($i)->dump(relative => exists $args->{-r});
-	}
+        $inst_log_header->dump(relative => exists $args->{-r}, filter => ['n']);
+        foreach my $i (0 .. $inst_log_header->n - 1) {
+          $inst_log_header->field($i)->dump(relative => exists $args->{-r});
+        }
       }
     }
     else {
       if ( exists $args->{-h} ) {
-	$inst_log_header->dump(style => 'html', relative => exists $args->{-r});
+        $inst_log_header->dump(style => 'html', relative => exists $args->{-r});
       }
       elsif ( exists $args->{-w} ) {
-	$inst_log_header->dump(style => 'wiki', relative => exists $args->{-r});
+        $inst_log_header->dump(style => 'wiki', relative => exists $args->{-r});
       }
       else {
-	$inst_log_header->dump(relative => exists $args->{-r});
+        $inst_log_header->dump(relative => exists $args->{-r});
       }
     }
   }
   else {
     foreach my $i (0 .. $inst_log_header->n - 1) {
       say $inst_log_header->field($i)->type
-	. "\t" . $inst_log_header->field($i)->length
-	  . "\t" . $inst_log_header->field($i)->label
+        . "\t" . $inst_log_header->field($i)->length
+          . "\t" . $inst_log_header->field($i)->label;
     }
   }
 }
@@ -117,25 +117,24 @@ else {
     if ( exists $args->{-w} ) {
       say "|| seq || retention time || label || value ||";
       foreach my $field ($inst_log_record->fields) {
-	say "|| " . ($i + 1)
-	  . " || " . $inst_log_record->time
-	    . " || " .$inst_log_header->field($j)->label
-	      . " || " . $field->{value}
-		. " || ";
-	$j++;
+        say "|| " . ($i + 1)
+          . " || " . $inst_log_record->time
+            . " || " .$inst_log_header->field($j)->label
+              . " || " . $field->{value}
+                . " || ";
+        $j++;
       }
     }
     else {
       foreach my $field ($inst_log_record->fields) {
-	say $i + 1
-	  . "\t" . $inst_log_record->time
-	    . "\t" .$inst_log_header->field($j)->label
-	      . "\t" . $field->{value};
-	$j++;
+        say $i + 1
+          . "\t" . $inst_log_record->time
+            . "\t" .$inst_log_header->field($j)->label
+              . "\t" . $field->{value};
+        $j++;
       }
     }
-  }
-
+  } # for each record
 }
 
 __END__
@@ -149,15 +148,15 @@ uf-log [options] file
 
  Options:
 
-  -header			extract the log header (record structure)
-  -d[ump]			dump the requested feature with file seek addresses
-  -a[ll]			dump all field descriptors [requires: -d]
-  -s[ize]			print record size [requires: -d]
-  -n[unmber] <n:0+n>		extract the log entry number <n>
-  -h[tml]			format as html
-  -w[iki]			format as a wiki table format
-  -r[elative]			show relative addersess in dump [requires: -d]
-  <file>			input file [required]
+  -header              extract the log header (record structure)
+  -d[ump]              dump the requested feature showing file seek addresses
+  -a[ll]               detailed dump of all field descriptors [requires: -d]
+  -s[ize]              print record size [requires: -d]
+  -n[unmber] <n:0+n>   extract the log entry number <n>
+  -h[tml]              format as html
+  -w[iki]              format as a wiki table
+  -r[elative]          show relative addersess in the dump [requires: -d]
+  <file>               input file [required]
 
 =head1 OPTIONS
 
@@ -222,24 +221,24 @@ Finnigan::InstrumentLogRecord
 
 uf-log sample.raw 
 
-  (will list all log records in the tabular form: <record number, time, label, value>)
+  (lists all log records in the tabular form: <record number, time, label, value>)
 
 uf-log -n 5 sample.raw
 
-  (will print the fifth log record)
+  (prints the fifth log record)
 
 uf-log -header sample.raw
 
-  (will print the contents of the file header in the tabular form: <type, length, label>)
+  (prints the contents of the file header in the tabular form: <type, length, label>)
 
 uf-log -header -dw sample.raw
 
-  (will dump the header in the compact wiki format, with a stringified
+  (dumps the header in the compact wiki format, with a stringified
   GenericDataDescriptor list)
 
 uf-log -header -daw sample.raw
 
-  (will dump the header in the extended wiki format, showing the
+  (dumps the header in the extended wiki format, showing the
   location of echa GenericDataDescriptor's element)
 
 
