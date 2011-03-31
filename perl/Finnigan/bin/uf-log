@@ -110,17 +110,29 @@ else {
       exit -1;
     }
     @range = ($n - 1);
-    say STDERR "new range is @range";
   }
   foreach my $i (@range) {
     $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
     my $j = 0;
-    foreach my $field ($inst_log_record->fields) {
-      say $i + 1
-	. "\t" . $inst_log_record->time
-	  . "\t" .$inst_log_header->field($j)->label
-	    . "\t" . $field->{value};
-      $j++;
+    if ( exists $args->{-w} ) {
+      say "|| seq || retention time || label || value ||";
+      foreach my $field ($inst_log_record->fields) {
+	say "|| " . ($i + 1)
+	  . " || " . $inst_log_record->time
+	    . " || " .$inst_log_header->field($j)->label
+	      . " || " . $field->{value}
+		. " || ";
+	$j++;
+      }
+    }
+    else {
+      foreach my $field ($inst_log_record->fields) {
+	say $i + 1
+	  . "\t" . $inst_log_record->time
+	    . "\t" .$inst_log_header->field($j)->label
+	      . "\t" . $field->{value};
+	$j++;
+      }
     }
   }
 
