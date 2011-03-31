@@ -285,13 +285,20 @@ sub dump {
 
   my $addr = $self->{addr};
 
+  $arg{header}++ unless exists $arg{header}; # print the header by default
+
   my @keys = sort {
     $self->data->{$a}->{seq} <=> $self->data->{$b}->{seq}
   } keys %{$self->{data}};
 
+  if ( $arg{filter} ) {
+    my %filter = map {$_ => 1} @{$arg{filter}};
+    @keys = grep {$filter{$_}} @keys;
+  }
+
   if ($arg{style} and $arg{style} eq 'html') {
     say "<table>";
-    say "  <tr> <td>offset</td> <td>size</td> <td>type</td> <td>key</td> <td>value</td> </tr>";
+    say "  <tr> <td>offset</td> <td>size</td> <td>type</td> <td>key</td> <td>value</td> </tr>" if $arg{header};
     foreach my $key ( @keys ) {
       my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
@@ -319,7 +326,7 @@ sub dump {
     say "</table>";
   }
   elsif ($arg{style} and $arg{style} eq 'wiki') {
-    say "|| " . join(" || ", qw/offset size type key value/) . " ||";
+    say "|| " . join(" || ", qw/offset size type key value/) . " ||" if $arg{header};
     foreach my $key ( @keys ) {
       my $offset = $arg{relative} ? $self->item($key)->{addr} - $addr :  $self->item($key)->{addr};
       my $value = $self->item($key)->{value};
