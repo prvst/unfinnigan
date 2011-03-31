@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 89;
+use Test::More tests => 90;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -189,6 +189,10 @@ is( $inst_log_record->data->{"158|Divert/Inject valve:"}->{value}, "Inject", "In
 # }
 
 is( tell INPUT, $error_log_addr, "should have arrived at the start of the error log" );
+
+# Error log (null in the test file);
+my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+is ($error_log_length, 0, "Error log length");
 
 __END__
 
