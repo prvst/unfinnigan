@@ -45,9 +45,9 @@ Finnigan::InjectionData -- a decoder for the injection parameters in a sequence 
 
 =head1 DESCRIPTION
 
-Specifies parameters of injection, which delivered the sample for
-analysis to the mass specrometer. The parameters include vial label,
-sample volume, weight, internal standard amount, and dilution factor.
+Decodes the data describing the injection that delivered the sample for
+analysis to the mass specrometer. The data includes the vial label,
+sample volume, weight, internal standard (ISTD) amount, and dilution factor.
 
 Finnigan::InjectionData is a component of Finnigan::SeqRow
 
