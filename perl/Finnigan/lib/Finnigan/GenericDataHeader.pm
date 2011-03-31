@@ -28,6 +28,11 @@ sub fields {
   shift->{data}->{"field"}->{value};
 }
 
+sub field {
+  my ($self, $i) = @_;
+  return $self->{data}->{"field"}->{value}->[$i];
+}
+
 sub field_templates {
   my @list;
   my $ord = 1;
