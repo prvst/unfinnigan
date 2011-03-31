@@ -28,6 +28,14 @@ sub time {
   shift->{data}->{'0|time'}->{value};
 }
 
+sub fields {
+  my $self = shift;
+  map{$self->{data}->{$_}}
+    sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]}
+      grep {!/0\|time/}
+	keys %{$self->{data}};
+}
+
 1;
 __END__
 
