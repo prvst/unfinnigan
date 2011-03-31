@@ -497,7 +497,7 @@ Decoder's attribute given in C<$name>, according to the template
 specified in C<$desc>.  For example, to read a list of 4-byte
 integers, the template description must be of the form:
 
-  $desc = ['V', 'Uint32']
+  $desc = ['V', 'UInt32']
 
 
 =item C<iterate_object($stream, $count, $name, $class, $any_arg)>
