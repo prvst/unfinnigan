@@ -124,7 +124,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
 # and are not directly addressable, so all of them must be read, up to
 # the highest number in the range.
 
-# First, the in order to reach the ScanParameters header, the error
+# First, in order to reach the ScanParameters header, the error
 # log and the scan hierarchy must be read.
 
 # error log
@@ -132,12 +132,7 @@ my $error_log_addr = $run_header->sample_info->error_log_addr;
 seek INPUT, $error_log_addr, 0;
 
 # read the number of ErrorLog records
-$bytes_to_read = 4;
-$nbytes = read INPUT, $rec, $bytes_to_read;
-$nbytes == $bytes_to_read
-  or die "could not read all $bytes_to_read bytes of the log record count at $error_log_addr";
-my $error_log_length = unpack 'V', $rec;
-
+my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
 foreach my $i ( 0 .. $error_log_length - 1) {
   my $e = Finnigan::Error->decode(\*INPUT);
   unless ( exists $args->{'-q'} ) {
