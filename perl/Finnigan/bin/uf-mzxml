@@ -50,12 +50,6 @@ my $run_header_addr = $rfi->preamble->run_header_addr;
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
 my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
-
-# use this to dump InstID
-my $inst_id         = Finnigan::InstID->decode( \*INPUT );
-$inst_id->dump(style => 'wiki', relative => 1);
-say STDERR $inst_id->size;
-#exit;
 my $scan_index_addr = $run_header->sample_info->scan_index_addr;
 my $trailer_addr = $run_header->trailer_addr;
 my $params_addr = $run_header->params_addr;
@@ -181,7 +175,7 @@ seek INPUT, $params_addr, 0;
 my %charge_state;
 foreach my $i ( $first_scan - 1.. $last_scan - 1) {
   my $n = $i + 1;
-  my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->fields);
+  my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
   next if $n < $from;
   $charge_state{$i} = $p->charge_state;
   last if $n == $to;
