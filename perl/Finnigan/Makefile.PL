@@ -21,6 +21,7 @@ WriteMakefile(
 			  'bin/uf-rfi',
 			  'bin/uf-meth',
 			  'bin/uf-runheader',
+			  'bin/uf-log',
 			  'bin/uf-index',
 			  'bin/uf-trailer',
 			  'bin/uf-scan',

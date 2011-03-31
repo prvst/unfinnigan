@@ -1,0 +1,297 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use feature qw/state say/;
+use 5.010;
+
+use Getopt::Declare;
+use Finnigan;
+
+my $args = new Getopt::Declare q{
+  [strict]
+  [mutex: -h -w]
+  [mutex: -a -r]
+  [mutex: -header -n]
+  -header			extract the log header (record structure)
+  -d[ump]			dump the requested feature with file seek addresses
+  -a[ll]			dump all field descriptors [requires: -d]
+  -s[ize]			print record size [requires: -d]
+  -n[unmber] <n:0+n>		extract the log entry number <n>
+  -h[tml]			pormat as html
+  -w[iki]			format as a wiki table format
+  -r[elative]			show relative addersess in dump [requires: -d]
+  <file>			input file [required]
+}
+  or exit(-1);
+
+my $file = $args->{"<file>"};
+-e $file or die "file '$file' does not exist";
+-f $file or die "'$file' is not a plain file";
+-s $file or die "'$file' has zero size";
+
+# -----------------------------------------------------------------------------
+open INPUT, "<$file" or die "can't open '$file': $!";
+binmode INPUT;
+
+my $header = Finnigan::FileHeader->decode(\*INPUT);
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+
+my $run_header_addr = $rfi->preamble->run_header_addr;
+
+# fast-forward to RunHeader
+seek INPUT, $run_header_addr, 0;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
+my $inst_log_addr = $run_header->sample_info->inst_log_addr;
+my $inst_log_length = $run_header->sample_info->inst_log_length;
+
+# can't FF; have to read the istrument IDs to reach the InstrumentLog
+my $inst_id  = Finnigan::InstID->decode( \*INPUT );
+say $inst_id->model;
+
+# now at the start of InstrumentLog
+my $inst_log_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+
+if ( $args->{'-header'} ) {
+  if ( exists $args->{-d} ) {
+    if ( exists $args->{-s} ) {
+      my $size = $inst_log_header->size;
+      say "size: $size";
+    }
+    if ( exists $args->{-a}) {
+      if ( exists $args->{-h} ) {
+	$inst_log_header->dump(style => 'html', filter => ['n']);
+	foreach my $i (0 .. $inst_log_header->n - 1) {
+	  $inst_log_header->field($i)->dump(style => 'html', header => undef);
+	}
+      }
+      elsif ( exists $args->{-w} ) {
+	$inst_log_header->dump(style => 'wiki', filter => ['n']);
+	foreach my $i (0 .. $inst_log_header->n - 1) {
+	  $inst_log_header->field($i)->dump(style => 'wiki', header => undef);
+	}
+      }
+      else {
+	$inst_log_header->dump(relative => exists $args->{-r}, filter => ['n']);
+	foreach my $i (0 .. $inst_log_header->n - 1) {
+	  $inst_log_header->field($i)->dump(relative => exists $args->{-r});
+	}
+      }
+    }
+    else {
+      if ( exists $args->{-h} ) {
+	$inst_log_header->dump(style => 'html', relative => exists $args->{-r});
+      }
+      elsif ( exists $args->{-w} ) {
+	$inst_log_header->dump(style => 'wiki', relative => exists $args->{-r});
+      }
+      else {
+	$inst_log_header->dump(relative => exists $args->{-r});
+      }
+    }
+  }
+  else {
+    $inst_log_header->dump(filter => ['n']);
+    foreach my $i (0 .. $inst_log_header->n - 1) {
+      $inst_log_header->field($i)->dump;
+    }
+  }
+}
+else {
+  # do the records
+  my $inst_log_record;
+  foreach my $i (0 .. $inst_log_length - 1) {
+    $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
+  }
+
+  use Data::Dumper;
+  print Dumper($inst_log_record);
+}
+__END__
+else {
+  if ( $args->{-a} ) {
+    # An alternative way to read all entries (assuming there ever are
+    # more of them than the number between the first and the last
+    # scans specified in SampleInfo) is to read everything between the
+    # start address of ScanIndex and the address of the stream
+    # following it. Since ScanIndexEntry is a static structure, the
+    # number of entries is obtained by dividing the address offset by
+    # the entry size
+
+    my $trailer_addr = $run_header->trailer_addr;
+    my $stream_size = $trailer_addr - $scan_index_addr;
+    die "nothing to read" unless $stream_size > 0;
+
+    # Read one record and measure its size. We know it's 72, but
+    # better be indirect, and there is no time to add a recursive size
+    # method to Decoder, to calculate the expected size.
+    my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+    print_as_table_row($entry);
+    my $record_size = $entry->size;
+
+    my $nrecords = $stream_size / $record_size;
+    die "can't fit the whole number of $record_size\-byte records between $scan_index_addr and $trailer_addr" if $stream_size % $record_size;
+    foreach my $n ( 2 .. $nrecords ) {
+      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
+    }
+  }
+  else {
+    # unless option --all is given, assume the index range specfied in SampleInfo is wanted
+
+    # this code is not fool-proof and is not finished! It assumes that
+    # there are exactly as many entries in ScanIndex as would fit
+    # between $first_scan and $last_scan. In other words, the internal
+    # indices and links are not checked.
+    my $first_scan = $run_header->sample_info->first_scan;
+    my $last_scan = $run_header->sample_info->last_scan;
+    my $from = exists $args->{-range} ? $args->{-range}{"<from>"} : $first_scan;
+    my $to = exists $args->{-range} ? $args->{-range}{"<to>"} : $last_scan;
+
+    if ( $from > $first_scan) {
+      my $size = 72; # this may be wrong!
+      seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
+    }
+    foreach my $index ($from - 1 .. $to - 1) {
+      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
+    }
+  }
+}
+
+sub print_as_table_row {
+  my $index_entry = shift;
+  my $unknown = $index_entry->unknown;
+  if ( exists $args->{-f} ) {
+    if ( $args->{-f}->{'<type>'} eq 'bin' ) {
+      $unknown = sprintf "%b", $unknown;
+    }
+    elsif ( $args->{-f}->{'<type>'} eq 'hex' ) {
+      $unknown = sprintf "0x%08x", $unknown;
+    }
+    elsif ( $args->{-f}->{'<type>'} eq 'ms' ) {
+      $unknown = {21 => 'MS1', 18 => 'MS2', 19 => 'MS2*'}->{$unknown};
+    }
+    else {
+      die "unkonwn format: " . $args->{-f}->{'<type>'};
+    }
+  }
+  say $index_entry->index . "\t"
+    . $index_entry->next . "\t"
+      . $index_entry->scan_segment . "\t"
+	. $index_entry->scan_event . "\t"
+	  . $index_entry->offset . "\t"
+	    . $index_entry->data_size . "\t"
+	      . $unknown . "\t"
+		. $index_entry->start_time . "\t"
+		  . $index_entry->low_mz . "\t"
+		    . $index_entry->high_mz . "\t"
+		      . $index_entry->base_intensity . "\t"
+			. $index_entry->base_mz . "\t"
+			  . $index_entry->total_current
+}
+
+__END__
+=head1 NAME
+
+uf-index - decode the ScanIndexEntry structures in a Finnigan raw file
+
+=head1 SYNOPSIS
+
+uf-index [options] file
+
+ Options:
+
+  -a[ll]                        process all existing index entries
+  -n[unmber] <n>                get one index entry number <n>
+  -range <from> .. <to>         extract all entries with numbers between <from> and <to>
+  -d[ump]                       dump all data in each index entry 
+  -s[ize]                       print record size 
+  -h[tml]                       dump as html 
+  -w[iki]                       dump in wiki table format 
+  -r[elative]                   show relative addersess in dump 
+  -f[ormat] <type>              format the unknown long as 'bin', 'hex', or 'ms' (for MS level)
+  <file>                        input file 
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-d[ump]>
+
+Prints a table listing all fields in the ScanIndexEntry records, with their seek
+addresses, sizes, names and values. Individual entries can be selected
+with the B<-n[umber]> option or with the B<-range> option.
+
+=item B<-n[umber]>
+
+Gives the number of a single ScanIndexEntry to process
+
+=item B<-r[ange]>
+
+Selects a range of the ScanIndexEntry records to process
+
+=item B<-h[tml]>
+
+Format the dump output as an html table. When multiple entries are
+specified, each will be rendered in its own table
+
+=item B<-w[iki]>
+
+Format the dump output as a wiki table.
+
+=item B<-s[ize]>
+
+Show structure size in bytes (works with the -d[ump] option).
+
+=item B<-r[elative]>
+
+Show relative addresses of all itmes in the dump. The default is to
+show the absolute seek address. (works with the -d[ump] option)
+
+=item B<-a[ll]>
+
+Process all entries, including those that may lie outside the declared
+range. It appears as though it can be possible to find more index
+entries in the file than would fit between the first and the last scan
+numbers specified in RunHeader/SampleInfo. In that case, in the
+absence of the -all option, the entries will be enumerated according
+to ScanIndex, which will be treated as a linked list -- starting with
+the entry whose index matches the first scan number.
+
+=back
+
+=head1 DESCRIPTION
+
+B<uf-index> can be used to dump the scan index entries from a Finnigan
+raw file.
+
+
+=head1 SEE ALSO
+
+Finnigan::ScanIndexRecord
+
+=head1 EXAMPLES
+
+uf-index sample.raw 
+
+  (will print all index entries in the file in a tabular form)
+
+uf-index -range 1..5 sample.raw
+
+  (will print the first five records)
+
+uf-index -range 1..5 -format bin sample.raw
+
+  (will show individual bits in the scan type word)
+
+uf-index -rdsn 5 ~/shared/test/sample4.raw 
+
+  (will dump the fifth index entry with relative addresses and will
+   show its size)
+
+=cut
