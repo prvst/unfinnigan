@@ -140,6 +140,7 @@ foreach my $i ( 0 .. $error_log_length - 1) {
   }
 }
 
+# read the scan even hierarchy, even though it is not used -- just to reach the next object
 my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
 foreach my $i ( 0 .. $nsegs - 1) {
   my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
