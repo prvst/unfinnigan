@@ -45,7 +45,7 @@ Finnigan::InstrumentLogRecord -- the decoder for a single Instrument Log record
 
 =head1 SYNOPSIS
 
-  my $entry = Finnigan::InstrumentLogRecord->decode(\*INPUT, $header);
+  my $entry = Finnigan::InstrumentLogRecord->decode(\*INPUT, $header->ordered_field_templates);
   use Finnigan;
   my $i = 0;
   foreach my $field ($entry->fields) {
