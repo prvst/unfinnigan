@@ -7,7 +7,7 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 sub decode {
-  my ($class, $stream, $header) = @_;
+  my ($class, $stream, $field_templates) = @_;
 
   # This is a sleazy way of decoding this structure. The result will
   # be a hash whose keys start with the ordinal numbers of elements;
@@ -18,7 +18,7 @@ sub decode {
   my $self = Finnigan::Decoder->read($stream,
 				     [
 				      '0|time' => ['f', 'Float32'],
-				      @{$header->field_templates}    # Generic record
+				      @$field_templates    # ordered templates from GenericDataHeader
 				     ]
 				    );
   return bless $self, $class;
