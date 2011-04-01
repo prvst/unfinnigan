@@ -145,22 +145,24 @@ my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{dat
 foreach my $i ( 0 .. $nsegs - 1) {
   my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
   foreach my $j ( 0 .. $n - 1) {
-    my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
+    Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
   }
 }
 
 # now the file pointer is at the start of GenericDataHeader for ScanParameters
 my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 
-# with the header on hand, skip to the ScanParameters stream
+# with the header on hand, skip to the ScanParameters stream and grab
+# the precurser charge for all scans.
 seek INPUT, $params_addr, 0;
 
 my %charge_state;
-foreach my $i ( $first_scan - 1.. $last_scan - 1) {
+foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   my $n = $i + 1;
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
   next if $n < $from;
-  $charge_state{$i} = $p->charge_state;
+  my $charge = $p->charge_state;
+  $charge_state{$i} = $charge if $charge;
   last if $n == $to;
 }
 

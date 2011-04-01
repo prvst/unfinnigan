@@ -34,16 +34,16 @@ my $file = $args->{"<file>"};
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
-my $header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $file_header = Finnigan::FileHeader->decode(\*INPUT);
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $file_header->version);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
-my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $file_header->version);
 
 my $run_header_addr = $rfi->preamble->run_header_addr;
 
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
-my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $file_header->version);
 my $inst_log_addr = $run_header->sample_info->inst_log_addr;
 my $inst_log_length = $run_header->sample_info->inst_log_length;
 
@@ -51,57 +51,57 @@ my $inst_log_length = $run_header->sample_info->inst_log_length;
 my $inst_id  = Finnigan::InstID->decode( \*INPUT );
 
 # now at the start of InstrumentLog
-my $inst_log_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+my $header = Finnigan::GenericDataHeader->decode(\*INPUT);
 
 if ( $args->{'-header'} ) {
   if ( exists $args->{-d} ) {
     if ( exists $args->{-s} ) {
-      my $size = $inst_log_header->size;
+      my $size = $header->size;
       say "size: $size";
     }
     if ( exists $args->{-a}) {
       if ( exists $args->{-h} ) {
-        $inst_log_header->dump(style => 'html', filter => ['n']);
-        foreach my $i (0 .. $inst_log_header->n - 1) {
-          $inst_log_header->field($i)->dump(style => 'html', header => undef);
+        $header->dump(style => 'html', filter => ['n']);
+        foreach my $i (0 .. $header->n - 1) {
+          $header->field($i)->dump(style => 'html', header => undef);
         }
       }
       elsif ( exists $args->{-w} ) {
-        $inst_log_header->dump(style => 'wiki', filter => ['n']);
-        foreach my $i (0 .. $inst_log_header->n - 1) {
-          $inst_log_header->field($i)->dump(style => 'wiki', header => undef);
+        $header->dump(style => 'wiki', filter => ['n']);
+        foreach my $i (0 .. $header->n - 1) {
+          $header->field($i)->dump(style => 'wiki', header => undef);
         }
       }
       else {
-        $inst_log_header->dump(relative => exists $args->{-r}, filter => ['n']);
-        foreach my $i (0 .. $inst_log_header->n - 1) {
-          $inst_log_header->field($i)->dump(relative => exists $args->{-r});
+        $header->dump(relative => exists $args->{-r}, filter => ['n']);
+        foreach my $i (0 .. $header->n - 1) {
+          $header->field($i)->dump(relative => exists $args->{-r});
         }
       }
     }
     else {
       if ( exists $args->{-h} ) {
-        $inst_log_header->dump(style => 'html', relative => exists $args->{-r});
+        $header->dump(style => 'html', relative => exists $args->{-r});
       }
       elsif ( exists $args->{-w} ) {
-        $inst_log_header->dump(style => 'wiki', relative => exists $args->{-r});
+        $header->dump(style => 'wiki', relative => exists $args->{-r});
       }
       else {
-        $inst_log_header->dump(relative => exists $args->{-r});
+        $header->dump(relative => exists $args->{-r});
       }
     }
   }
   else {
-    foreach my $i (0 .. $inst_log_header->n - 1) {
-      say $inst_log_header->field($i)->type
-        . "\t" . $inst_log_header->field($i)->length
-          . "\t" . $inst_log_header->field($i)->label;
+    foreach my $i (0 .. $header->n - 1) {
+      say $header->field($i)->type
+        . "\t" . $header->field($i)->length
+          . "\t" . $header->field($i)->label;
     }
   }
 }
 else {
   # do the records
-  my $inst_log_record;
+  my $record;
   my @range = 0 .. $inst_log_length - 1;
   if ( exists $args->{-n}) {
     my $n = $args->{-n}{"<n>"};
@@ -112,24 +112,24 @@ else {
     @range = ($n - 1);
   }
   foreach my $i (@range) {
-    $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
+    $record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $header->ordered_field_templates);
     my $j = 0;
     if ( exists $args->{-w} ) {
       say "|| seq || retention time || label || value ||";
-      foreach my $field ($inst_log_record->fields) {
+      foreach my $field ($record->fields) {
         say "|| " . ($i + 1)
-          . " || " . $inst_log_record->time
-            . " || " .$inst_log_header->field($j)->label
+          . " || " . $record->time
+            . " || " . $header->field($j)->label
               . " || " . $field->{value}
                 . " || ";
         $j++;
       }
     }
     else {
-      foreach my $field ($inst_log_record->fields) {
+      foreach my $field ($record->fields) {
         say $i + 1
-          . "\t" . $inst_log_record->time
-            . "\t" .$inst_log_header->field($j)->label
+          . "\t" . $record->time
+            . "\t" .$header->field($j)->label
               . "\t" . $field->{value};
         $j++;
       }
