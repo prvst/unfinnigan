@@ -23,6 +23,8 @@ WriteMakefile(
 			  'bin/uf-runheader',
 			  'bin/uf-log',
 			  'bin/uf-error',
+			  'bin/uf-segments',
+			  'bin/uf-params',
 			  'bin/uf-index',
 			  'bin/uf-trailer',
 			  'bin/uf-scan',

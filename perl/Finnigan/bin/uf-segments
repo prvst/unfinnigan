@@ -1,0 +1,264 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use feature qw/state say/;
+use 5.010;
+
+use Getopt::Declare;
+use Finnigan;
+
+my $args = new Getopt::Declare q{
+  [strict]
+  [mutex: -h -w]
+  [mutex: -a -r]
+  [mutex: -header -n]
+  -header			extract the log header (record structure)
+  -d[ump]			dump the requested feature with file seek addresses
+  -a[ll]			detailed dump of all field descriptors [requires: -d]
+  -s[ize]			print record size [requires: -d]
+  -n[unmber] <n:0+n>		extract the log entry number <n>
+  -h[tml]			format as html
+  -w[iki]			format as a wiki table
+  -r[elative]			show relative addersess in the dump [requires: -d]
+  <file>			input file [required]
+}
+  or exit(-1);
+
+my $file = $args->{"<file>"};
+-e $file or die "file '$file' does not exist";
+-f $file or die "'$file' is not a plain file";
+-s $file or die "'$file' has zero size";
+
+# -----------------------------------------------------------------------------
+open INPUT, "<$file" or die "can't open '$file': $!";
+binmode INPUT;
+
+my $header = Finnigan::FileHeader->decode(\*INPUT);
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+
+my $run_header_addr = $rfi->preamble->run_header_addr;
+
+# fast-forward to RunHeader
+seek INPUT, $run_header_addr, 0;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
+
+# skip to the error log and read through
+seek INPUT, $run_header->sample_info->error_log_addr, 0;
+my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+foreach my $i ( 0 .. $error_log_length - 1) {
+  Finnigan::Error->decode(\*INPUT);
+}
+
+# read through the scan event hierarchy
+my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
+foreach my $i ( 0 .. $nsegs - 1) {
+  my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
+  foreach my $j ( 0 .. $n - 1) {
+    my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
+    say "($i, $j)";
+    $e->dump(style=>'wiki');
+    say "--------";
+  }
+}
+
+
+__END__
+
+# now at the start of InstrumentLog
+my $inst_log_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+foreach my $i (0 .. $inst_log_length - 1) {
+  $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
+}
+if ( $args->{'-header'} ) {
+  if ( exists $args->{-d} ) {
+    if ( exists $args->{-s} ) {
+      my $size = $inst_log_header->size;
+      say "size: $size";
+    }
+    if ( exists $args->{-a}) {
+      if ( exists $args->{-h} ) {
+        $inst_log_header->dump(style => 'html', filter => ['n']);
+        foreach my $i (0 .. $inst_log_header->n - 1) {
+          $inst_log_header->field($i)->dump(style => 'html', header => undef);
+        }
+      }
+      elsif ( exists $args->{-w} ) {
+        $inst_log_header->dump(style => 'wiki', filter => ['n']);
+        foreach my $i (0 .. $inst_log_header->n - 1) {
+          $inst_log_header->field($i)->dump(style => 'wiki', header => undef);
+        }
+      }
+      else {
+        $inst_log_header->dump(relative => exists $args->{-r}, filter => ['n']);
+        foreach my $i (0 .. $inst_log_header->n - 1) {
+          $inst_log_header->field($i)->dump(relative => exists $args->{-r});
+        }
+      }
+    }
+    else {
+      if ( exists $args->{-h} ) {
+        $inst_log_header->dump(style => 'html', relative => exists $args->{-r});
+      }
+      elsif ( exists $args->{-w} ) {
+        $inst_log_header->dump(style => 'wiki', relative => exists $args->{-r});
+      }
+      else {
+        $inst_log_header->dump(relative => exists $args->{-r});
+      }
+    }
+  }
+  else {
+    foreach my $i (0 .. $inst_log_header->n - 1) {
+      say $inst_log_header->field($i)->type
+        . "\t" . $inst_log_header->field($i)->length
+          . "\t" . $inst_log_header->field($i)->label;
+    }
+  }
+}
+else {
+  # do the records
+  my $inst_log_record;
+  my @range = 0 .. $inst_log_length - 1;
+  if ( exists $args->{-n}) {
+    my $n = $args->{-n}{"<n>"};
+    if ($n - 1 < $range[0] or $n - 1 > $range[-1]) {
+      say STDERR "Record number $n is out of range. The file $file has only $inst_log_length log records";
+      exit -1;
+    }
+    @range = ($n - 1);
+  }
+  foreach my $i (@range) {
+    $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header);
+    my $j = 0;
+    if ( exists $args->{-w} ) {
+      say "|| seq || retention time || label || value ||";
+      foreach my $field ($inst_log_record->fields) {
+        say "|| " . ($i + 1)
+          . " || " . $inst_log_record->time
+            . " || " .$inst_log_header->field($j)->label
+              . " || " . $field->{value}
+                . " || ";
+        $j++;
+      }
+    }
+    else {
+      foreach my $field ($inst_log_record->fields) {
+        say $i + 1
+          . "\t" . $inst_log_record->time
+            . "\t" .$inst_log_header->field($j)->label
+              . "\t" . $field->{value};
+        $j++;
+      }
+    }
+  } # for each record
+}
+
+__END__
+=head1 NAME
+
+uf-log - list or dump the instrument log entries in a Finnigan raw file
+
+=head1 SYNOPSIS
+
+uf-log [options] file
+
+ Options:
+
+  -header              extract the log header (record structure)
+  -d[ump]              dump the requested feature showing file seek addresses
+  -a[ll]               detailed dump of all field descriptors [requires: -d]
+  -s[ize]              print record size [requires: -d]
+  -n[unmber] <n:0+n>   extract the log entry number <n>
+  -h[tml]              format as html
+  -w[iki]              format as a wiki table
+  -r[elative]          show relative addersess in the dump [requires: -d]
+  <file>               input file [required]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-help>
+
+Print a brief help message and exit.
+
+=item B<-d[ump]>
+
+Prints a table listing all fields in the requested object (a log entry
+or the file header), with their seek addresses, sizes, names and
+values. Individual entries can be selected with the B<-n[umber]>
+option.
+
+=item B<-n[umber]>
+
+Gives the number of a single InstrumentLogRecord to extract
+
+=item B<-h[tml]>
+
+Format the dump output as an html table. When multiple entries are
+specified, each will be rendered in its own table
+
+=item B<-w[iki]>
+
+Format the dump output as a wiki table.
+
+=item B<-s[ize]>
+
+Show structure size in bytes (works with the -d[ump] option).
+
+=item B<-r[elative]>
+
+Show relative addresses of all itmes in the dump. The default is to
+show the absolute seek address. (works with the -d[ump] option)
+
+=item B<-a[ll]>
+
+Dump all GenericDataDescriptor entries in the file header (requires B<-header>)
+
+=back
+
+=head1 DESCRIPTION
+
+B<uf-log> can be used to examine the instrument log stream in a
+Finnigan raw file. The instrument log records typically contain more
+than a hundred parameters, including operational data on the pumps,
+power supplies, ion optics and injectors -- everything that may be
+useful in the auditing of the instrument's performance.
+
+Each record is timestamped with the current retention time of the
+sample.
+
+=head1 SEE ALSO
+
+Finnigan::InstrumentLog
+Finnigan::InstrumentLogRecord
+
+=head1 EXAMPLES
+
+uf-log sample.raw 
+
+  (lists all log records in the tabular form: <record number, time, label, value>)
+
+uf-log -n 5 sample.raw
+
+  (prints the fifth log record)
+
+uf-log -header sample.raw
+
+  (prints the contents of the file header in the tabular form: <type, length, label>)
+
+uf-log -header -dw sample.raw
+
+  (dumps the header in the compact wiki format, with a stringified
+  GenericDataDescriptor list)
+
+uf-log -header -daw sample.raw
+
+  (dumps the header in the extended wiki format, showing the
+  location of echa GenericDataDescriptor's element)
+
+
+=cut
