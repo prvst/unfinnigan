@@ -16,6 +16,16 @@ sub decode {
     $self->iterate_object($stream, $self->n, field => 'Finnigan::GenericDataDescriptor');
   }
 
+  # prepare the field templates
+  foreach my $f ( @{$self->{data}->{"field"}->{value}} ) {
+    push @{$self->{templates}}, $f->definition;
+  }
+
+  my $ord = 1;
+  foreach my $f ( @{$self->{data}->{"field"}->{value}} ) {
+    push @{$self->{ordered_templates}}, $f->definition($ord++);
+  }
+
   return $self;
 }
 
@@ -34,12 +44,11 @@ sub field {
 }
 
 sub field_templates {
-  my @list;
-  my $ord = 1;
-  foreach my $f ( @{shift->{data}->{"field"}->{value}} ) {
-    push @list, $f->definition($ord++);
-  }
-  return \@list;
+  shift->{templates};
+}
+
+sub ordered_field_templates {
+  shift->{ordered_templates};
 }
 
 1;
