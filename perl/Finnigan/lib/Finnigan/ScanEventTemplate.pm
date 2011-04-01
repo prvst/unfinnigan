@@ -48,7 +48,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanEventTemplate -- a decoder for ScanEventTemplate, a scan descriptor prototype
+Finnigan::ScanEventTemplate -- a decoder for ScanEventTemplate, the prototype scan descriptor
 
 =head1 SYNOPSIS
 
@@ -63,9 +63,10 @@ Finnigan::ScanEventTemplate -- a decoder for ScanEventTemplate, a scan descripto
 
 =head1 DESCRIPTION
 
-This is a template structure that apparently forms the core of every
-scan's ScanEvent structure. It is an elment of MSScanEvent hirerachy
-that models the hierarchy of scan segments and scan events.
+This is a template structure that apparently forms the core of each
+ScanEvent structure corresponding to an individual scan. It is an
+elment of MSScanEvent hirerachy (that's the name used by Thermo),
+which models the grouping of scan events into segments.
 
 =head2 EXPORT
 

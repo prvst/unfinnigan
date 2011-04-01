@@ -421,21 +421,17 @@ sub decode {
 
 
 sub list {
-  my ($self, %arg) = @_;
-
-  my $decode = (exists $arg{decode} and $arg{decode});
-
   my @list;
-  foreach my $i (0 .. keys(%{$self->{data}}) - 1) {
+  foreach my $i (0 .. keys(%{$_[0]->{data}}) - 1) {
     my $key = $name{$i} ? $name{$i} : "unknown byte[$i]";
     my $value;
-    if ( $decode ) {
+    if ( $_[1] ) { # decode
       $value = $TYPE{$key}
-	? $SYMBOL{$TYPE{$key}}->{$self->{data}->{$key}->{value}}
-	  : $self->{data}->{$key}->{value};
+	? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+	  : $_[0]->{data}->{$key}->{value};
     }
     else {
-      $value = $self->{data}->{$key}->{value};
+      $value = $_[0]->{data}->{$key}->{value};
     }
     $list[$i] = $value;
   }
@@ -574,22 +570,23 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanEventPreamble -- a decoder for ScanEventPreamble, the byte array in ScanEvent
+Finnigan::ScanEventPreamble -- a decoder for ScanEventPreamble, the byte array component of ScanEvent
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $p = Finnigan::ScanEventPreamble->decode(\*INPUT);
+  my $p = Finnigan::ScanEventPreamble->decode(\*INPUT, $version);
   say join(" ", $p->list);
-  say join(" ", $p->list(decode => 1));
+  say join(" ", $p->list('decode');
   say p->analyzer;
+  say p->analyzer('decode');
 
 =head1 DESCRIPTION
 
-This fixed-size structure is a byte array at the head of ScanEvent. It
-contains various boolean flags an enumerated types with a small number
-of values. For example, it's 41st byte contains the analyzer type in
-all versions:
+ScanEventPreamble is a fixed-size (but version-dependent) structure. It
+is a byte array located at the head of each ScanEvent. It contains
+various boolean flags an enumerated types. For example, it's 41st byte
+contains the analyzer type in all versions:
 
 %ANALYZER = (
   0 => "ITMS",
@@ -601,11 +598,16 @@ all versions:
   6 => "undefined"
 );
 
-The of the values in ScanEventPreamble remain unknown.
+The ScanEventPreamble decoder provides a number of accessors that
+interpret the enumerated and boolean values.
 
-The structure seems to have grown historically; to the 41 bytes in
-v.57, 39 more are added in v.62, and 8 further bytes are added in
-v.63.
+The meaning of some values in ScanEventPreamble remains unknown.
+
+The structure seems to have grown historically: to the 41 bytes in
+v.57, 39 more were added in v.62, and 8 further bytes were added in
+v.63. That does not affect the decoder interface; those values it
+knows about have not changed, but the version number still has to be
+passed into it so it knows how many bytes to read.
 
 
 =head2 EXPORT
