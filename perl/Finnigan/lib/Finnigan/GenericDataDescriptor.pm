@@ -34,11 +34,6 @@ sub label {
   shift->{data}->{"label"}->{value};
 }
 
-sub ordinal {
-  my ($self, $ord) = @_;
-  return $ord . "|" . $self->{data}->{"label"}->{value};
-}
-
 sub stringify {
   my $self = shift;
   my $type = $self->type;
@@ -50,78 +45,79 @@ sub stringify {
 sub definition {
   my ($self, $ord) = @_;
 
+  my $key = defined $ord ? "$ord|$self->{data}->{label}->{value}" : $self->{data}->{label}->{value};
   my $type = $self->type;
 
   # a gap in the listing or a section title
   if ( $type == 0 ) {
-    return $self->ordinal($ord) => undef;
+    return $key => undef;
   }
 
   # c char (a signed byte)
   if ( $type == 0x1 ) {
-    return $self->ordinal($ord) => ['c', 'Int8'];
+    return $key => ['c', 'Int8'];
   }
 
   # bool (true/false)
   if ( $type == 0x2 ) {
-    return $self->ordinal($ord) => ['C', 'UInt8 (true/false)'];
+    return $key => ['C', 'UInt8 (true/false)'];
   }
   
   # yes/no
   if ( $type == 0x3 ) {
-    return $self->ordinal($ord) => ['C', 'UInt8 (yes/no)'];
+    return $key => ['C', 'UInt8 (yes/no)'];
   }
 
   # on/off
   if ( $type == 0x4 ) {
-    return $self->ordinal($ord) => ['C', 'UInt8 (on/off)'];
+    return $key => ['C', 'UInt8 (on/off)'];
   }
 
   # c unsigned char
   if ( $type == 0x5 ) {
-    return $self->ordinal($ord) => ['C', 'UInt8'];
+    return $key => ['C', 'UInt8'];
   }
 
   # c short
   if ( $type == 0x6 ) {
-    return $self->ordinal($ord) => ['s', 'Int16'];
+    return $key => ['s', 'Int16'];
   }
 
   # c unsigned short
   if ( $type == 0x7 ) {
-    return $self->ordinal($ord) => ['v', 'UInt16'];
+    return $key => ['v', 'UInt16'];
   }
 
   # c long
   if ( $type == 0x8 ) {
-    return $self->ordinal($ord) => ['l', 'Int32'];
+    return $key => ['l', 'Int32'];
   }
 
   # c unsigned long
   if ( $type == 0x9 ) {
-    return $self->ordinal($ord) => ['V', 'UInt32'];
+    return $key => ['V', 'UInt32'];
   }
 
   # c float
   if ( $type == 0xA ) {
-    return $self->ordinal($ord) => ['f', 'Float32'];
+    return $key => ['f', 'Float32'];
   }
 
   # c double
   if ( $type == 0xB ) {
-    return $self->ordinal($ord) => ['d', 'Float64'];
+    return $key => ['d', 'Float64'];
   }
 
   # asciiz string
   if ( $type == 0xC ) {
     my $l = $self->length;
-    return $self->ordinal($ord) => ['string', "ASCIIZ:$l"];
+    return $key => ['string', "ASCIIZ:$l"];
   }
 
   # wide string, zero-terminated
   if ( $type == 0xD ) {
     my $l = $self->length * 2;
-    return $self->ordinal($ord) => ['string', "UTF-16-LE:$l"];
+    return $key => ['string', "UTF-16-LE:$l"];
   }
 
   die "unkown data type at $self->{addr}, " . $self;
