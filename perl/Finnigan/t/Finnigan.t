@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 90;
+use Test::More tests => 122;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -188,13 +188,42 @@ is( $inst_log_record->data->{"158|Divert/Inject valve:"}->{value}, "Inject", "In
 #   print STDERR "$key -> " . $inst_log_record->data->{$key}->{value} . "\n";
 # }
 
-is( tell INPUT, $error_log_addr, "should have arrived at the start of the error log" );
-
 # Error log (null in the test file);
+is( tell INPUT, $error_log_addr, "should have arrived at the start of the error log" );
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
-is ($error_log_length, 0, "Error log length");
+is( $error_log_length, 0, "Error log length" );
 
-__END__
+# ScanEventHierarchy
+my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
+is( $nsegs, 1, "Number of scan segments" );
+my $nev = Finnigan::Decoder->read(\*INPUT, ['nev' => ['V', 'UInt32']])->{data}->{nev}->{value};
+is( $nev, 4, "Number of scan event types in the first segment" );
+# read the first scan event template
+my $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
+is( join('', $et->preamble->list), "1121111011030000000000004000255255255255000020004222111000000000100000000000000022000000000000002000000000000000200000000000000002140000", "ScanEventTemplate->ScanEventPreamble->list (1)" );
+is( join(' ', $et->preamble->list('decode')), "1 1 undefined undefined positive profile MS1 Full 1 1 False ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 FTMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (1)" );
+is ($et->preamble->corona('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->corona(decode) (1)");
+is ($et->preamble->detector('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->detector(decode) (1)");
+is ($et->preamble->polarity('decode'), "positive", "ScanEventTemplate->ScanEventPreamble->polarity(decode) (1)");
+is ($et->preamble->scan_mode('decode'), "profile", "ScanEventTemplate->ScanEventPreamble->scan_mode(decode) (1)");
+is ($et->preamble->ms_power('decode'), "MS1", "ScanEventTemplate->ScanEventPreamble->ms_power(decode) (1)");
+is ($et->preamble->scan_type('decode'), "Full", "ScanEventTemplate->ScanEventPreamble->scan_type(decode) (1)");
+is ($et->preamble->dependent, 0, "ScanEventTemplate->ScanEventPreamble->dependent (1)");
+is ($et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)");
+is ($et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)");
+is ($et->preamble->analyzer('decode'), "FTMS", "ScanEventTemplate->ScanEventPreamble->analyzer(decode) (1)");
+is ($et->preamble->stringify, "FTMS + p ESI Full ms", "ScanEventTemplate->ScanEventPreamble->stringify (1)");
+
+#-----------------------------------------------------------------------
+#
+# Temprorary gap - the following structures will be decoded here:
+#
+#       "MS Scan Events"
+#       ScanHeader
+#       TuneFileHeader
+#       TuneFile
+#       ScanIndex
+# ----------------------------------------------------------------------
 
 # Read the first ScanEvent record and get the converter. More tests
 # for ScanEvent itself later ...
@@ -288,6 +317,7 @@ my $trailer_length = unpack 'V', $rec;
 is ( $trailer_length, 33, "the trailer events count should be 33");
 
 my $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
+is ($scan_event->preamble->corona('decode'), "undefined", "ScanEvent->preamble->corona");
 is ($scan_event->preamble->analyzer('decode'), "FTMS", "ScanEvent->preamble->analyzer");
 is ($scan_event->preamble->polarity('decode'), "positive", "ScanEvent->preamble->polarity");
 is ($scan_event->preamble->scan_mode('decode'), "profile", "ScanEvent->preamble->scan_mode");
@@ -296,7 +326,6 @@ is ($scan_event->preamble->dependent, 0, "ScanEvent->preamble->dependent");
 is ($scan_event->preamble->scan_type('decode'), "Full", "ScanEvent->preamble->scan_type");
 is ($scan_event->preamble->ms_power('decode'), "MS1", "ScanEvent->preamble->ms_power");
 is ("$scan_event", "FTMS + p ESI Full ms [400.00-2000.00]", "ScanEvent->preamble->stringify");
-is ($scan_event->preamble->corona('decode'), "undefined", "ScanEvent->preamble->corona");
 is ($scan_event->preamble->wideband('decode'), "Off", "ScanEvent->preamble->wideband");
 is ($scan_event->fraction_collector->stringify, "[400.00-2000.00]", "ScanEvent->fraction_collector->stringify");
 is ($scan_event->np, 0, "ScanEvent->np");
