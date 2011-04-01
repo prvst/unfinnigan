@@ -7,7 +7,7 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 sub decode {
-  my ($class, $stream, $header) = @_;
+  my ($class, $stream, $field_templates) = @_;
 
   # This is a sleazy way of decoding this structure. The result will
   # be a hash whose keys start with the ordinal numbers of elements;
@@ -23,7 +23,7 @@ sub decode {
   # a number and have the form 'x|key', and that number is unique in
   # each field (does not co-incide with the range of numbers in the
   # header (which is 1 .. n).
-  my $self = Finnigan::Decoder->read($stream, $header->field_templates});
+  my $self = Finnigan::Decoder->read($stream, $field_templates);
   return bless $self, $class;
 }
 
