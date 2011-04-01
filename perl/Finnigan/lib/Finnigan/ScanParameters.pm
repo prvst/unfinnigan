@@ -4,15 +4,7 @@ use strict;
 use warnings;
 
 use Finnigan;
-use base 'Finnigan::Decoder';
-
-sub decode {
-  my ($class, $stream, $fields) = @_;
-
-  my $self = Finnigan::Decoder->read($stream, $fields);
-  bless $self, $class;
-  return $self;
-}
+our @ISA = ('Finnigan::GenericRecord');
 
 sub charge_state {
   shift->{data}->{"Charge State:"}->{value}
@@ -30,10 +22,11 @@ Finnigan::ScanParameters -- a decoder for ScanParameters, a GenericRecord contai
   use Finnigan;
   my $h = Finnigan::ScanParameters->decode(\*INPUT, $generic_header_ref);
   say $h->n;
-  say $h->dump;
+  say $h->charge_state;
 
 =head1 DESCRIPTION
 
+This decoder augments the GenericRecord decoder with the charge_state() method.
 
 =head2 EXPORT
 
@@ -41,6 +34,8 @@ None
 
 =head1 SEE ALSO
 
+Finnigan::GenericRecord
+Finnigan::GenericDataHeader
 Finnigan::ScanEventPreamble
 Finnigan::FractionCollector
 Finnigan::Reaction
