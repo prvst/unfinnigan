@@ -140,22 +140,9 @@ foreach my $i ( 0 .. $error_log_length - 1) {
   }
 }
 
-# scan hierarchy -- not used at the moment; read to skip the correct number of bytes
-# 1. read the number of scan segments
-my $scan_hierachy_addr = tell INPUT;
-$bytes_to_read = 4;
-$nbytes = read INPUT, $rec, $bytes_to_read;
-$nbytes == $bytes_to_read
-  or die "could not read all $bytes_to_read bytes of the scan_segment count at $scan_hierachy_addr";
-my $nsegs = unpack 'V', $rec;
+my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
 foreach my $i ( 0 .. $nsegs - 1) {
-  # 1. read the number of scan events in this segment
-  my $scan_event_addr = tell INPUT;
-  $bytes_to_read = 4;
-  $nbytes = read INPUT, $rec, $bytes_to_read;
-  $nbytes == $bytes_to_read
-    or die "could not read all $bytes_to_read bytes of the log record count at $scan_event_addr";
-  my $n = unpack 'V', $rec;
+  my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
   foreach my $j ( 0 .. $n - 1) {
     my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
   }
