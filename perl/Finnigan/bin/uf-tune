@@ -132,13 +132,13 @@ else {
   }
   else {
     if ( exists $args->{-w} ) {
-      say "|| seq || retention time || label || value ||";
+      say "|| label || value ||";
       foreach my $key ( sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$record->{data}}) {
         my ($stripped_key) = ($key =~ /^\d+\|(.*)$/);
         $stripped_key ||= '';
-        say " || " . $stripped_key
+        say "|| " . $stripped_key
           . " || " . $record->{data}->{$key}->{value}
-            . " || ";
+            . " ||";
       }
     }
     else {

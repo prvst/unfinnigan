@@ -152,12 +152,12 @@ else {
       }
       else {
         if ( exists $args->{-w} ) {
-          say "|| seq || retention time || label || value ||";
+          say "|| seq || label || value ||";
           foreach my $key (@{$header->labels}) {
             say "|| " . ($i + 1)
               . " || " . $key
                 . " || " . $record->{data}->{$key}->{value}
-                  . " || ";
+                  . " ||";
             $j++;
           }
         }
