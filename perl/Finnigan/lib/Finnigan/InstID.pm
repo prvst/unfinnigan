@@ -6,6 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
+use overload ('""' => 'stringify');
 
 sub decode {
   my ($class, $stream) = @_;
@@ -38,6 +39,13 @@ sub serial_number {
 
 sub software_version {
   shift->{data}->{"software version"}->{value};
+}
+
+sub stringify {
+  my $self = shift;
+  return $self->model
+    . ", S/N: " . $self->serial_number
+      . "; software version " . $self->software_version;
 }
 
 1;
