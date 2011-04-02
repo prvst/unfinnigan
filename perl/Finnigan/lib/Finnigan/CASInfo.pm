@@ -40,8 +40,10 @@ Finnigan::CASInfo -- a decoder for autosampler data
 =head1 DESCRIPTION
 
 CASInfo is a structure with uncertain purpose that contains a binary
-preamble with autosampler co-ordinates (CASInfoPreamble), followed by a
-text string.
+preamble with autosampler co-ordinates (CASInfoPreamble), followed by
+a text string. The text string is apparently a comment; in one
+instance where it was non-null, it contained this text: '384 Well
+Plate'.
 
 =head2 EXPORT
 

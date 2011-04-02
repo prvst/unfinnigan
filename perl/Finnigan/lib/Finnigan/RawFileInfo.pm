@@ -54,7 +54,7 @@ Finnigan::RawFileInfo -- a decoder for RawFileInfo, the primary index structure
 This variable-size structure consists of RawFileInfoPreamble followed
 by six text strings. The first five strings contain the headings for
 the user-defined labels stored in SeqRow. The sixth string is probably
-used to store the name of the sample.
+used to store the sample ID.
 
 The older versions of RawFileInfoPreamble contained an unpacked
 rpresentation of the file creation date in the UTC time zone.
