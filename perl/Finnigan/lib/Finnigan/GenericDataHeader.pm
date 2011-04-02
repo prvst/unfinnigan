@@ -17,13 +17,11 @@ sub decode {
   }
 
   # prepare the field templates
-  foreach my $f ( @{$self->{data}->{"field"}->{value}} ) {
-    push @{$self->{templates}}, $f->definition;
-  }
-
   my $ord = 1;
   foreach my $f ( @{$self->{data}->{"field"}->{value}} ) {
+    push @{$self->{templates}}, $f->definition;
     push @{$self->{ordered_templates}}, $f->definition($ord++);
+    push @{$self->{labels}}, $f->label;
   }
 
   return $self;
@@ -36,6 +34,10 @@ sub n {
 
 sub fields {
   shift->{data}->{"field"}->{value};
+}
+
+sub labels {
+  shift->{labels};
 }
 
 sub field {
