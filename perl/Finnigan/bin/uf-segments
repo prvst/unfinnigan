@@ -8,27 +8,24 @@ use 5.010;
 use Getopt::Declare;
 use Finnigan;
 
-my $args = new Getopt::Declare q{
-  [strict]
-  [mutex: -h -w]
-  [mutex: -a -r]
-  [mutex: -header -n]
-  -header			extract the log header (record structure)
-  -d[ump]			dump the requested feature with file seek addresses
-  -a[ll]			detailed dump of all field descriptors [requires: -d]
-  -s[ize]			print record size [requires: -d]
-  -n[unmber] <n:0+n>		extract the log entry number <n>
-  -h[tml]			format as html
-  -w[iki]			format as a wiki table
-  -r[elative]			show relative addersess in the dump [requires: -d]
-  <file>			input file [required]
-}
-  or exit(-1);
 
-my $file = $args->{"<file>"};
--e $file or die "file '$file' does not exist";
--f $file or die "'$file' is not a plain file";
--s $file or die "'$file' has zero size";
+@ARGV == 1 or do {
+  say STDERR "Usage: $0 <file>";
+  exit -1;
+};
+my $file = $ARGV[0];
+-e $file or do {
+  say STDERR "file '$file' does not exist";
+  exit -1;
+};
+-f $file or do {
+  say STDERR "'$file' is not a plain file";
+  exit -1;
+};
+-s $file or do {
+  say STDERR "'$file' has zero size";
+  exit -1;
+};
 
 # -----------------------------------------------------------------------------
 open INPUT, "<$file" or die "can't open '$file': $!";
@@ -67,106 +64,24 @@ foreach my $i ( 0 .. $nsegs - 1) {
 __END__
 =head1 NAME
 
-uf-segments - list or dump the instrument log entries in a Finnigan raw file
+uf-segments - dump the scan event hirerarchy of a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-log [options] file
-
- Options:
-
-  -header              extract the log header (record structure)
-  -d[ump]              dump the requested feature showing file seek addresses
-  -a[ll]               detailed dump of all field descriptors [requires: -d]
-  -s[ize]              print record size [requires: -d]
-  -n[unmber] <n:0+n>   extract the log entry number <n>
-  -h[tml]              format as html
-  -w[iki]              format as a wiki table
-  -r[elative]          show relative addersess in the dump [requires: -d]
-  <file>               input file [required]
+uf-segments <file>
 
 =head1 OPTIONS
 
 =over 4
 
-=item B<-help>
-
-Print a brief help message and exit.
-
-=item B<-d[ump]>
-
-Prints a table listing all fields in the requested object (a log entry
-or the file header), with their seek addresses, sizes, names and
-values. Individual entries can be selected with the B<-n[umber]>
-option.
-
-=item B<-n[umber]>
-
-Gives the number of a single InstrumentLogRecord to extract
-
-=item B<-h[tml]>
-
-Format the dump output as an html table. When multiple entries are
-specified, each will be rendered in its own table
-
-=item B<-w[iki]>
-
-Format the dump output as a wiki table.
-
-=item B<-s[ize]>
-
-Show structure size in bytes (works with the -d[ump] option).
-
-=item B<-r[elative]>
-
-Show relative addresses of all itmes in the dump. The default is to
-show the absolute seek address. (works with the -d[ump] option)
-
-=item B<-a[ll]>
-
-Dump all GenericDataDescriptor entries in the file header (requires B<-header>)
-
-=back
-
 =head1 DESCRIPTION
 
-B<uf-log> can be used to examine the instrument log stream in a
-Finnigan raw file. The instrument log records typically contain more
-than a hundred parameters, including operational data on the pumps,
-power supplies, ion optics and injectors -- everything that may be
-useful in the auditing of the instrument's performance.
-
-Each record is timestamped with the current retention time of the
-sample.
+This is a very rough-and-ready means to examine the scan hierarchy in
+a Finnigan raw file. All ScanEventTemplate structures are dumped to
+STDIN, prepended with their segment and scan event numbers.
 
 =head1 SEE ALSO
 
-Finnigan::InstrumentLog
-Finnigan::InstrumentLogRecord
-
-=head1 EXAMPLES
-
-uf-log sample.raw 
-
-  (lists all log records in the tabular form: <record number, time, label, value>)
-
-uf-log -n 5 sample.raw
-
-  (prints the fifth log record)
-
-uf-log -header sample.raw
-
-  (prints the contents of the file header in the tabular form: <type, length, label>)
-
-uf-log -header -dw sample.raw
-
-  (dumps the header in the compact wiki format, with a stringified
-  GenericDataDescriptor list)
-
-uf-log -header -daw sample.raw
-
-  (dumps the header in the extended wiki format, showing the
-  location of echa GenericDataDescriptor's element)
-
+Finnigan::ScanEventTemplate
 
 =cut

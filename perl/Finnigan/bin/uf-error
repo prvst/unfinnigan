@@ -69,7 +69,6 @@ It will exit with no output if there are no error messages.
 
 =head1 SEE ALSO
 
-Finnigan::ErrorLog
 Finnigan::Error
 
 =cut
