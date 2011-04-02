@@ -20,15 +20,15 @@ my $option_relative = 0;
 
 Getopt::Long::Configure ("bundling");
 GetOptions(
-	   'help|?' => \$option_help,
-	   'man' => \$option_man,
-	   'dump|d' => \$option_dump,
-	   'size|s' => \$option_size,
-	   'html|h' => \$option_html,
-	   'wiki|w' => \$option_wiki,
-	   'sample_info|i' => \$option_si,
-	   'relative|r' => \$option_relative,
-	  ) or pod2usage(2);
+           'help|?' => \$option_help,
+           'man' => \$option_man,
+           'dump|d' => \$option_dump,
+           'size|s' => \$option_size,
+           'html|h' => \$option_html,
+           'wiki|w' => \$option_wiki,
+           'sample_info|i' => \$option_si,
+           'relative|r' => \$option_relative,
+          ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
 
@@ -93,28 +93,28 @@ else {
   say "$file: "
     . "scan range: ["
       . $run_header->sample_info->low_mz . ".."
-	. $run_header->sample_info->high_mz . "]; "
-	  . "scan numbers: ["
-	    . $run_header->sample_info->first_scan . ".."
-	      . $run_header->sample_info->last_scan . "]; "
-		. "number of segments: "
-		  . $run_header->nsegs . "; "
-		    . "inst. status samples: "
-		      . $run_header->sample_info->inst_status_samples . "; "
-			. "max. ion current: "
-			  . $run_header->sample_info->max_ion_current . "; "
-			    . "retention time: ["
-			      . $run_header->sample_info->start_time . ".."
-				. $run_header->sample_info->end_time . "]; "
-				  . "ntrailer: "
-				    . $run_header->ntrailer . "; "
-				      . "nparams: "
-					. $run_header->nparams . "; "
-					  . "unknown[1]: "
-					    . $run_header->u1 . "; "
-					      . "unknown[2]: "
-						. $run_header->u2 . "; "
-						  ;
+        . $run_header->sample_info->high_mz . "]; "
+          . "scan numbers: ["
+            . $run_header->sample_info->first_scan . ".."
+              . $run_header->sample_info->last_scan . "]; "
+                . "number of segments: "
+                  . $run_header->nsegs . "; "
+                    . "inst. status samples: "
+                      . $run_header->sample_info->inst_status_samples . "; "
+                        . "max. ion current: "
+                          . $run_header->sample_info->max_ion_current . "; "
+                            . "retention time: ["
+                              . $run_header->sample_info->start_time . ".."
+                                . $run_header->sample_info->end_time . "]; "
+                                  . "ntrailer: "
+                                    . $run_header->ntrailer . "; "
+                                      . "nparams: "
+                                        . $run_header->nparams . "; "
+                                          . "unknown[1]: "
+                                            . $run_header->u1 . "; "
+                                              . "unknown[2]: "
+                                                . $run_header->u2 . "; "
+                                                  ;
 }
 
 __END__

@@ -144,7 +144,7 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
     else {
       my $range = [$ph->low_mz, $ph->high_mz];
       if ( exists $args->{-mz} ) {
-	$range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
+        $range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
       }
       if ( exists $args->{-v} ) {
         $profile->set_converter($scan_event->converter);
@@ -182,8 +182,8 @@ END
       say q{"};
       say qq{centroid_input <- "mz\ts};
       $peaks->list();
-    say q{"};
-    say <<END;
+      say q{"};
+      say <<END;
 p <- read.table(textConnection(profile_input), header=TRUE)
 c <- read.table(textConnection(centroid_input), header=TRUE)
 postscript(file="", command="cat", paper="special", onefile=F, horizontal=F, width=8, height=6, pointsize=15)
@@ -207,14 +207,14 @@ uf-scan [options] file
 
   -d[ump]                       dump the packet header
   -e[xtract]                    extract the entire scan data as a binary chunk
-  -l[ist]			list the called peaks [required]
-  -p[rofile]			print the scan profile as a 2-column table [required]
-  -plot				plot the profile (along with the called peaks, if available) [required]
-  -v				convert f -> M/z [requires: -p]
-  -z				add empty bins [requires: -p]
-  -n[unmber] <n:+i>		select scan number <n> [required]
-  -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
-  <file>			input file [required]
+  -l[ist]                       list the called peaks [required]
+  -p[rofile]                    print the scan profile as a 2-column table [required]
+  -plot                         plot the profile (along with the called peaks, if available) [required]
+  -v                            convert f -> M/z [requires: -p]
+  -z                            add empty bins [requires: -p]
+  -n[unmber] <n:+i>             select scan number <n> [required]
+  -mz <low:+n> .. <high:+n>     limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
+  <file>                        input file [required]
 
 =head1 OPTIONS
 

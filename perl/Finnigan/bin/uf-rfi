@@ -20,15 +20,15 @@ my $option_relative = 0;
 
 Getopt::Long::Configure ("bundling");
 GetOptions(
-	   'help|?' => \$option_help,
-	   'man' => \$option_man,
-	   'dump|d' => \$option_dump,
-	   'size|s' => \$option_size,
-	   'html|h' => \$option_html,
-	   'wiki|w' => \$option_wiki,
-	   'preamble|p' => \$option_preamble,
-	   'relative|r' => \$option_relative,
-	  ) or pod2usage(2);
+           'help|?' => \$option_help,
+           'man' => \$option_man,
+           'dump|d' => \$option_dump,
+           'size|s' => \$option_size,
+           'html|h' => \$option_html,
+           'wiki|w' => \$option_wiki,
+           'preamble|p' => \$option_preamble,
+           'relative|r' => \$option_relative,
+          ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
 

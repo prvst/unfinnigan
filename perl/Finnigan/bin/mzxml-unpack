@@ -65,8 +65,8 @@ mzxml-unpack [options] <file>
 
  Options:
 
-  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
-  <file>				input file
+  -r[ange] <from:0+n> .. <to:0+n>  write only scans with numbers between <from> and <to>
+  <file>                           input file
 
 =head1 OPTIONS
 

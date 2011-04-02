@@ -136,39 +136,39 @@ else {
     if ( $i >= $selected[0] and $i <= $selected[1] ) {
       my $j = 0;
       if ( exists $args->{-d} ) {
-	if ( exists $args->{-s} ) {
-	  my $size = $record->size;
-	  say "size: $size";
-	}
-	if ( exists $args->{-h} ) {
-	  $record->dump(style => 'html', relative => exists $args->{-r});
-	}
-	elsif ( exists $args->{-w} ) {
-	  $record->dump(style => 'wiki', relative => exists $args->{-r});
-	}
-	else {
-	  $record->dump(relative => exists $args->{-r});
-	}
+        if ( exists $args->{-s} ) {
+          my $size = $record->size;
+          say "size: $size";
+        }
+        if ( exists $args->{-h} ) {
+          $record->dump(style => 'html', relative => exists $args->{-r});
+        }
+        elsif ( exists $args->{-w} ) {
+          $record->dump(style => 'wiki', relative => exists $args->{-r});
+        }
+        else {
+          $record->dump(relative => exists $args->{-r});
+        }
       }
       else {
-	if ( exists $args->{-w} ) {
-	  say "|| seq || retention time || label || value ||";
-	  foreach my $key (@{$header->labels}) {
-	    say "|| " . ($i + 1)
-	      . " || " . $key
-		. " || " . $record->{data}->{$key}->{value}
-		  . " || ";
-	    $j++;
-	  }
-	}
-	else {
-	  foreach my $key (@{$header->labels}) {
-	    say $i + 1
-	      . "\t" . $key
-		. "\t" . $record->{data}->{$key}->{value};
-	    $j++;
-	  }
-	}
+        if ( exists $args->{-w} ) {
+          say "|| seq || retention time || label || value ||";
+          foreach my $key (@{$header->labels}) {
+            say "|| " . ($i + 1)
+              . " || " . $key
+                . " || " . $record->{data}->{$key}->{value}
+                  . " || ";
+            $j++;
+          }
+        }
+        else {
+          foreach my $key (@{$header->labels}) {
+            say $i + 1
+              . "\t" . $key
+                . "\t" . $record->{data}->{$key}->{value};
+            $j++;
+          }
+        }
       } # if / if not -d
     } # if in range
   } # for each record

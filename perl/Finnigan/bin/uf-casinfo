@@ -20,14 +20,14 @@ my $option_relative = 0;
 
 Getopt::Long::Configure ("bundling");
 GetOptions(
-	   'help|?' => \$option_help,
-	   'man' => \$option_man,
-	   'size|s' => \$option_size,
-	   'html|h' => \$option_html,
-	   'wiki|w' => \$option_wiki,
-	   'preamble|p' => \$option_preamble,
-	   'relative|r' => \$option_relative,
-	  ) or pod2usage(2);
+           'help|?' => \$option_help,
+           'man' => \$option_man,
+           'size|s' => \$option_size,
+           'html|h' => \$option_html,
+           'wiki|w' => \$option_wiki,
+           'preamble|p' => \$option_preamble,
+           'relative|r' => \$option_relative,
+          ) or pod2usage(2);
 pod2usage(1) if $option_help;
 pod2usage(-existstatus => 0, -verbose => 2) if $option_man;
 
@@ -69,8 +69,8 @@ elsif ( $option_wiki ) {
     $cas_info->preamble->dump(style => 'wiki', relative => $option_relative);
   }
   else {
-      $cas_info->dump(style => 'wiki', relative => $option_relative);
-    }
+    $cas_info->dump(style => 'wiki', relative => $option_relative);
+  }
 }
 else {
   if ( $option_preamble ) {
@@ -159,6 +159,4 @@ uf-casinfo sample.raw
 
   (will dump theh preamble with relative addresses)
 
-
 =cut
-

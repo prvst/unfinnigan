@@ -147,16 +147,16 @@ sub print_as_table_row {
   say $index_entry->index . "\t"
     . $index_entry->next . "\t"
       . $index_entry->scan_segment . "\t"
-	. $index_entry->scan_event . "\t"
-	  . $index_entry->offset . "\t"
-	    . $index_entry->data_size . "\t"
-	      . $unknown . "\t"
-		. $index_entry->start_time . "\t"
-		  . $index_entry->low_mz . "\t"
-		    . $index_entry->high_mz . "\t"
-		      . $index_entry->base_intensity . "\t"
-			. $index_entry->base_mz . "\t"
-			  . $index_entry->total_current
+        . $index_entry->scan_event . "\t"
+          . $index_entry->offset . "\t"
+            . $index_entry->data_size . "\t"
+              . $unknown . "\t"
+                . $index_entry->start_time . "\t"
+                  . $index_entry->low_mz . "\t"
+                    . $index_entry->high_mz . "\t"
+                      . $index_entry->base_intensity . "\t"
+                        . $index_entry->base_mz . "\t"
+                          . $index_entry->total_current
 }
 
 __END__
