@@ -12,16 +12,16 @@ sub decode {
 
   my $fields = [
                 "unknown data"       => ['C8',     'RawBytes'],
-		"unknown long[1]"    => ['V',      'UInt32'],
-		"model[1]"           => ['varstr', 'PascalStringWin32'],
-		"model[2]"           => ['varstr', 'PascalStringWin32'],
-		"serial number"      => ['varstr', 'PascalStringWin32'],
-		"software version"   => ['varstr', 'PascalStringWin32'],
-		"tag[1]"             => ['varstr', 'PascalStringWin32'],
-		"tag[2]"             => ['varstr', 'PascalStringWin32'],
-		"tag[3]"             => ['varstr', 'PascalStringWin32'],
-		"tag[4]"             => ['varstr', 'PascalStringWin32'],
-	       ];
+                "unknown long[1]"    => ['V',      'UInt32'],
+                "model[1]"           => ['varstr', 'PascalStringWin32'],
+                "model[2]"           => ['varstr', 'PascalStringWin32'],
+                "serial number"      => ['varstr', 'PascalStringWin32'],
+                "software version"   => ['varstr', 'PascalStringWin32'],
+                "tag[1]"             => ['varstr', 'PascalStringWin32'],
+                "tag[2]"             => ['varstr', 'PascalStringWin32'],
+                "tag[3]"             => ['varstr', 'PascalStringWin32'],
+                "tag[4]"             => ['varstr', 'PascalStringWin32'],
+         ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
 

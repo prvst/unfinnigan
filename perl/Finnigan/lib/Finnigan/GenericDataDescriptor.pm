@@ -12,11 +12,11 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		"type"   => ['V', 'UInt32'],
-		"length" => ['V', 'UInt32'],
+                "type"   => ['V', 'UInt32'],
+                "length" => ['V', 'UInt32'],
                 "label"  => ['varstr', 'PascalStringWin32'],
+               ];
 
-	       ];
   my $self = Finnigan::Decoder->read($stream, $fields);
 
   return bless $self, $class;

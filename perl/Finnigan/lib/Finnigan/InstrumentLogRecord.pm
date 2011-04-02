@@ -16,11 +16,11 @@ sub decode {
   # in the actual record. The field_templates() method of
   # GenericDataHeader modifies all keys by adding ordinals to them.
   my $self = Finnigan::Decoder->read($stream,
-				     [
-				      '0|time' => ['f', 'Float32'],
-				      @$field_templates    # ordered templates from GenericDataHeader
-				     ]
-				    );
+                                     [
+                                      '0|time' => ['f', 'Float32'],
+                                      @$field_templates    # ordered templates from GenericDataHeader
+                                     ]
+                                    );
   return bless $self, $class;
 }
 
@@ -33,7 +33,7 @@ sub fields {
   map{$self->{data}->{$_}}
     sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]}
       grep {!/0\|time/}
-	keys %{$self->{data}};
+        keys %{$self->{data}};
 }
 
 1;

@@ -10,52 +10,52 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @common_fields = (
-		       injection          => ['object', 'Finnigan::InjectionData'],
-		       "unknown text[a]"  => ['varstr', 'PascalStringWin32'],
-		       "unknown text[b]"  => ['varstr', 'PascalStringWin32'],
-		       "id"               => ['varstr', 'PascalStringWin32'],
-		       "comment"          => ['varstr', 'PascalStringWin32'],
-		       "user label[1]"    => ['varstr', 'PascalStringWin32'],
-		       "user label[2]"    => ['varstr', 'PascalStringWin32'],
-		       "user label[3]"    => ['varstr', 'PascalStringWin32'],
-		       "user label[4]"    => ['varstr', 'PascalStringWin32'],
-		       "user label[5]"    => ['varstr', 'PascalStringWin32'],
-		       "inst method"      => ['varstr', 'PascalStringWin32'],
-		       "proc method"      => ['varstr', 'PascalStringWin32'],
-		       "file name"        => ['varstr', 'PascalStringWin32'],
-		       "path"             => ['varstr', 'PascalStringWin32'],
-		      );
+                       injection          => ['object', 'Finnigan::InjectionData'],
+                       "unknown text[a]"  => ['varstr', 'PascalStringWin32'],
+                       "unknown text[b]"  => ['varstr', 'PascalStringWin32'],
+                       "id"               => ['varstr', 'PascalStringWin32'],
+                       "comment"          => ['varstr', 'PascalStringWin32'],
+                       "user label[1]"    => ['varstr', 'PascalStringWin32'],
+                       "user label[2]"    => ['varstr', 'PascalStringWin32'],
+                       "user label[3]"    => ['varstr', 'PascalStringWin32'],
+                       "user label[4]"    => ['varstr', 'PascalStringWin32'],
+                       "user label[5]"    => ['varstr', 'PascalStringWin32'],
+                       "inst method"      => ['varstr', 'PascalStringWin32'],
+                       "proc method"      => ['varstr', 'PascalStringWin32'],
+                       "file name"        => ['varstr', 'PascalStringWin32'],
+                       "path"             => ['varstr', 'PascalStringWin32'],
+                      );
 
   my %specific_fields;
   $specific_fields{8} = [],
   $specific_fields{57} = [
-			  "vial"             => ['varstr', 'PascalStringWin32'],
-			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown long"     => ['V',      'UInt32'],
-			 ];
+                          "vial"             => ['varstr', 'PascalStringWin32'],
+                          "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown long"     => ['V',      'UInt32'],
+                         ];
   
   $specific_fields{62} = [
-			  "vial"             => ['varstr', 'PascalStringWin32'],
-			  "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown long"     => ['V',      'UInt32'],
-			  "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[f]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[g]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[h]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[i]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[j]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[k]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[l]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[m]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[n]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[o]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[p]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[q]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[r]"  => ['varstr', 'PascalStringWin32'],
-			  "unknown text[s]"  => ['varstr', 'PascalStringWin32'],
-			 ];
+                          "vial"             => ['varstr', 'PascalStringWin32'],
+                          "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown long"     => ['V',      'UInt32'],
+                          "unknown text[e]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[f]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[g]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[h]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[i]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[j]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[k]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[l]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[m]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[n]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[o]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[p]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[q]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[r]"  => ['varstr', 'PascalStringWin32'],
+                          "unknown text[s]"  => ['varstr', 'PascalStringWin32'],
+                         ];
   $specific_fields{63} = $specific_fields{62};
 
   die "don't know how to parse version $version" unless $specific_fields{$version};

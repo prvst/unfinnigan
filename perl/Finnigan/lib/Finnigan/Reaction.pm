@@ -9,12 +9,12 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
 
 my $fields = [
-	      "precursor mz"      => ['d', 'Float64'],
-	      "unknown double"    => ['d', 'Float64'],
-	      "energy"            => ['d', 'Float64'],
-	      "unknown long[1]"   => ['V', 'UInt32'],
-	      "unknown long[2]"   => ['V', 'UInt32'],
-	     ];
+              "precursor mz"      => ['d', 'Float64'],
+              "unknown double"    => ['d', 'Float64'],
+              "energy"            => ['d', 'Float64'],
+              "unknown long[1]"   => ['V', 'UInt32'],
+              "unknown long[2]"   => ['V', 'UInt32'],
+             ];
 
 sub decode {
   my ($class, $stream) = @_;

@@ -11,13 +11,13 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		"unknown long[1]" => ['V',    'UInt32'],
-		"unknown long[2]" => ['V',    'UInt32'],
-		"number of wells" => ['V',    'UInt32'],
-		"unknown long[3]" => ['V',    'UInt32'],
-		"unknown long[4]" => ['V',    'UInt32'],
-		"unknown long[5]" => ['V',    'UInt32'],
-	       ];
+                "unknown long[1]" => ['V',    'UInt32'],
+                "unknown long[2]" => ['V',    'UInt32'],
+                "number of wells" => ['V',    'UInt32'],
+                "unknown long[3]" => ['V',    'UInt32'],
+                "unknown long[4]" => ['V',    'UInt32'],
+                "unknown long[5]" => ['V',    'UInt32'],
+               ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
 

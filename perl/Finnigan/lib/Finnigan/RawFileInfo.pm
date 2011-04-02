@@ -12,14 +12,14 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my $fields = [
-		"preamble"          => ['object',  'Finnigan::RawFileInfoPreamble'],
-		"label heading[1]"  => ['varstr', 'PascalStringWin32'],
-		"label heading[2]"  => ['varstr', 'PascalStringWin32'],
-		"label heading[3]"  => ['varstr', 'PascalStringWin32'],
-		"label heading[4]"  => ['varstr', 'PascalStringWin32'],
-		"label heading[5]"  => ['varstr', 'PascalStringWin32'],
-		"unknown text"      => ['varstr', 'PascalStringWin32'],
-	       ];
+                "preamble"          => ['object',  'Finnigan::RawFileInfoPreamble'],
+                "label heading[1]"  => ['varstr', 'PascalStringWin32'],
+                "label heading[2]"  => ['varstr', 'PascalStringWin32'],
+                "label heading[3]"  => ['varstr', 'PascalStringWin32'],
+                "label heading[4]"  => ['varstr', 'PascalStringWin32'],
+                "label heading[5]"  => ['varstr', 'PascalStringWin32'],
+                "unknown text"      => ['varstr', 'PascalStringWin32'],
+               ];
 
   my $self = Finnigan::Decoder->read($stream, $fields, $version);
 

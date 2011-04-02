@@ -8,9 +8,9 @@ use base 'Finnigan::Decoder';
 
 
 my $preamble_0 = [
-		 "first bin"     => ['V', 'UInt32'],
-		 "nbins"         => ['V', 'UInt32'],
-		];
+                  "first bin"     => ['V', 'UInt32'],
+                  "nbins"         => ['V', 'UInt32'],
+                 ];
 
 my $preamble = [@$preamble_0, "fudge" => ['f', 'Float32']];
 

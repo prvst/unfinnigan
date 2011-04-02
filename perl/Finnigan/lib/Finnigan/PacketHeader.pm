@@ -11,17 +11,17 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		"unknown long[1]"         => ['V',      'UInt32'],
-		"profile size"            => ['V',      'UInt32'],
-		"peak list size"          => ['V',      'UInt32'],
-		"layout"                  => ['V',      'UInt32'],
-		"descriptor list size"    => ['V',      'UInt32'],
-		"size of unknown stream"  => ['V',      'UInt32'],
-		"size of triplet stream"  => ['V',      'UInt32'],
-		"unknown long[2]"         => ['V',      'UInt32'],
-		"low mz"                  => ['f',      'Float32'],
-		"high mz"                 => ['f',      'Float32'],
-	       ];
+                "unknown long[1]"         => ['V',      'UInt32'],
+                "profile size"            => ['V',      'UInt32'],
+                "peak list size"          => ['V',      'UInt32'],
+                "layout"                  => ['V',      'UInt32'],
+                "descriptor list size"    => ['V',      'UInt32'],
+                "size of unknown stream"  => ['V',      'UInt32'],
+                "size of triplet stream"  => ['V',      'UInt32'],
+                "unknown long[2]"         => ['V',      'UInt32'],
+                "low mz"                  => ['f',      'Float32'],
+                "high mz"                 => ['f',      'Float32'],
+               ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
 

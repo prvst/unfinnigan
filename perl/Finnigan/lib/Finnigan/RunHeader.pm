@@ -11,44 +11,44 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @common_fields = (
-		       "sample info" => ['object', 'Finnigan::SampleInfo'],
-		      );
+                       "sample info" => ['object', 'Finnigan::SampleInfo'],
+                      );
 
   my %specific_fields;
   $specific_fields{8} = [
-			  "orig file name"   => ['varstr', 'PascalStringWin32'],
-			  "file name[1]"  => ['varstr', 'PascalStringWin32'],
-			  "file name[2]"  => ['varstr', 'PascalStringWin32'],
-			  "file name[3]"  => ['varstr', 'PascalStringWin32'],
-			 ];
-  
+                         "orig file name"   => ['varstr', 'PascalStringWin32'],
+                         "file name[1]"  => ['varstr', 'PascalStringWin32'],
+                         "file name[2]"  => ['varstr', 'PascalStringWin32'],
+                         "file name[3]"  => ['varstr', 'PascalStringWin32'],
+                        ];
+
   $specific_fields{57} = [
-			  "file name[1]"          => ['U0C520', 'UTF16LE'],
-			  "file name[2]"          => ['U0C520', 'UTF16LE'],
-			  "file name[3]"          => ['U0C520', 'UTF16LE'],
-			  "file name[4]"          => ['U0C520', 'UTF16LE'],
-			  "file name[5]"          => ['U0C520', 'UTF16LE'],
-			  "file name[6]"          => ['U0C520', 'UTF16LE'],
-			  "unknown double[1]"     => ['d',      'Float64'],
-			  "unknown double[2]"     => ['d',      'Float64'],
-			  "file name[7]"          => ['U0C520', 'UTF16LE'],
-			  "file name[8]"          => ['U0C520', 'UTF16LE'],
-			  "file name[9]"          => ['U0C520', 'UTF16LE'],
-			  "file name[a]"          => ['U0C520', 'UTF16LE'],
-			  "file name[b]"          => ['U0C520', 'UTF16LE'],
-			  "file name[c]"          => ['U0C520', 'UTF16LE'],
-			  "file name[d]"          => ['U0C520', 'UTF16LE'],
-			  "scan trailer addr"     => ['V',      'UInt32'],
-			  "scan params addr"      => ['V',      'UInt32'],
-			  "unknown length[1]"     => ['V',      'UInt32'],
-			  "unknown length[2]"     => ['V',      'UInt32'],
-			  "nsegs"                 => ['V',      'UInt32'],
-			  "unknown long[1]"       => ['V',      'UInt32'],
-			  "unknown long[2]"       => ['V',      'UInt32'],
-			  "own addr"              => ['V',      'UInt32'],
-			  "unknown long[3]"       => ['V',      'UInt32'],
-			  "unknown long[4]"       => ['V',      'UInt32'],
-			 ];
+                          "file name[1]"          => ['U0C520', 'UTF16LE'],
+                          "file name[2]"          => ['U0C520', 'UTF16LE'],
+                          "file name[3]"          => ['U0C520', 'UTF16LE'],
+                          "file name[4]"          => ['U0C520', 'UTF16LE'],
+                          "file name[5]"          => ['U0C520', 'UTF16LE'],
+                          "file name[6]"          => ['U0C520', 'UTF16LE'],
+                          "unknown double[1]"     => ['d',      'Float64'],
+                          "unknown double[2]"     => ['d',      'Float64'],
+                          "file name[7]"          => ['U0C520', 'UTF16LE'],
+                          "file name[8]"          => ['U0C520', 'UTF16LE'],
+                          "file name[9]"          => ['U0C520', 'UTF16LE'],
+                          "file name[a]"          => ['U0C520', 'UTF16LE'],
+                          "file name[b]"          => ['U0C520', 'UTF16LE'],
+                          "file name[c]"          => ['U0C520', 'UTF16LE'],
+                          "file name[d]"          => ['U0C520', 'UTF16LE'],
+                          "scan trailer addr"     => ['V',      'UInt32'],
+                          "scan params addr"      => ['V',      'UInt32'],
+                          "unknown length[1]"     => ['V',      'UInt32'],
+                          "unknown length[2]"     => ['V',      'UInt32'],
+                          "nsegs"                 => ['V',      'UInt32'],
+                          "unknown long[1]"       => ['V',      'UInt32'],
+                          "unknown long[2]"       => ['V',      'UInt32'],
+                          "own addr"              => ['V',      'UInt32'],
+                          "unknown long[3]"       => ['V',      'UInt32'],
+                          "unknown long[4]"       => ['V',      'UInt32'],
+                         ];
   $specific_fields{62} = $specific_fields{57};
   $specific_fields{63} = $specific_fields{57};
 

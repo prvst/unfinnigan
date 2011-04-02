@@ -100,7 +100,7 @@ uf-rfi [options] file
  Options:
    --help            brief help message
    --man             full documentation
-   --html            requet html formatting of the dump
+   --html            request html formatting of the dump
    --wiki            format as a wiki table
    --size            tell object size
    --preamble        dump the content of RawFileInfoPreamble instead of RawFileInfo itself
@@ -155,6 +155,12 @@ It will return an error message if its input is not a Finnigan raw
 file.
 
 By default, it prints a summary of the object's data on a single line.
+
+=head2 SEE ALSO
+
+Finnigan::RawFileInfo
+Finnigan::RawFileInfoPreamble
+Finnigan::Runheader
 
 =head2 EXAMPLES
 

@@ -12,29 +12,29 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @common_fields = (
-		       "unknown long[1]"  => ['V',    'UInt32'],
-		       year               => ['v',    'UInt16'],
-		       month              => ['v',    'UInt16'],
-		       "day of the week"  => ['v',    'UInt16'],
-		       day                => ['v',    'UInt16'],
-		       hour               => ['v',    'UInt16'],
-		       minute             => ['v',    'UInt16'],
-		       second             => ['v',    'UInt16'],
-		       millisecond        => ['v',    'UInt16'],
-		      );
+                       "unknown long[1]"  => ['V',    'UInt32'],
+                       year               => ['v',    'UInt16'],
+                       month              => ['v',    'UInt16'],
+                       "day of the week"  => ['v',    'UInt16'],
+                       day                => ['v',    'UInt16'],
+                       hour               => ['v',    'UInt16'],
+                       minute             => ['v',    'UInt16'],
+                       second             => ['v',    'UInt16'],
+                       millisecond        => ['v',    'UInt16'],
+                      );
 
   my %specific_fields;
   $specific_fields{8} = [],
   $specific_fields{57} = [
-			  "unknown_long[2]"   => ['V',    'UInt32'],
-			  "data addr"         => ['V',    'UInt32'],
-			  "unknown_long[3]"   => ['V',    'UInt32'],
-			  "unknown_long[4]"   => ['V',    'UInt32'],
-			  "unknown_long[5]"   => ['V',    'UInt32'],
-			  "unknown_long[6]"   => ['V',    'UInt32'],
-			  "run header addr"   => ['V',    'UInt32'],
-			  unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (the structure seems to be fixed-size)
-			 ];
+                          "unknown_long[2]"   => ['V',    'UInt32'],
+                          "data addr"         => ['V',    'UInt32'],
+                          "unknown_long[3]"   => ['V',    'UInt32'],
+                          "unknown_long[4]"   => ['V',    'UInt32'],
+                          "unknown_long[5]"   => ['V',    'UInt32'],
+                          "unknown_long[6]"   => ['V',    'UInt32'],
+                          "run header addr"   => ['V',    'UInt32'],
+                          unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (the structure seems to be fixed-size)
+                         ];
 
   $specific_fields{62} = $specific_fields{57};
   $specific_fields{63} = $specific_fields{57};
@@ -52,18 +52,18 @@ sub timestamp {
   $dow_abbr[$self->{data}->{"day of the week"}->{value}] . " "
     . $month_abbr[$self->{data}->{month}->{value}]
       . " "
-	. $self->{data}->{day}->{value}
-	  . " "
-	    . $self->{data}->{year}->{value}
-	      . " "
-		. $self->{data}->{hour}->{value}
-		  . ":"
-		    . $self->{data}->{minute}->{value}
-		      . ":"
-			. $self->{data}->{second}->{value} 
-			  . "."
-			    . $self->{data}->{millisecond}->{value} 
-			  ;
+        . $self->{data}->{day}->{value}
+          . " "
+            . $self->{data}->{year}->{value}
+              . " "
+                . $self->{data}->{hour}->{value}
+                  . ":"
+                    . $self->{data}->{minute}->{value}
+                      . ":"
+                        . $self->{data}->{second}->{value} 
+                          . "."
+                            . $self->{data}->{millisecond}->{value} 
+                              ;
 }
 
 sub run_header_addr {
@@ -78,10 +78,10 @@ sub stringify {
   my $self = shift;
   return $self->timestamp
       . "; "
-	. "data addr: " . $self->data_addr
-	  . "; "
-	    . "RunHeader addr: " . $self->run_header_addr
-	  ;
+        . "data addr: " . $self->data_addr
+          . "; "
+            . "RunHeader addr: " . $self->run_header_addr
+              ;
 }
 
 1;

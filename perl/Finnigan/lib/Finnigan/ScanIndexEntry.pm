@@ -7,20 +7,20 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 my $fields = [
-	      "offset"           => ['V',      'UInt32'],
-	      "index"            => ['V',      'UInt32'],
-	      "scan event"       => ['v',      'UInt16'],
-	      "scan segment"     => ['v',      'UInt16'],
-	      "next"             => ['V',      'UInt32'],
-	      "unknown long"     => ['V',      'UInt32'],
-	      "data size"        => ['V',      'UInt32'],
-	      "start time"       => ['d',      'Float64'],
-	      "total current"    => ['d',      'Float64'],
-	      "base intensity"   => ['d',      'Float64'],
-	      "base mz"          => ['d',      'Float64'],
-	      "low mz"           => ['d',      'Float64'],
-	      "high mz"          => ['d',      'Float64'],
-	     ];
+              "offset"           => ['V',      'UInt32'],
+              "index"            => ['V',      'UInt32'],
+              "scan event"       => ['v',      'UInt16'],
+              "scan segment"     => ['v',      'UInt16'],
+              "next"             => ['V',      'UInt32'],
+              "unknown long"     => ['V',      'UInt32'],
+              "data size"        => ['V',      'UInt32'],
+              "start time"       => ['d',      'Float64'],
+              "total current"    => ['d',      'Float64'],
+              "base intensity"   => ['d',      'Float64'],
+              "base mz"          => ['d',      'Float64'],
+              "low mz"           => ['d',      'Float64'],
+              "high mz"          => ['d',      'Float64'],
+             ];
 
 sub decode {
   return bless Finnigan::Decoder->read($_[1], $fields), $_[0];

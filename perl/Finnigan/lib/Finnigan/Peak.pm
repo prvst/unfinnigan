@@ -9,9 +9,9 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
 
 my $fields = [
-	      "mz"        => ['f', 'Float32'],
-	      "abundance" => ['f', 'Float32'],
-	     ];
+              "mz"        => ['f', 'Float32'],
+              "abundance" => ['f', 'Float32'],
+             ];
 
 sub decode {
   return bless Finnigan::Decoder->read($_[1], $fields), $_[0];

@@ -152,13 +152,13 @@ sub chunk_dist {
   my $min_j = $start + ($chunk_j->{"first bin"} - 1) * $step;
   my $max_j = $min_j + $chunk_j->{nbins} * $step;
   my $dist = (sort {$a <=> $b}
-	      (
-	       abs($min_i - $min_j),
-	       abs($min_i - $max_j),
-	       abs($max_i - $min_j),
-	       abs($max_i - $max_j)
-	      )
-	     )[0];
+        (
+         abs($min_i - $min_j),
+         abs($min_i - $max_j),
+         abs($max_i - $min_j),
+         abs($max_i - $max_j)
+        )
+       )[0];
   return $dist;
 }
 
@@ -198,26 +198,26 @@ sub find_chunk {
       my $chunk = $chunks->[$cur];
       $upper = $first_value + $chunk->{"first bin"} * $step;
       $lower = $upper + $chunk->{nbins} * $step;
-#      say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
+      # say STDERR "    testing: $cur [$lower .. $upper] against $value in [$low_ix .. $high_ix]";
       if ( $value >= $lower and $value <= $upper ) {
-#	say STDERR "      direct hit";
-	return ($cur, 0);
+        # say STDERR "      direct hit";
+        return ($cur, 0);
       }
       if ( $value > $upper ) {
-	$dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
-	$last_match = [$cur, $dist] if $dist < $last_match->[1];
-#	say STDERR "      distance = $dist, shifting up";
+        $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
+        $last_match = [$cur, $dist] if $dist < $last_match->[1];
+        # say STDERR "      distance = $dist, shifting up";
         $high_ix = $cur;
       }
       if ( $value < $lower ) {
-	$dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
-	$last_match = [$cur, $dist] if $dist < $last_match->[1];
-#	say STDERR "      distance = $dist; shifting down";
+        $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
+        $last_match = [$cur, $dist] if $dist < $last_match->[1];
+        # say STDERR "      distance = $dist; shifting down";
         $low_ix = $cur + 1;
       }
-#      say STDERR "The remainder: $low_ix, $high_ix";
+      # say STDERR "The remainder: $low_ix, $high_ix";
     }
-#    say STDERR "The final remainder: $low_ix, $high_ix";
+    # say STDERR "The final remainder: $low_ix, $high_ix";
   }
 
   if ( $low_ix == $high_ix ) {
@@ -231,7 +231,7 @@ sub find_chunk {
     if ( $dist > $last_match[1] ) {
       ($closest_chunk, $min_dist) = @$last_match;
     }
-#    say STDERR "      no direct hit; closest chunk is $closest_chunk; distance between $value and [$lower, $upper] is $min_dist";
+    # say STDERR "      no direct hit; closest chunk is $closest_chunk; distance between $value and [$lower, $upper] is $min_dist";
     return ($closest_chunk, $min_dist);
   }
   else {
@@ -298,8 +298,8 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $self = {
-	      addr => tell $stream
-	     };
+        addr => tell $stream
+       };
   my $nbytes;
   my $bytes_to_read;
   my $current_addr;
@@ -322,10 +322,10 @@ sub decode {
 
   # skip peak descriptors and the unknown streams
   $self->{size} += 4 * (
-			$header_data->{"descriptor list size"}->{value} +
-			$header_data->{"size of unknown stream"}->{value} +
-			$header_data->{"size of triplet stream"}->{value}
-		       );
+                        $header_data->{"descriptor list size"}->{value} +
+                        $header_data->{"size of unknown stream"}->{value} +
+                        $header_data->{"size of triplet stream"}->{value}
+                       );
   seek $stream, $self->{addr} + $self->{size}, 0;
 
   return bless $self, $class;

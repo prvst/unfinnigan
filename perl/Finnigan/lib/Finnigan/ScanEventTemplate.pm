@@ -12,14 +12,14 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @fields = (
-		     "preamble"           => ['object',  'Finnigan::ScanEventPreamble'],
-		     "unknown long[1]"    => ['V',       'UInt32'],
-		     "unknown long[2]"    => ['V',       'UInt32'],
-                     "fraction collector" => ['object', 'Finnigan::FractionCollector'],
-		     "unknown long[3]"    => ['V',       'UInt32'],
-		     "unknown long[4]"    => ['V',       'UInt32'],
-		     "unknown long[5]"    => ['V',       'UInt32'],
-		    );
+                "preamble"           => ['object',  'Finnigan::ScanEventPreamble'],
+                "unknown long[1]"    => ['V',       'UInt32'],
+                "unknown long[2]"    => ['V',       'UInt32'],
+                "fraction collector" => ['object', 'Finnigan::FractionCollector'],
+                "unknown long[3]"    => ['V',       'UInt32'],
+                "unknown long[4]"    => ['V',       'UInt32'],
+                "unknown long[5]"    => ['V',       'UInt32'],
+               );
 
   my $self = Finnigan::Decoder->read($stream, \@fields, $version);
   bless $self, $class;

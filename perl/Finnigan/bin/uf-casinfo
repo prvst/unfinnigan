@@ -93,7 +93,7 @@ uf-casinfo [options] file
  Options:
    --help            brief help message
    --man             full documentation
-   --html            requet html formatting of the dump
+   --html            format as HTML
    --wiki            format as a wiki table
    --size            tell object size
    --preamble        dump the content of CASInfoPreamble instead of CASInfo itself
@@ -152,11 +152,11 @@ By default, it dumps the object in a tabular format.
 
 uf-casinfo sample.raw
 
-  (will show the area occupied by the preamble and the text following
+  (shows the space occupied by the preamble and the text following it
   with absolute addresses)
 
-uf-casinfo sample.raw
+uf-casinfo --preamble --relative sample.raw
 
-  (will dump theh preamble with relative addresses)
+  (dumps the contents of the preamble with relative addresses)
 
 =cut

@@ -12,9 +12,9 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @common_head = (
-		     "preamble" => ['object',  'Finnigan::ScanEventPreamble'],
-		     "np"       => ['V',       'UInt32'],
-		    );
+                     "preamble" => ['object',  'Finnigan::ScanEventPreamble'],
+                     "np"       => ['V',       'UInt32'],
+                    );
 
   my $self = Finnigan::Decoder->read($stream, \@common_head, $version);
   bless $self, $class;
@@ -24,10 +24,10 @@ sub decode {
   }
 
   my @common_middle = (
-		       "unknown long[1]"    => ['V',      'UInt32'],
-		       "fraction collector" => ['object', 'Finnigan::FractionCollector'],
-		       "nparam"             => ['V',      'UInt32'],
-		      );
+                       "unknown long[1]"    => ['V',      'UInt32'],
+                       "fraction collector" => ['object', 'Finnigan::FractionCollector'],
+                       "nparam"             => ['V',      'UInt32'],
+                      );
   $self->SUPER::decode($stream, \@common_middle, $version);
 
   if ( $self->nparam == 0 ) {
@@ -35,23 +35,23 @@ sub decode {
   }
   elsif ( $self->nparam == 4 ) {
     my $fields = [
-		  "unknown double"  => ['d',      'Float64'],
-		  "A"               => ['d',      'Float64'],
-		  "B"               => ['d',      'Float64'],
-		  "C"               => ['d',      'Float64'],
-		 ];
+                  "unknown double"  => ['d',      'Float64'],
+                  "A"               => ['d',      'Float64'],
+                  "B"               => ['d',      'Float64'],
+                  "C"               => ['d',      'Float64'],
+                 ];
     $self->SUPER::decode($stream, $fields);
   }
   elsif ( $self->nparam == 7 ) {
     my $fields = [
-		  "unknown double"  => ['d',      'Float64'],
-		  "I"               => ['d',      'Float64'],
-		  "A"               => ['d',      'Float64'],
-		  "B"               => ['d',      'Float64'],
-		  "C"               => ['d',      'Float64'],
-		  "D"               => ['d',      'Float64'],
-		  "E"               => ['d',      'Float64'],
-		 ];
+                  "unknown double"  => ['d',      'Float64'],
+                  "I"               => ['d',      'Float64'],
+                  "A"               => ['d',      'Float64'],
+                  "B"               => ['d',      'Float64'],
+                  "C"               => ['d',      'Float64'],
+                  "D"               => ['d',      'Float64'],
+                  "E"               => ['d',      'Float64'],
+                 ];
     $self->SUPER::decode($stream, $fields);
   }
   else {
@@ -59,9 +59,9 @@ sub decode {
   }
   
   my @common_tail = (
-		     "unknown long[2]"    => ['V',      'UInt32'],
-		     "unknown long[3]"    => ['V',      'UInt32'],
-		    );
+                     "unknown long[2]"    => ['V',      'UInt32'],
+                     "unknown long[3]"    => ['V',      'UInt32'],
+                    );
   $self->SUPER::decode($stream, \@common_tail, $version);
 
   return $self;
@@ -171,7 +171,7 @@ sub inverse_converter {
     my $C = $self->{data}->{C}->{value};
     return sub {
       (-$B - sqrt($B**2 - 4*$C*($A - $_[0])))  # $_[0] == Mz
-      /
+        /
       (2*($A - $_[0]));
     };
   }
@@ -182,10 +182,10 @@ sub inverse_converter {
     my $C = $self->{data}->{C}->{value};
     return sub {
       sqrt(
-	   (-$B - sqrt($B**2 - 4*$C*($A - $_[0])))  # $_[0] == Mz
-	   /
-	   (2*($A - $_[0]))
-	  );
+           (-$B - sqrt($B**2 - 4*$C*($A - $_[0])))  # $_[0] == Mz
+           /
+           (2*($A - $_[0]))
+          );
     };
   }
   else {

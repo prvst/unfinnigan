@@ -10,9 +10,9 @@ use overload ('""' => 'stringify');
  
 
 my @fields = (
-	      "low mz"  => ['d', 'Float64'],
-	      "high mz" => ['d', 'Float64'],
-	     );
+              "low mz"  => ['d', 'Float64'],
+              "high mz" => ['d', 'Float64'],
+             );
 
 sub decode {
   return bless Finnigan::Decoder->read($_[1], \@fields), $_[0];

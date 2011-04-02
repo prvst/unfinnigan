@@ -10,9 +10,9 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-		preamble =>  ['object', 'Finnigan::CASInfoPreamble'],
-		text     =>  ['varstr', 'PascalStringWin32'],
-	       ];
+                preamble =>  ['object', 'Finnigan::CASInfoPreamble'],
+                text     =>  ['varstr', 'PascalStringWin32'],
+               ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
 

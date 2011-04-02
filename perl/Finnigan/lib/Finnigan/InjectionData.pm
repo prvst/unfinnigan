@@ -19,7 +19,7 @@ sub decode {
                 "volume"          => ['d',       'Float64'],
                 "istd amount"     => ['d',       'Float64'],
                 "dilution factor" => ['d',       'Float64'],
-	       ];
+               ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
 

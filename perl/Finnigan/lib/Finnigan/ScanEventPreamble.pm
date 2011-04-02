@@ -9,94 +9,94 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
 
 my %SYMBOL = (
-	      bool => {
-		       0 => "False",
-		       1 => "True"
-		      },
+              bool => {
+                       0 => "False",
+                       1 => "True"
+                      },
 
-	      "on/off" => {
-			   0 => "Off",
-			   1 => "On",
-			   2 => "undefined",
-			  },
+              "on/off" => {
+                           0 => "Off",
+                           1 => "On",
+                           2 => "undefined",
+                          },
 
-	      detector => {
-			   0 => "valid",
-			   1 => "undefined",
-			  },
+              detector => {
+                           0 => "valid",
+                           1 => "undefined",
+                          },
 
-	      analyzer => {
-			   0 => "ITMS",
-			   1 => "TQMS",
-			   2 => "SQMS",
-			   3 => "TOFMS",
-			   4 => "FTMS",
-			   5 => "Sector",
-			   6 => "undefined"
-			  },
+              analyzer => {
+                           0 => "ITMS",
+                           1 => "TQMS",
+                           2 => "SQMS",
+                           3 => "TOFMS",
+                           4 => "FTMS",
+                           5 => "Sector",
+                           6 => "undefined"
+                          },
 
-	      polarity => {
-			   0 => "negative",
-			   1 => "positive",
-			   2 => "undefined",
-			  },
+              polarity => {
+                           0 => "negative",
+                           1 => "positive",
+                           2 => "undefined",
+                          },
 
-	      "scan mode" => {
-			      0 => "centroid",
-			      1 => "profile",
-			      2 => "undefined",
-			     },
+              "scan mode" => {
+                              0 => "centroid",
+                              1 => "profile",
+                              2 => "undefined",
+                             },
 
-	      "scan type" => {
-			      0 => "Full",
-			      1 => "Zoom",
-			      2 => "SIM",
-			      3 => "SRM",
-			      4 => "CRM",
-			      5 => "undefined",
-			      6 => "Q1",
-			      7 => "Q3",
-			     },
+              "scan type" => {
+                              0 => "Full",
+                              1 => "Zoom",
+                              2 => "SIM",
+                              3 => "SRM",
+                              4 => "CRM",
+                              5 => "undefined",
+                              6 => "Q1",
+                              7 => "Q3",
+                             },
 
-	      "ms power" => {
-			     0 => "undefined",
-			     1 => "MS1",
-			     2 => "MS2",
-			     3 => "MS3",
-			     4 => "MS4",
-			     5 => "MS5",
-			     6 => "MS6",
-			     7 => "MS7",
-			     8 => "MS8",
-			    },
+              "ms power" => {
+                             0 => "undefined",
+                             1 => "MS1",
+                             2 => "MS2",
+                             3 => "MS3",
+                             4 => "MS4",
+                             5 => "MS5",
+                             6 => "MS6",
+                             7 => "MS7",
+                             8 => "MS8",
+                            },
 
-	      ionization => {
-			     0 => "EI",
-			     1 => "CI",
-			     2 => "FABI",
-			     3 => "ESI",
-			     4 => "APCI",
-			     5 => "NSI",
-			     6 => "TSI",
-			     7 => "FDI",
-			     8 => "MALDI",
-			     9 => "GDI",
-			     10 => "undefined"
-			    },
-	     );
+              ionization => {
+                             0 => "EI",
+                             1 => "CI",
+                             2 => "FABI",
+                             3 => "ESI",
+                             4 => "APCI",
+                             5 => "NSI",
+                             6 => "TSI",
+                             7 => "FDI",
+                             8 => "MALDI",
+                             9 => "GDI",
+                             10 => "undefined"
+                            },
+             );
 
 my %TYPE = (
-	    "corona"            => "on/off",
-	    "detector"          => "detector",
-	    "polarity"          => "polarity",
-	    "scan mode"         => "scan mode",
-	    "ms power"          => "ms power",
-	    "scan type"         => "scan type",
-	    "dependent"         => "bool",
-	    "ionization"        => "ionization",
-	    "wideband"          => "on/off",
-	    "analyzer"          => "analyzer",
-	   );
+            "corona"            => "on/off",
+            "detector"          => "detector",
+            "polarity"          => "polarity",
+            "scan mode"         => "scan mode",
+            "ms power"          => "ms power",
+            "scan type"         => "scan type",
+            "dependent"         => "bool",
+            "ionization"        => "ionization",
+            "wideband"          => "on/off",
+            "analyzer"          => "analyzer",
+           );
 
 my @common_fields = (
                      "unknown byte[0]"   => ['C',    'UInt8'],
@@ -380,10 +380,10 @@ my %dependent_symbol = (
                        );
 
 my %wideband_symbol = (
-                        0 => "",
-                        1 => " w",
-		        2 => "",
-                       );
+                       0 => "",
+                       1 => " w",
+                       2 => "",
+                      );
 
 my %ms_power_symbol = (
                        0 => "?",
@@ -427,8 +427,8 @@ sub list {
     my $value;
     if ( $_[1] ) { # decode
       $value = $TYPE{$key}
-	? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	  : $_[0]->{data}->{$key}->{value};
+        ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+          : $_[0]->{data}->{$key}->{value};
     }
     else {
       $value = $_[0]->{data}->{$key}->{value};
@@ -443,10 +443,22 @@ sub corona {
   if ( $_[1] ) { # decode
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     shift->{data}->{corona}->{value};
+  }
+}
+
+sub detector {
+  my $key = "detector";
+  if ( $_[1] ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+        : $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    $_[0]->{data}->{$key}->{value};
   }
 }
 
@@ -455,7 +467,7 @@ sub polarity {
   if ( $_[1] ) { # decode
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     return $_[0]->{data}->{$key}->{value};
@@ -467,27 +479,11 @@ sub scan_mode {
   if ( $_[1] ) {
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     $_[0]->{data}->{$key}->{value};
   }
-}
-
-sub detector {
-  my $key = "detector";
-  if ( $_[1] ) {
-    return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
-  }
-  else {
-    $_[0]->{data}->{$key}->{value};
-  }
-}
-
-sub dependent {
-  $_[0]->{data}->{dependent}->{value};
 }
 
 sub ms_power {
@@ -495,19 +491,7 @@ sub ms_power {
   if ( $_[1] ) {
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
-  }
-  else {
-    $_[0]->{data}->{$key}->{value};
-  }
-}
-
-sub analyzer {
-  my $key = "analyzer";
-  if ( $_[1] ) {
-    return $TYPE{$key}
-      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     $_[0]->{data}->{$key}->{value};
@@ -519,11 +503,15 @@ sub scan_type {
   if ( $_[1] ) {
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     $_[0]->{data}->{$key}->{value};
   }
+}
+
+sub dependent {
+  $_[0]->{data}->{dependent}->{value};
 }
 
 sub ionization {
@@ -531,7 +519,7 @@ sub ionization {
   if ( $_[1] ) {
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     $_[0]->{data}->{$key}->{value};
@@ -543,7 +531,19 @@ sub wideband {
   if ( $_[1] ) {
     return $TYPE{$key}
       ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
-	: $_[0]->{data}->{$key}->{value};
+        : $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    $_[0]->{data}->{$key}->{value};
+  }
+}
+
+sub analyzer {
+  my $key = "analyzer";
+  if ( $_[1] ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+        : $_[0]->{data}->{$key}->{value};
   }
   else {
     $_[0]->{data}->{$key}->{value};
@@ -558,11 +558,11 @@ sub stringify {
   $self->analyzer(decode => 1)
     . " " . $polarity_symbol{$self->polarity}
       . " " . $scan_mode_symbol{$self->scan_mode}
-  	. " " . $self->ionization('decode')
-	  . $dependent_symbol{$self->dependent}
-	    . $wideband_symbol{$self->wideband}
-	      . " " . $self->scan_type('decode')
-		. " " . $ms_power_symbol{$self->ms_power}
+        . " " . $self->ionization('decode')
+          . $dependent_symbol{$self->dependent}
+            . $wideband_symbol{$self->wideband}
+              . " " . $self->scan_type('decode')
+                . " " . $ms_power_symbol{$self->ms_power}
 }
 
 1;

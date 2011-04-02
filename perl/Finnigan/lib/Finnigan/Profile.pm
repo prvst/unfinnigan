@@ -8,11 +8,11 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 my $preamble = [
-		"first value" => ['d', 'Float64'],
-		"step"        => ['d', 'Float64'],
-		"peak count"  => ['V', 'UInt32'],
-		"nbins"       => ['V', 'UInt32'],
-	       ];
+                "first value" => ['d', 'Float64'],
+                "step"        => ['d', 'Float64'],
+                "peak count"  => ['V', 'UInt32'],
+                "nbins"       => ['V', 'UInt32'],
+               ];
 
 
 sub decode {
@@ -186,20 +186,20 @@ sub print_bins {
       my $from = $chunks->[$i]->first_bin + $chunks->[$i]->{data}->{nbins}->{value};
       my $to = $chunks->[$i+1]->first_bin - 1;
       if ($to >= $from) {
-	foreach my $bin ( $from .. $to ) {
-	  my $x = $start + $bin * $step;
-	  my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
-	  if ( $range ) {
-	    if ( exists $self->{converter} ) {
-	      next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
-	    }
-	    else {
-	      # frequencies have the reverse order
-	      next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
-	    }
-	  }
-	  print "$x_conv\t0\n";
-	}
+        foreach my $bin ( $from .. $to ) {
+          my $x = $start + $bin * $step;
+          my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
+          if ( $range ) {
+            if ( exists $self->{converter} ) {
+              next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+            }
+            else {
+              # frequencies have the reverse order
+              next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
+            }
+          }
+          print "$x_conv\t0\n";
+        }
       }
     }
   }
@@ -210,18 +210,18 @@ sub print_bins {
     my $first_trailer_bin = $last_chunk->{data}->{"first bin"}->{value} + $last_chunk->{data}->{nbins}->{value};
     if ( $first_trailer_bin < $data->{nbins}->{value} ) {
       foreach my $bin ( $first_trailer_bin .. $self->{data}->{nbins}->{value} - 1 ) {
-	my $x = $start + $bin * $step;
-	my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
-	if ( $range ) {
-	  if ( exists $self->{converter} ) {
-	    next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
-	  }
-	  else {
-	    # frequencies have the reverse order
-	    next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
-	  }
-	}
-	print "$x_conv\t0\n";
+        my $x = $start + $bin * $step;
+        my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
+        if ( $range ) {
+          if ( exists $self->{converter} ) {
+            next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
+          }
+          else {
+            # frequencies have the reverse order
+            next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
+          }
+        }
+        print "$x_conv\t0\n";
       }
     }
     print "$range->[1]\t0\n";
@@ -268,13 +268,13 @@ sub find_precursor_peak {
   $j = $second_closest->{point}->{n};
   my $point2 = {
                 mz => &{$self->{converter}}(
-					    $start +
-					    (
-					     $self->{data}->{chunks}->{value}->[$i]
-					     ->{data}->{"first bin"}->{value}
-					     + $j - 1
-					    ) * $step
-					   ),
+                                            $start +
+                                            (
+                                             $self->{data}->{chunks}->{value}->[$i]
+                                             ->{data}->{"first bin"}->{value}
+                                             + $j - 1
+                                            ) * $step
+                                           ),
                 intensity => $chunks->[$i]->{data}->{signal}->{value}->[$j]
                };
   return $point1->{intensity} > $point2->{intensity} ? $point1 : $point2;
