@@ -73,7 +73,7 @@ GenericDataHeader drives the decoding of a generic record. It stores a
 list of GenericDataDescriptor objects, each describing a field in the
 record.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

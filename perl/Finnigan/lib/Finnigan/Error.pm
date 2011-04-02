@@ -47,7 +47,7 @@ Error is a varibale-length structure containing timestamped error
 messages. It implicitly links an error message to a scan using the
 retention time.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

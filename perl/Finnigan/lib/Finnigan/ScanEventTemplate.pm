@@ -68,7 +68,7 @@ ScanEvent structure corresponding to an individual scan. It is an
 elment of MSScanEvent hirerachy (that's the name used by Thermo),
 which models the grouping of scan events into segments.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

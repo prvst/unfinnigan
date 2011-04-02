@@ -51,7 +51,7 @@ Finnigan::FractionCollector -- a decoder for FractionCollector, a mass range obj
 This object is just a container for a pair of double-precision floating point
 numbers that define the M/z range of ions collected during a scan.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

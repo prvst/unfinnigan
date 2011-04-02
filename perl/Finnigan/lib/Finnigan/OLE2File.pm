@@ -303,7 +303,7 @@ Get the directory entry (Finnigan::OLE2DirectoryEntry) matching the
 path supplied in the only argument. The directory entry's B<data>
 method needs to be called in order to extract the node data.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

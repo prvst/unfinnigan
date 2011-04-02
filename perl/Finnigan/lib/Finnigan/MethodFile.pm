@@ -94,7 +94,7 @@ The outer container also contains a name translation table mapping the
 names of the instruments into the names used inside the method files.
 
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

@@ -130,7 +130,7 @@ stream lengths and addresses, as well as some unidentified data. Every
 data stream in the file has its address stored in RunHeader or in its
 historical antecedent SampleInfo, which it now includes.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

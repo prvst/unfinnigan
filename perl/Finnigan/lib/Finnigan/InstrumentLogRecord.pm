@@ -72,7 +72,7 @@ needs to be preserved. That is why Finnigan::GenericRecord relies on
 the B<field_templates> method of Finnigan::GenericDataHeader to insert
 ordinal numbers into the keys.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

@@ -511,7 +511,7 @@ context information to that decoder.
 
 =back
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

@@ -81,7 +81,7 @@ Calling this decoder is a pre-requisite to reading any scan data. It
 reads the data packet layout indicator and the sizes of the data
 streams included in the packet.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

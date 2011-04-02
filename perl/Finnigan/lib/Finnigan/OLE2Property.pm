@@ -115,7 +115,7 @@ The constructor method
 
 Returns the property name
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

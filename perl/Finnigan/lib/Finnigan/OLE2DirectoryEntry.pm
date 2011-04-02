@@ -254,7 +254,7 @@ efficiency of access). The directory entry's constructor method
 B<new()> is called recursively starting from the root directory
 contained in the file's 0-th property.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

@@ -63,7 +63,7 @@ instrument identifiers and some unknown data.
 
 The identifiers include the model name, the serial number and the software version.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

@@ -247,7 +247,7 @@ to M/z (the other copy of the same coefficients is stored in the
 corresponding ScanParameterSet -- a somewhat overlapping structure in
 a parallel stream).
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

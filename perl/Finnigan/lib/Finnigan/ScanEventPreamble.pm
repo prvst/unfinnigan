@@ -610,7 +610,7 @@ knows about have not changed, but the version number still has to be
 passed into it so it knows how many bytes to read.
 
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

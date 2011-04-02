@@ -119,7 +119,7 @@ stored in the parent structure, RunHeader.
 It appears as though RunHeader is a recently introduced wrapper around
 the older SampleInfo structure.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

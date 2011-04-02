@@ -103,7 +103,7 @@ The file-related tags seem to have the following meaning:
   "file name":    original raw file name (can be basename or full path)
   "path":         directory path where the raw file was created (can be null if full path is given in "file nam")
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

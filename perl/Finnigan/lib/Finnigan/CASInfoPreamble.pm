@@ -42,7 +42,7 @@ Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, a numeric autosample
 CASInfoPreamble is a fixed-length structure with some unknown data about the autosampler. It is a component of [CASInfo], which consists of this numeric descriptor and a text string following it.
 
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

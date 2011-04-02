@@ -111,7 +111,7 @@ to all other data streams in the file.
 The older versions of this structure did not contain anything except
 the date stamp.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

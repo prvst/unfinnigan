@@ -101,7 +101,7 @@ The OLE2 header is the first the first object to be decoded on the way
 to parsing the embedded filesystem. It contains the key parameters that
 determine the shape of the filesystem.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

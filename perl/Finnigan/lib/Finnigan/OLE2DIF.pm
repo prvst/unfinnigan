@@ -64,7 +64,7 @@ caller of the B<sect> method.
 
 DIF == Double-Indirect File Allocation Table
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

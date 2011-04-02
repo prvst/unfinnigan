@@ -67,7 +67,7 @@ There are other data elements in the modern preamble, whose meaning is
 unkonwn.
 
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

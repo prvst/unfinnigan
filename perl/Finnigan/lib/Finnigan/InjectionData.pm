@@ -51,7 +51,7 @@ sample volume, weight, internal standard (ISTD) amount, and dilution factor.
 
 Finnigan::InjectionData is a component of Finnigan::SeqRow
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

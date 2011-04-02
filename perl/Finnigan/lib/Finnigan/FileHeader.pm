@@ -83,7 +83,7 @@ The key information contained in the Finnigan header is the file
 version number. Since the file structure varies from one version to
 another, the decoders must be aware of it.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

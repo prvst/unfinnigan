@@ -62,7 +62,7 @@ to carry the user ID of the person who created the
 files. Additionally, there is a long integer, possibly carrying the
 CRC-32 sum of the data file or a portion of it.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

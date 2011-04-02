@@ -45,7 +45,7 @@ Finnigan::OLE2FAT -- a decoder for FAT Sector, a block allocation structure in O
 
 This is an auxiliary decoder used by Finnigan::OLE2File; it is of no use on its own. It reads a specified number of 4-byte intergers into an array that is to be interpreted as a sector allocation table by the caller of the B<sect> method.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

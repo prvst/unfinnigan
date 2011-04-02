@@ -64,7 +64,7 @@ There are other elements that currently remain unknown: a double (set
 to 1.0 in all observations) and a couple longs.
 
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

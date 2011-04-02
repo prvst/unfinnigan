@@ -28,7 +28,7 @@ Finnigan::ScanParameters -- a decoder for ScanParameters, a GenericRecord contai
 
 This decoder augments the GenericRecord decoder with the charge_state() method.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

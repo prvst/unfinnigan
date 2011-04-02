@@ -378,7 +378,7 @@ observations are lacking, I am inclined to interpret it as a
 forward-linked list, simply from common sense.
 
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 

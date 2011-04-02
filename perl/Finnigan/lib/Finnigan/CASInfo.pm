@@ -45,7 +45,7 @@ a text string. The text string is apparently a comment; in one
 instance where it was non-null, it contained this text: '384 Well
 Plate'.
 
-=head2 EXPORT
+=head1 EXPORT
 
 None
 
