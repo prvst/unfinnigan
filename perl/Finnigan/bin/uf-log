@@ -102,38 +102,58 @@ if ( $args->{'-header'} ) {
 else {
   # do the records
   my $record;
-  my @range = 0 .. $inst_log_length - 1;
+  my @range = (0, $inst_log_length - 1);
+  my @selected = @range;
   if ( exists $args->{-n}) {
     my $n = $args->{-n}{"<n>"};
-    if ($n - 1 < $range[0] or $n - 1 > $range[-1]) {
+    if ($n - 1 < $range[0] or $n - 1 > $range[1]) {
       say STDERR "Record number $n is out of range. The file $file has only $inst_log_length log records";
       exit -1;
     }
-    @range = ($n - 1);
+    @selected = ($n - 1) x 2;
   }
-  foreach my $i (@range) {
+  foreach my $i ( $range[0] .. $range[1] ) {
+    exit if $i > $selected[1];
     $record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $header->ordered_field_templates);
-    my $j = 0;
-    if ( exists $args->{-w} ) {
-      say "|| seq || retention time || label || value ||";
-      foreach my $field ($record->fields) {
-        say "|| " . ($i + 1)
-          . " || " . $record->time
-            . " || " . $header->field($j)->label
-              . " || " . $field->{value}
-                . " || ";
-        $j++;
+    if ( $i >= $selected[0] and $i <= $selected[1] ) {
+      my $j = 0;
+      if ( exists $args->{-d} ) {
+	if ( exists $args->{-s} ) {
+	  my $size = $record->size;
+	  say "size: $size";
+	}
+	if ( exists $args->{-h} ) {
+	  $record->dump(style => 'html', relative => exists $args->{-r});
+	}
+	elsif ( exists $args->{-w} ) {
+	  $record->dump(style => 'wiki', relative => exists $args->{-r});
+	}
+	else {
+	  $record->dump(relative => exists $args->{-r});
+	}
       }
-    }
-    else {
-      foreach my $field ($record->fields) {
-        say $i + 1
-          . "\t" . $record->time
-            . "\t" .$header->field($j)->label
-              . "\t" . $field->{value};
-        $j++;
-      }
-    }
+      else {
+	if ( exists $args->{-w} ) {
+	  say "|| seq || retention time || label || value ||";
+	  foreach my $key (@{$header->labels}) {
+	    say "|| " . ($i + 1)
+	      . " || " . $key
+		. " || " . $record->{data}->{$key}->{value}
+		  . " || ";
+	    $j++;
+	  }
+	}
+	else {
+	  foreach my $key ( sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$record->{data}}) {
+	    my ($stripped_key) = ($key =~ /^\d+\|(.*)$/);
+	    say $i + 1
+	      . "\t" . ($stripped_key || '')
+		. "\t" . $record->{data}->{$key}->{value};
+	    $j++;
+	  }
+	}
+      } # if / if not -d
+    } # if in range
   } # for each record
 }
 
@@ -214,7 +234,6 @@ sample.
 
 =head1 SEE ALSO
 
-Finnigan::InstrumentLog
 Finnigan::InstrumentLogRecord
 
 =head1 EXAMPLES
@@ -226,6 +245,9 @@ uf-log sample.raw
 uf-log -n 5 sample.raw
 
   (prints the fifth log record)
+
+uf-log -dswr -n 5 sample.raw
+  (dumps the fifth log record in wiki format with total size and relative addresses)
 
 uf-log -header sample.raw
 

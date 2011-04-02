@@ -69,14 +69,6 @@ foreach my $i ( 0 .. $nsegs - 1) {
 # now at the start of the ScanParameters header (GenericDataHeader)
 my $header = Finnigan::GenericDataHeader->decode(\*INPUT);
 
-# with the header on hand, skip to the ScanParameters stream
-seek INPUT, $params_addr, 0;
-foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
-  # there must be the same number of ScanParameters records as there are scans
-  my $p = Finnigan::ScanParameters->decode(\*INPUT, $header->field_templates);
-  $p->dump;
-}
-
 if ( $args->{'-header'} ) {
   if ( exists $args->{-d} ) {
     if ( exists $args->{-s} ) {
@@ -124,49 +116,72 @@ if ( $args->{'-header'} ) {
   }
 }
 else {
-  # do the records
+  # Do the records. With the header on hand, skip to the ScanParameters stream
+  seek INPUT, $params_addr, 0;
+
   my $record;
-  my @range = 0 .. $inst_log_length - 1;
+  my @range = ($first_scan - 1, $last_scan - 1);
+  my @selected = @range;
   if ( exists $args->{-n}) {
     my $n = $args->{-n}{"<n>"};
     if ($n - 1 < $range[0] or $n - 1 > $range[-1]) {
-      say STDERR "Record number $n is out of range. The file $file has only $inst_log_length log records";
+      say STDERR "Record number $n is out of range [$first_scan .. $last_scan]";
       exit -1;
     }
-    @range = ($n - 1);
+    @selected = ($n - 1) x 2;
   }
-  foreach my $i (@range) {
-    $record = Finnigan::GenericRecord->decode(\*INPUT, $header);
-    my $j = 0;
-    if ( exists $args->{-w} ) {
-      say "|| seq || retention time || label || value ||";
-      foreach my $field ($record->fields) {
-        say "|| " . ($i + 1)
-	  . " || " .$header->field($j)->label
-	    . " || " . $field->{value}
-	      . " || ";
-        $j++;
+  foreach my $i ( $range[0] .. $range[1] ) {
+    exit if $i > $selected[1];
+    $record = Finnigan::ScanParameters->decode(\*INPUT, $header->field_templates);
+    if ( $i >= $selected[0] and $i <= $selected[1] ) {
+      my $j = 0;
+      if ( exists $args->{-d} ) {
+	if ( exists $args->{-s} ) {
+	  my $size = $record->size;
+	  say "size: $size";
+	}
+	if ( exists $args->{-h} ) {
+	  $record->dump(style => 'html', relative => exists $args->{-r});
+	}
+	elsif ( exists $args->{-w} ) {
+	  $record->dump(style => 'wiki', relative => exists $args->{-r});
+	}
+	else {
+	  $record->dump(relative => exists $args->{-r});
+	}
       }
-    }
-    else {
-      foreach my $field ($record->fields) {
-        say $i + 1
-            . "\t" .$header->field($j)->label
-              . "\t" . $field->{value};
-        $j++;
-      }
-    }
+      else {
+	if ( exists $args->{-w} ) {
+	  say "|| seq || retention time || label || value ||";
+	  foreach my $key (@{$header->labels}) {
+	    say "|| " . ($i + 1)
+	      . " || " . $key
+		. " || " . $record->{data}->{$key}->{value}
+		  . " || ";
+	    $j++;
+	  }
+	}
+	else {
+	  foreach my $key (@{$header->labels}) {
+	    say $i + 1
+	      . "\t" . $key
+		. "\t" . $record->{data}->{$key}->{value};
+	    $j++;
+	  }
+	}
+      } # if / if not -d
+    } # if in range
   } # for each record
 }
 
 __END__
 =head1 NAME
 
-uf-log - list or dump the instrument log entries in a Finnigan raw file
+uf-params - list or dump the ScanParameters records in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-log [options] file
+uf-params [options] file
 
  Options:
 
@@ -225,43 +240,40 @@ Dump all GenericDataDescriptor entries in the file header (requires B<-header>)
 
 =head1 DESCRIPTION
 
-B<uf-log> can be used to examine the instrument log stream in a
-Finnigan raw file. The instrument log records typically contain more
-than a hundred parameters, including operational data on the pumps,
-power supplies, ion optics and injectors -- everything that may be
-useful in the auditing of the instrument's performance.
-
-Each record is timestamped with the current retention time of the
-sample.
+B<uf-params> can be used to examine the ScanParameters? records in a
+Finnigan raw file. These records contain a miscellany of data
+pertaining to a single scan: ion injection time, retention time,
+charge state and M/z of the precursor ion, M/z conversion
+coefficients, and other data.
 
 =head1 SEE ALSO
 
-Finnigan::InstrumentLog
-Finnigan::InstrumentLogRecord
+Finnigan::ScanParameters
 
 =head1 EXAMPLES
 
-uf-log sample.raw 
+uf-params sample.raw
 
-  (lists all log records in the tabular form: <record number, time, label, value>)
+  (lists all ScanParameters? records in the tabular form: <record number, label, value>)
 
-uf-log -n 5 sample.raw
+uf-params -n 5 sample.raw
 
-  (prints the fifth log record)
+  (prints the parameters record for the fifth scan)
 
-uf-log -header sample.raw
+uf-params -dswr -n 5 sample.raw
 
-  (prints the contents of the file header in the tabular form: <type, length, label>)
+  (dumps the fifth ScanParameters? record in wiki format with total size and relative addresses)
 
-uf-log -header -dw sample.raw
+uf-params -header sample.raw
 
-  (dumps the header in the compact wiki format, with a stringified
-  GenericDataDescriptor list)
+  (prints the contents of the stream header in the tabular form: <type, length, label>)
 
-uf-log -header -daw sample.raw
+uf-params -header -dw sample.raw
 
-  (dumps the header in the extended wiki format, showing the
-  location of echa GenericDataDescriptor's element)
+  (dumps the header in the compact wiki format, with a stringified GenericDataDescriptor list)
 
+uf-params -header -daw sample.raw
+
+  (dumps the header in the extended wiki format, showing the location of echa GenericDataDescriptor's element)
 
 =cut
