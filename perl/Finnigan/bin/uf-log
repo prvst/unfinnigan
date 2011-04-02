@@ -135,13 +135,19 @@ else {
       else {
         if ( exists $args->{-w} ) {
           say "|| seq || retention time || label || value ||";
-          foreach my $key (@{$header->labels}) {
+          foreach my $key ( sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$record->{data}}) {
+            my ($stripped_key) = ($key =~ /^\d+\|(.*)$/);
+	    $stripped_key ||= '';
             say "|| " . ($i + 1)
-              . " || " . $key
+              . " || " . $stripped_key
                 . " || " . $record->{data}->{$key}->{value}
                   . " || ";
             $j++;
           }
+        }
+        if ( exists $args->{-h} ) {
+          say STDERR "sorry, HTML formatting only works in dump mode";
+	  exit -1;
         }
         else {
           foreach my $key ( sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$record->{data}}) {
