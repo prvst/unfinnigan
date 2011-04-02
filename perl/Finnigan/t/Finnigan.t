@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 116;
+use Test::More tests => 120;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -234,11 +234,20 @@ is ($et->preamble->stringify, "ITMS + p ESI d Full ms2", "ScanEventTemplate->Sca
 # This is where things become convoluted. The following GenericDataHeader 
 # decodes the ScanParameters stream that sits at the end of the file.
 #
-# The next ojbect after this will be the tune file.
+# The next ojbect after this will be the tune file, followed by the
+# ScanIndex stream, then ScanEvent stream, and finally ScanParameters.
 #
 #-------------------------------------------------------------------------
 my $scan_parameters_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 is( $scan_parameters_header->n, 29, "GenericDataHeader->n (ScanParameters stream)" );
+
+# Tune file
+my $tune_file_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+is( $tune_file_header->n, 421, "GenericDataHeader->n (Tune File)" );
+my $tune_file = Finnigan::GenericRecord->decode(\*INPUT, $tune_file_header->ordered_field_templates);
+is( $tune_file->{data}->{"2|Source Type:"}->{value}, "ESI", "GenericRecord->decode (2)" );
+is( $tune_file->{data}->{"3|Capillary Temp (C):"}->{value}, "275", "GenericRecord->decode (3)" );
+is( $tune_file->{data}->{"421|FT Cal. Item 250:"}->{value}, "0", "GenericRecord->decode (421)" );
 
 seek INPUT, $params_addr, 0;
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
