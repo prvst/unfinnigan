@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 150;
+use Test::More tests => 181;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -273,9 +273,8 @@ is( $index_entry->base_mz, 1521.9716796875, "ScanIndexEntry->base_mz (0)" );
 is( $index_entry->base_intensity, 796088, "ScanIndexEntry->base_intensity (0)" );
 is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (0)" );
 is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (0)" );
-for my $i (2 .. $nrecords) {
+for my $i (2 .. $nrecords) { # skip to the last index entry
   $index_entry       = Finnigan::ScanIndexEntry->decode( \*INPUT );
-  diag($index_entry->index);
 }
 is( $index_entry->offset, 721572, "ScanIndexEntry->offset (32)" );
 is( $index_entry->index, 32, "ScanIndexEntry->index (32)" );
@@ -290,8 +289,50 @@ is( $index_entry->base_mz, 445.120635986328, "ScanIndexEntry->base_mz (32)" );
 is( $index_entry->base_intensity, 861951.8125, "ScanIndexEntry->base_intensity (32)" );
 is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (32)" );
 is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (32)" );
-
 is( tell INPUT, $trailer_addr, "should have arrived at the start of ScanEvents stream" );
+
+# read the ScanEvent stream (the "trailer")
+my $trailer_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+is( $trailer_length, 33, "the trailer events count should be 33");
+# read the first ScanEvent record
+my $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
+is( $scan_event->preamble->corona('decode'), "undefined", "ScanEvent->preamble->corona" );
+is( $scan_event->preamble->analyzer('decode'), "FTMS", "ScanEvent->preamble->analyzer" );
+is( $scan_event->preamble->polarity('decode'), "positive", "ScanEvent->preamble->polarity" );
+is( $scan_event->preamble->scan_mode('decode'), "profile", "ScanEvent->preamble->scan_mode" );
+is( $scan_event->preamble->ionization('decode'), "ESI", "ScanEvent->preamble->ionization" );
+is( $scan_event->preamble->dependent, 0, "ScanEvent->preamble->dependent" );
+is( $scan_event->preamble->scan_type('decode'), "Full", "ScanEvent->preamble->scan_type" );
+is( $scan_event->preamble->ms_power('decode'), "MS1", "ScanEvent->preamble->ms_power" );
+is( "$scan_event", "FTMS + p ESI Full ms [400.00-2000.00]", "ScanEvent->preamble->stringify" );
+is( $scan_event->preamble->wideband('decode'), "Off", "ScanEvent->preamble->wideband" );
+is( $scan_event->fraction_collector->stringify, "[400.00-2000.00]", "ScanEvent->fraction_collector->stringify" );
+is( $scan_event->np, 0, "ScanEvent->np" );
+is( $scan_event->precursors, undef, "ScanEvent->precursors" );
+my $converter = $scan_event->converter;
+is( &$converter(1), 38518081.414831, "ScanEvent->converter");
+# read the second ScanEvent record
+$scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
+is( $scan_event->preamble->analyzer('decode'), "ITMS", "ScanEvent->preamble->analyzer (2)" );
+is( $scan_event->preamble->polarity('decode'), "positive", "ScanEvent->preamble->polarity (2)" );
+is( $scan_event->preamble->scan_mode('decode'), "profile", "ScanEvent->preamble->scan_mode (2)" );
+is( $scan_event->preamble->dependent, 1, "ScanEvent->preamble->dependent (2)" );
+is( $scan_event->preamble->scan_type('decode'), "Full", "ScanEvent->preamble->scan_type (2)" );
+is( $scan_event->preamble->ms_power('decode'), "MS2", "ScanEvent->preamble->ms_power (2)" );
+is( "$scan_event", 'ITMS + p ESI d Full ms2 445.12@cid35.00 [110.00-460.00]', "ScanEvent->preamble->stringify (2)" );
+is( $scan_event->preamble->corona('decode'), "undefined", "ScanEvent->preamble->corona (2)" );
+is( $scan_event->preamble->wideband('decode'), "Off", "ScanEvent->preamble->wideband (2)" );
+is( $scan_event->fraction_collector->stringify, "[110.00-460.00]", "ScanEvent->fraction_collector->stringify (2)" );
+is( $scan_event->np, 1, "ScanEvent->np" );
+my $pr = join ", ", map {"$_"} @{$scan_event->precursors};
+is( $pr, '445.12@cid35.00', "ScanEvent->precursors (2)" );
+$Finnigan::activationMethod = 'ecd'; # cos we don't know where to look for it
+$pr = $scan_event->reaction->stringify;
+is( $pr, '445.12@ecd35.00', "ScanEvent->precursors (3): setting the activation method)" );
+is( $scan_event->reaction->precursor, 445.121063232422, "ScanEvent->reaction, Reaction->precursor" );
+is( $scan_event->reaction(0)->precursor, 445.121063232422, "ScanEvent->reaction(0), Reaction->precursor" );
+is( $scan_event->reaction->energy, 35, "ScanEvent->reaction, Reaction->energy" );
+
 
 seek INPUT, $params_addr, 0;
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
@@ -362,51 +403,4 @@ seek INPUT, $scan_index_addr, 0;
 is( tell INPUT, 829706, "seek to scan index address" );
 
 
-
-# read the first ScanEvent record
-seek INPUT, $trailer_addr, 0;
-my $rec;
-my $bytes_to_read = 4;
-my $nbytes = read INPUT, $rec, $bytes_to_read;
-is ( $nbytes, $bytes_to_read, "should have read the $bytes_to_read of the trailer events count");
-my $trailer_length = unpack 'V', $rec;
-is ( $trailer_length, 33, "the trailer events count should be 33");
-
-my $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
-is ($scan_event->preamble->corona('decode'), "undefined", "ScanEvent->preamble->corona");
-is ($scan_event->preamble->analyzer('decode'), "FTMS", "ScanEvent->preamble->analyzer");
-is ($scan_event->preamble->polarity('decode'), "positive", "ScanEvent->preamble->polarity");
-is ($scan_event->preamble->scan_mode('decode'), "profile", "ScanEvent->preamble->scan_mode");
-is ($scan_event->preamble->ionization('decode'), "ESI", "ScanEvent->preamble->ionization");
-is ($scan_event->preamble->dependent, 0, "ScanEvent->preamble->dependent");
-is ($scan_event->preamble->scan_type('decode'), "Full", "ScanEvent->preamble->scan_type");
-is ($scan_event->preamble->ms_power('decode'), "MS1", "ScanEvent->preamble->ms_power");
-is ("$scan_event", "FTMS + p ESI Full ms [400.00-2000.00]", "ScanEvent->preamble->stringify");
-is ($scan_event->preamble->wideband('decode'), "Off", "ScanEvent->preamble->wideband");
-is ($scan_event->fraction_collector->stringify, "[400.00-2000.00]", "ScanEvent->fraction_collector->stringify");
-is ($scan_event->np, 0, "ScanEvent->np");
-is ($scan_event->precursors, undef, "ScanEvent->precursors");
-
-my $converter = $scan_event->converter;
-is (&$converter(1), 38518081.414831, "ScanEvent->converter");
-
-
-# read the second ScanEvent record
-$scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
-is ($scan_event->preamble->analyzer('decode'), "ITMS", "ScanEvent->preamble->analyzer (2)");
-is ($scan_event->preamble->polarity('decode'), "positive", "ScanEvent->preamble->polarity (2)");
-is ($scan_event->preamble->scan_mode('decode'), "profile", "ScanEvent->preamble->scan_mode (2)");
-is ($scan_event->preamble->dependent, 1, "ScanEvent->preamble->dependent (2)");
-is ($scan_event->preamble->scan_type('decode'), "Full", "ScanEvent->preamble->scan_type (2)");
-is ($scan_event->preamble->ms_power('decode'), "MS2", "ScanEvent->preamble->ms_power (2)");
-is ("$scan_event", 'ITMS + p ESI d Full ms2 445.12@cid35.00 [110.00-460.00]', "ScanEvent->preamble->stringify (2)");
-is ($scan_event->preamble->corona('decode'), "undefined", "ScanEvent->preamble->corona (2)");
-is ($scan_event->preamble->wideband('decode'), "Off", "ScanEvent->preamble->wideband (2)");
-is ($scan_event->fraction_collector->stringify, "[110.00-460.00]", "ScanEvent->fraction_collector->stringify (2)");
-is ($scan_event->np, 1, "ScanEvent->np");
-my $pr = join ", ", map {"$_"} @{$scan_event->precursors};
-is ($pr, '445.12@cid35.00', "ScanEvent->precursors (2)");
-$Finnigan::activationMethod = 'ecd';
-$pr = $scan_event->precursors->[0]->stringify;
-is ($pr, '445.12@ecd35.00', "ScanEvent->precursors (3: activation method)");
 
