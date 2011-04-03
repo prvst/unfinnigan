@@ -24,7 +24,7 @@ sub nchunks { # in place of the erroneous "peak_count"
   shift->{data}->{"peak count"}->{value};
 }
 
-sub peak_count { # the name will be deprecated
+sub peak_count { # deprecated
   shift->{data}->{"peak count"}->{value};
 }
 
@@ -304,8 +304,8 @@ Finnigan::Profile -- a full-featured decoder for Finnigan scan profiles
   say $profile->nbins;
   $profile->set_converter( $converter_function_ref );
   my $bins = $profile->bins; # calls the converter
-  say $bins->[0]->[0]; # the first profile chunk, M/z
-  say $bins->[0]->[1]; # the first profile chunk, abundance
+  say $bins->[0]->[0]; # the first bin, M/z
+  say $bins->[0]->[1]; # the first bin, abundance
 
 =head1 DESCRIPTION
 
@@ -349,8 +349,43 @@ instance of this structure exists for every scan).
 The B<bins> method of Finnigan::Profile returns the converted bins,
 optionally filling the gaps with zeroes.
 
-=head1 METHODS
+=head2 METHODS
 
+=over 4
+
+=item decode
+
+The constructor method
+
+=item nchunks
+
+Get the number of chunks in the profile
+
+=item nbins
+
+Get the total number of bins in the profile
+
+=item first_value
+
+Get the the value of the first bin in the profile
+
+=item step
+
+Get the bin width and direction of change (usually, the frequency step needed to go from one bin to the next)
+
+=item chunk, chunks
+
+Get the list of Finnigan::ProfileChunk? objects representing the profile data
+
+=item set_converter($func_ref)
+
+Set the converter function (f → M/z)
+
+=item set_inverse_converter($func_ref)
+
+Set the inverse converter function (M/z → f)
+
+=back
 
 =head1 EXPORT
 
@@ -358,6 +393,7 @@ None
 
 =head1 SEE ALSO
 
+Finnigan::ProfileChunk
 Finnigan::PacketHeader
 Finnigan::Scan
 Finnigan::Scan::Profile
