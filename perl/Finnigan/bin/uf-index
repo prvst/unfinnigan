@@ -121,6 +121,7 @@ else {
       my $size = 72; # this may be wrong!
       seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
     }
+    say join "\t", qw/Index Next ScanSegment ScanEvent Offset DataSize Unknown StartTime LowMz HighMz BaseIntensity BaseMz TotalCurrent/;
     foreach my $index ($from - 1 .. $to - 1) {
       print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
     }
@@ -138,7 +139,7 @@ sub print_as_table_row {
       $unknown = sprintf "0x%08x", $unknown;
     }
     elsif ( $args->{-f}->{'<type>'} eq 'ms' ) {
-      $unknown = {21 => 'MS1', 18 => 'MS2', 19 => 'MS2*'}->{$unknown};
+      $unknown = {21 => 'MS1', 18 => 'MS2', 19 => 'MS2*'}->{$unknown} || '?';
     }
     else {
       die "unkonwn format: " . $args->{-f}->{'<type>'};
@@ -162,7 +163,7 @@ sub print_as_table_row {
 __END__
 =head1 NAME
 
-uf-index - decode the ScanIndexEntry structures in a Finnigan raw file
+uf-index - examine the ScanIndexEntry structures in a Finnigan raw file
 
 =head1 SYNOPSIS
 
@@ -174,7 +175,7 @@ uf-index [options] file
   -n[unmber] <n>                get one index entry number <n>
   -range <from> .. <to>         extract all entries with numbers between <from> and <to>
   -d[ump]                       dump all data in each index entry 
-  -s[ize]                       print record size 
+  -s[ize]                       print object size 
   -h[tml]                       dump as html 
   -w[iki]                       dump in wiki table format 
   -r[elative]                   show relative addersess in dump 
@@ -247,19 +248,18 @@ Finnigan::ScanIndexRecord
 
 uf-index sample.raw 
 
-  (will print all index entries in the file in a tabular form)
+  (prints all index entries in the file in a tabular form)
 
 uf-index -range 1..5 sample.raw
 
-  (will print the first five records)
+  (prints the first five records)
 
 uf-index -range 1..5 -format bin sample.raw
 
-  (will show individual bits in the scan type word)
+  (shows individual bits in the scan type word)
 
 uf-index -rdsn 5 ~/shared/test/sample4.raw 
 
-  (will dump the fifth index entry with relative addresses and will
-   show its size)
+  (dumps the fifth index entry with relative addresses and shows its size)
 
 =cut
