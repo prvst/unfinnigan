@@ -16,7 +16,7 @@ my $args = new Getopt::Declare q{
   -header			extract the tune header (record structure)
   -d[ump]			dump the requested feature with file seek addresses
   -a[ll]			detailed dump of all field descriptors [requires: -d]
-  -s[ize]			print record size [requires: -d]
+  -s[ize]			print object size [requires: -d]
   -h[tml]			format as html
   -w[iki]			format as a wiki table
   -r[elative]			show relative addersess in the dump [requires: -d]
@@ -154,7 +154,7 @@ else {
 __END__
 =head1 NAME
 
-uf-tune - list or dump the instrument tune entries in a Finnigan raw file
+uf-tune - list or dump the instrument settings and calibration data from a Finnigan raw file
 
 =head1 SYNOPSIS
 
@@ -165,7 +165,7 @@ uf-tune [options] file
   -header              extract the tune header (record structure)
   -d[ump]              dump the requested feature showing file seek addresses
   -a[ll]               detailed dump of all field descriptors [requires: -d]
-  -s[ize]              print record size [requires: -d]
+  -s[ize]              print object size [requires: -d]
   -h[tml]              format as html
   -w[iki]              format as a wiki table
   -r[elative]          show relative addersess in the dump [requires: -d]
