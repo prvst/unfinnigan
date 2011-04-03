@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 121;
+use Test::More tests => 150;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -241,7 +241,7 @@ is ($et->preamble->stringify, "ITMS + p ESI d Full ms2", "ScanEventTemplate->Sca
 my $scan_parameters_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 is( $scan_parameters_header->n, 29, "GenericDataHeader->n (ScanParameters stream)" );
 
-# Tune file
+# Tune file, a GenericRecord -- no special decoder is necessary
 my $tune_file_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 is( $tune_file_header->n, 421, "GenericDataHeader->n (Tune File)" );
 my $tune_file = Finnigan::GenericRecord->decode(\*INPUT, $tune_file_header->ordered_field_templates);
@@ -251,6 +251,47 @@ is( $tune_file->{data}->{"421|FT Cal. Item 250:"}->{value}, "0", "GenericRecord-
 
 # ScanIndex
 is( tell INPUT, $scan_index_addr, "should have arrived at the start of scan index" );
+my $index_entry       = Finnigan::ScanIndexEntry->decode( \*INPUT );
+# measure scan index record size
+my $record_size = $index_entry->size;
+is( $index_entry->size, 72, "ScanIndexEntry->size" );
+# check that the index record stream is of the right size
+my $stream_size = $trailer_addr - $scan_index_addr;
+my $nrecords = $stream_size / $record_size;
+is( $stream_size % $record_size, 0, "scan index record stream should contain a whole number of $record_size\-byte records");
+# look inside this index entry
+is( $index_entry->offset, 0, "ScanIndexEntry->offset (0)" );
+is( $index_entry->index, 0, "ScanIndexEntry->index (0)" );
+is( $index_entry->scan_event, 0, "ScanIndexEntry->scan_event (0)" );
+is( $index_entry->scan_segment, 0, "ScanIndexEntry->scan_segment (0)" );
+is( $index_entry->next, 1, "ScanIndexEntry->next (0)" );
+is( $index_entry->unknown, 21, "ScanIndexEntry->unknown (0)" );
+is( $index_entry->data_size, 31932, "ScanIndexEntry->data_size (0)" );
+is( $index_entry->start_time, 0.00581833333333333, "ScanIndexEntry->start_time (0)" );
+is( $index_entry->total_current, 10851256, "ScanIndexEntry->total_current (0)" );
+is( $index_entry->base_mz, 1521.9716796875, "ScanIndexEntry->base_mz (0)" );
+is( $index_entry->base_intensity, 796088, "ScanIndexEntry->base_intensity (0)" );
+is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (0)" );
+is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (0)" );
+for my $i (2 .. $nrecords) {
+  $index_entry       = Finnigan::ScanIndexEntry->decode( \*INPUT );
+  diag($index_entry->index);
+}
+is( $index_entry->offset, 721572, "ScanIndexEntry->offset (32)" );
+is( $index_entry->index, 32, "ScanIndexEntry->index (32)" );
+is( $index_entry->scan_event, 0, "ScanIndexEntry->scan_event (32)" );
+is( $index_entry->scan_segment, 0, "ScanIndexEntry->scan_segment (32)" );
+is( $index_entry->next, 33, "ScanIndexEntry->next (32)" );
+is( $index_entry->unknown, 21, "ScanIndexEntry->unknown (32)" );
+is( $index_entry->data_size, 31020, "ScanIndexEntry->data_size (32)" );
+is( $index_entry->start_time, 0.242753333333333, "ScanIndexEntry->start_time (32)" );
+is( $index_entry->total_current, 11508917, "ScanIndexEntry->total_current (32)" );
+is( $index_entry->base_mz, 445.120635986328, "ScanIndexEntry->base_mz (32)" );
+is( $index_entry->base_intensity, 861951.8125, "ScanIndexEntry->base_intensity (32)" );
+is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (32)" );
+is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (32)" );
+
+is( tell INPUT, $trailer_addr, "should have arrived at the start of ScanEvents stream" );
 
 seek INPUT, $params_addr, 0;
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
@@ -320,31 +361,6 @@ is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
 seek INPUT, $scan_index_addr, 0;
 is( tell INPUT, 829706, "seek to scan index address" );
 
-# measure scan index record size
-my $entry       = Finnigan::ScanIndexEntry->decode( \*INPUT );
-
-my $record_size = $entry->size;
-is( $entry->size, 72, "ScanIndexEntry->decode->size" );
-
-# check that the index record stream is of the right size
-my $stream_size = $trailer_addr - $scan_index_addr;
-my $nrecords = $stream_size / $record_size;
-is( $stream_size % $record_size, 0, "scan index record stream should contain a whole number of $record_size\-byte records");
-
-# look inside this index entry
-is( $entry->offset, 0, "ScanIndexEntry->offset" );
-is( $entry->index, 0, "ScanIndexEntry->index" );
-is( $entry->scan_event, 0, "ScanIndexEntry->scan_event" );
-is( $entry->scan_segment, 0, "ScanIndexEntry->scan_segment" );
-is( $entry->next, 1, "ScanIndexEntry->next" );
-is( $entry->unknown, 21, "ScanIndexEntry->unknown" );
-is( $entry->data_size, 31932, "ScanIndexEntry->data_size" );
-is( $entry->start_time, 0.00581833333333333, "ScanIndexEntry->start_time" );
-is( $entry->total_current, 10851256, "ScanIndexEntry->total_current" );
-is( $entry->base_mz, 1521.9716796875, "ScanIndexEntry->base_mz" );
-is( $entry->base_intensity, 796088, "ScanIndexEntry->base_intensity" );
-is( $entry->low_mz, 400, "ScanIndexEntry->low_mz" );
-is( $entry->high_mz, 2000, "ScanIndexEntry->high_mz" );
 
 
 # read the first ScanEvent record
