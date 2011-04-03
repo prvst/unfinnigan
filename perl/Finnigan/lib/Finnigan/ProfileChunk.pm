@@ -16,7 +16,7 @@ my $preamble = [@$preamble_0, "fudge" => ['f', 'Float32']];
 
 sub decode {
   my $self;
-  if ( $_[2] > 0 ) { # the layout flag
+  if ( $_[2] > 0 ) { # the layout flag in the packet header
     $self = Finnigan::Decoder->read($_[1], $preamble);
   }
   else {
@@ -47,35 +47,61 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanIndexEntry -- decoder for ScanIndexEntry, a linked list item pointing to scan data
+Finnigan::ScanIndexEntry -- A full-featured decoder for a single ProfileChunk structure
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
-  say $entry->offset; # returns an offset from the start of scan data stream 
-  say $entry->data_size;
-  $entry->dump;
+
+  my $chunk = Finnigan::ProfileChunk->decode( \*INPUT, $packet_header->layout );
+  say $chunk->nbins;
+  say $chunk->first_bin;
+  say $chunk->fudge;
+  foreach my $i ( 0 .. $nbins - 1) {
+    say $chunk->signal->[$i];
+  }
 
 =head1 DESCRIPTION
 
-ScanIndexEntry is a static (fixed-size) structure containing the
-pointer to a scan, the scan's data size and some auxiliary information
-about the scan.
+Finningan::ProfileChunk is a full-featured decoder for the ProfileChunk structure, a segment of a Profile. The data it generates contain the seek addresses, sizes and types of all decoded elements, no matter how small. That makes it very handy in the exploration of the file format and in writing new code, but it is not very efficient in production work.
 
-ScanIndexEntry elements seem to form a linked list. Each
-ScanIndexEntry contains the index of the next entry.
+In performance-sensitive applications, the more lightweight Finnigan::Scan? module should be used, which includes Finnigan::Scan::ProfileChunk? and other related submodules. It can be used as a drop-in replacement for the full-featured modules, but it does not store the seek addresses and object types, greatly reducing the overhead.
 
-Although in all observed instances the scans were sequential and their
-indices could be ignored, it may not always be the case.
+Every scan done in the B<profile mode> has a profile, which is either a time-domain signal or a frequency spectrum accumulated in histogram-like bins.
 
-It is not clear whether scan index numbers start at 0 or at 1. If they
-start at 0, the list link index must point to the next item. If they
-start at 1, then "index" will become "previous" and "next" becomes
-"index" -- the list will be linked from tail to head. Although
-observations are lacking, I am inclined to interpret it as a
-forward-linked list, simply from common sense.
+A profile can be either raw or filtered. Filtered profiles are sparse; they consist of separate data chunks. Each chunk consists of a contiguous range of bins containing the above-threshold signal. The bins whose values fall below a cerain threshold are simply discarded, leaving gaps in the profile -- the reason for the ProfileChunk structure to exist.
 
+One special case is raw profile, which preserves all data. Since there are no gaps in a raw profile, it is represented by a single chunk covering the entire range of bins, so the same container structure is suitable for complete profiles, as well as for sparse ones.
+
+The bins store the signal intensity, and the bin co-ordinates are typically the frequencies of Fourier-transformed signal. Since the bins are equally spaced in the frequency domain, only the first bin frequency is stored in each profile header. The bin width is common for all bins and it is also stored in the same header. With these data, it is possible to calculate the bin values based on the bin indices.
+
+Each ProfileChunk structure stores the first bin index, the number of bins, and a list of bin intensities. Additionally, in some layouts, it stores a small floating-point value that most probably represents the instrument drift relative to its calibrated value; this "fudge" value is added to the result of the the frequency to M/z conversion. The chunk layout (the presence or absence of the fudge value) is determined by the layout flag in PacketHeader.
+
+=head2 Methods
+
+=over 4
+
+=item decode
+
+The constructor method
+
+=item nbins
+
+Get the number of bins chunks in the chunk
+
+=item first_bin
+
+Get the index of the first bin in the chunk
+
+=item fudge
+
+Get the the value of conversion bias
+
+=item signal
+
+Get the list of bin values
+
+=back
 
 =head1 EXPORT
 
