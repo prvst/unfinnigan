@@ -84,7 +84,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanIndexEntry -- decoder for ScanIndexEntry, a linked list item pointing to scan data
+Finnigan::ScanIndexEntry -- a decoder for ScanIndexEntry, a linked list element pointing to scan data
 
 =head1 SYNOPSIS
 
@@ -100,8 +100,8 @@ ScanIndexEntry is a static (fixed-size) structure containing the
 pointer to a scan, the scan's data size and some auxiliary information
 about the scan.
 
-ScanIndexEntry elements seem to form a linked list. Each
-ScanIndexEntry contains the index of the next entry.
+Scan Index elements seem to form a linked list. Each ScanIndexEntry
+contains the index of the next entry.
 
 Although in all observed instances the scans were sequential and their
 indices could be ignored, it may not always be the case.
