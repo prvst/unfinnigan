@@ -44,21 +44,20 @@ __END__
 
 =head1 NAME
 
-Finnigan::Reaction -- a decoder for Reaction, an object describing ion fragmentation in ScanEvent
+Finnigan::Reaction -- a decoder for Reaction, the container for precursor mass and fragmentation energy
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $f = Finnigan::Reaction->decode(\*INPUT);
-  say f->precursor;
-  say f->enengy;
+  my $r = Finnigan::Reaction->decode(\*INPUT);
+  say $r->precursor;
+  say $r->enengy;
 
 =head1 DESCRIPTION
 
 This object contains a couple of double-precision floating point
-numbers that define the precursor ion M/z and, apparently, the energy
-with which it was whacked (both are conjectures at this time, but very
-plausible ones).
+numbers that define the precursor ion M/z and the energy
+of the fragmentation reaction.
 
 There are other elements that currently remain unknown: a double (set
 to 1.0 in all observations) and a couple longs.

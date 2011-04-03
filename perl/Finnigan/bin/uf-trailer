@@ -144,6 +144,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
   my $e = Finnigan::ScanEvent->decode(\*INPUT, $header->version);
   next if $i < $from;
+  # say join " ", $e->preamble->list('decode');
   if ( exists $args->{-d} ) {
     say "\n$n:" if ( $to > $from ); # not a single record
     if ( exists $args->{-h} ) {
@@ -196,7 +197,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
 __END__
 =head1 NAME
 
-uf-trailer - decode the ScanEvent structures in a Finnigan raw file "trailer"
+uf-trailer - examine the ScanEvent structures in a Finnigan raw file "trailer"
 
 =head1 SYNOPSIS
 
@@ -266,7 +267,7 @@ the entry whose index matches the first scan number.
 
 B<uf-trailer> can be used to list or dump the ScanEvent records in a
 Finnigan raw file. These records are stored in a stream Thermo calls a
-"trailer", which follows the data stream. Now, the "trailer"
+"trailer", which occurs near the end of the file. Now, the "trailer"
 containing scan event descriptions is not the only stream trailing the
 data; apparently, new ones were added as the format evolved, but the
 name stuck. The code in Thermo libraries refers to this stream as
@@ -283,14 +284,14 @@ Finnigan::Reaction
 
 uf-trailer sample.raw 
 
-  (will list all scan events in the file in Thermo's short-hand notation)
+  (lists all scan events in the file using Thermo's short-hand notation known as "filter line")
 
 uf-trailer -range 1..5 sample.raw
 
-  (will list the first five records)
+  (lists the first five records)
 
-uf-trailer -drn 5 ~/shared/test/sample4.raw 
+uf-trailer -drn 5 sample.raw
 
-  (will dump the fifth ScanEvent with relative addresses)
+  (dumps the fifth ScanEvent with relative addresses)
 
 =cut

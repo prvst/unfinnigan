@@ -57,6 +57,7 @@ foreach my $i ( 0 .. $nsegs - 1) {
     my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
     say "($i, $j)";
     $e->dump();
+    say join " ", $e->preamble->list('decode');
     say "--------";
   }
 }
