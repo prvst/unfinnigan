@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 202;
+use Test::More tests => 210;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -374,14 +374,25 @@ is ($ph->{data}->{"unknown long[2]"}->{value}, 0, "PacketHeader->{unknown long[2
 is ($ph->low_mz, 400.0, "PacketHeader->low_mz");
 is ($ph->high_mz, 2000.0, "PacketHeader->high_mz");
 
+# Profile
 my $profile = Finnigan::Profile->decode( \*INPUT, $ph->layout );
-is ($profile->first_value, 344.543619791667, "Profile->first_value");
 is ($profile->nchunks, 580, "Profile->nchunks");
 is ($profile->nbins, 293046, "Profile->nbins");
+is ($profile->first_value, 344.543619791667, "Profile->first_value");
+is ($profile->step, -0.000651041666666667, "Profile->first_value");
+# ProfileChunk
+is (ref $profile->chunk->[0], "Finnigan::ProfileChunk", "ref Profile->chunk->[0]" );
+is ($profile->chunk->[0]->nbins, 5, "ProfileChunk->nbins" );
+is ($profile->chunk->[0]->first_bin, 139, "ProfileChunk->first_bin" );
+is ($profile->chunk->[0]->fudge, 0.000183502677828074, "ProfileChunk->fudge" );
+is ($profile->chunk->[0]->signal->[4], 627.37109375, "ProfileChunk->signal" );
+# Profile again
 $profile->set_converter( $converter ); # from ScanEvent 1 above
 my $bins = $profile->bins;
-is ($bins->[0]->[0], 400.209152455266, "Profile->bins (Mz)");
-is ($bins->[0]->[1], 447.530578613281, "Profile->bins (signal)");
+is ($bins->[0]->[0], 400.209152455266, "Profile->bins->[0] (Mz)");
+is ($bins->[0]->[1], 447.530578613281, "Profile->bins->[0] (signal)");
+is ($bins->[-1]->[0], 1993.75819323833, "Profile->bins->[-1] (Mz)");
+is ($bins->[-1]->[1], 590.111206054688, "Profile->bins->[-1] (signal)");
 __END__
 
 # back to the first scan; read with compound decoder
