@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 181;
+use Test::More tests => 202;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -274,7 +274,7 @@ is( $index_entry->base_intensity, 796088, "ScanIndexEntry->base_intensity (0)" )
 is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (0)" );
 is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (0)" );
 for my $i (2 .. $nrecords) { # skip to the last index entry
-  $index_entry       = Finnigan::ScanIndexEntry->decode( \*INPUT );
+  $index_entry = Finnigan::ScanIndexEntry->decode( \*INPUT );
 }
 is( $index_entry->offset, 721572, "ScanIndexEntry->offset (32)" );
 is( $index_entry->index, 32, "ScanIndexEntry->index (32)" );
@@ -328,33 +328,36 @@ my $pr = join ", ", map {"$_"} @{$scan_event->precursors};
 is( $pr, '445.12@cid35.00', "ScanEvent->precursors (2)" );
 $Finnigan::activationMethod = 'ecd'; # cos we don't know where to look for it
 $pr = $scan_event->reaction->stringify;
-is( $pr, '445.12@ecd35.00', "ScanEvent->precursors (3): setting the activation method)" );
+is( $pr, '445.12@ecd35.00', "ScanEvent->precursors (2): setting the activation method)" );
 is( $scan_event->reaction->precursor, 445.121063232422, "ScanEvent->reaction, Reaction->precursor" );
 is( $scan_event->reaction(0)->precursor, 445.121063232422, "ScanEvent->reaction(0), Reaction->precursor" );
 is( $scan_event->reaction->energy, 35, "ScanEvent->reaction, Reaction->energy" );
+for my $i (3 .. $nrecords) { # skip to the last ScanEvent
+  $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
+}
+is( tell INPUT, $params_addr, "should have arrived at the start of ScanParameters stream" );
 
-
-seek INPUT, $params_addr, 0;
+# Finally reach ScanParameters. Test these, then return to scan data.
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
-is($p->charge_state, 1, "ScanParameters->charge_state");
+is( $p->charge_state, 1, "ScanParameters->charge_state" );
+for my $i (2 .. $nrecords) { # skip to the end of file
+  my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
+}
+is( $p->charge_state, 1, "ScanParameters->charge_state" );
+is( tell INPUT, 848001, "should have arrived at the null stream near the end of the file" );
+
+# Read the null stream
+$length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+is( $length, 0, "the stream at the end of the file should have zero size" );
+is( eof INPUT, 1, "should get EOF on the stream handle" );
 
 
-__END__
-
-#       ScanHeader
-#       TuneFileHeader
-#       TuneFile
-#       ScanIndex
 # ----------------------------------------------------------------------
-
-# Read the first ScanEvent record and get the converter. More tests
-# for ScanEvent itself later ...
-seek INPUT, $trailer_addr + 4, 0; # skip the events count
-my $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
-my $converter = $scan_event->converter;
-is (&$converter(1), 38518081.414831, "ScanEvent->converter");
-
-# back to the first ScanDataPacket
+#
+#  Now back to the data stream
+# 
+# ----------------------------------------------------------------------
+# the first ScanDataPacket
 seek INPUT, $data_addr, 0;
 is( tell INPUT, 24950, "seek to scan data address" );
 
@@ -373,7 +376,7 @@ is ($ph->high_mz, 2000.0, "PacketHeader->high_mz");
 
 my $profile = Finnigan::Profile->decode( \*INPUT, $ph->layout );
 is ($profile->first_value, 344.543619791667, "Profile->first_value");
-is ($profile->peak_count, 580, "Profile->peak_count");
+is ($profile->nchunks, 580, "Profile->nchunks");
 is ($profile->nbins, 293046, "Profile->nbins");
 $profile->set_converter( $converter ); # from ScanEvent 1 above
 my $bins = $profile->bins;
@@ -401,6 +404,4 @@ is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
 is( tell INPUT, 829706, "seek to scan index address" );
-
-
 
