@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 120;
+use Test::More tests => 121;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -249,9 +249,14 @@ is( $tune_file->{data}->{"2|Source Type:"}->{value}, "ESI", "GenericRecord->deco
 is( $tune_file->{data}->{"3|Capillary Temp (C):"}->{value}, "275", "GenericRecord->decode (3)" );
 is( $tune_file->{data}->{"421|FT Cal. Item 250:"}->{value}, "0", "GenericRecord->decode (421)" );
 
+# ScanIndex
+is( tell INPUT, $scan_index_addr, "should have arrived at the start of scan index" );
+
 seek INPUT, $params_addr, 0;
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 is($p->charge_state, 1, "ScanParameters->charge_state");
+
+
 __END__
 
 #       ScanHeader
