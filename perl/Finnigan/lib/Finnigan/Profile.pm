@@ -20,7 +20,11 @@ sub decode {
   return $self->iterate_object($_[1], $self->{data}->{"peak count"}->{value}, chunks => 'Finnigan::ProfileChunk', $_[2]); # the last arg is layout
 }
 
-sub peak_count {
+sub nchunks { # in place of the erroneous "peak_count"
+  shift->{data}->{"peak count"}->{value};
+}
+
+sub peak_count { # the name will be deprecated
   shift->{data}->{"peak count"}->{value};
 }
 
@@ -285,34 +289,67 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanIndexEntry -- decoder for ScanIndexEntry, a linked list item pointing to scan data
+Finnigan::Profile -- a full-featured decoder for Finnigan scan profiles
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+
   say $entry->offset; # returns an offset from the start of scan data stream 
   say $entry->data_size;
   $entry->dump;
+  my $profile = Finnigan::Profile->decode( \*INPUT, $packet_header->layout );
+  say $profile->first_value;
+  say $profile->nchunks;
+  say $profile->nbins;
+  $profile->set_converter( $converter_function_ref );
+  my $bins = $profile->bins; # calls the converter
+  say $bins->[0]->[0]; # the first profile chunk, M/z
+  say $bins->[0]->[1]; # the first profile chunk, abundance
 
 =head1 DESCRIPTION
 
-ScanIndexEntry is a static (fixed-size) structure containing the
-pointer to a scan, the scan's data size and some auxiliary information
-about the scan.
+Finningan::Profile is a full-featured decoder for Finnigan scan
+profiles. The data it generates contain the seek addresses, size and
+types of all decoded elements, no matter how small. That makes it very
+handy in the exploration of the file format and in creating the new
+code, but it is not very efficient in production work.
 
-ScanIndexEntry elements seem to form a linked list. Each
-ScanIndexEntry contains the index of the next entry.
+In performance-sensitive applications, Finnigan::Scan::Profile can be
+used as a drop-in replacement. It is part of the compound
+Finnigan::Scan module.
 
-Although in all observed instances the scans were sequential and their
-indices could be ignored, it may not always be the case.
+Every scan done in the B<profile mode> has a profile, which
+is either a time-domain signal or a frequency spectrum accumulated in
+histogram-like bins.
 
-It is not clear whether scan index numbers start at 0 or at 1. If they
-start at 0, the list link index must point to the next item. If they
-start at 1, then "index" will become "previous" and "next" becomes
-"index" -- the list will be linked from tail to head. Although
-observations are lacking, I am inclined to interpret it as a
-forward-linked list, simply from common sense.
+A profile can be either raw or filtered. Filtered profiles are sparse;
+they consist of separate data chunks (Finnigan::ProfileChunk). Each
+chunk consists of a contiguous range of bins containing the
+above-threshold signal. The bins whose values fall below a cerain
+threshold are simply discarded, leaving gaps in the profile -- the
+reason for the ProfileChunk structure to exist.
+
+Raw profiles preserve all data. Since there are no gaps in a raw
+profile, it is represented by a single chunk covering the entire
+range of bins.
+
+The bins store the signal intensity, and the bin co-ordinates are
+typically the frequencies of Fourier-transformed signal. Since the
+bins are equally spaced in the frequency domain, only the first bin
+frequency is stored in each chunk. The bin width is common for all
+bins and it is stored in the PacketHeader structure.
+
+The programs reading these data must convert the frequencies into the
+M/z values using the conversion function specific to the type of
+analyser used to acquire the signal. The calibrated coefficients for
+this convesion function are stored in the ScanEvent structure (one
+instance of this structure exists for every scan).
+
+The B<bins> method of Finnigan::Profile returns the converted bins,
+optionally filling the gaps with zeroes.
+
+=head1 METHODS
 
 
 =head1 EXPORT
@@ -321,7 +358,10 @@ None
 
 =head1 SEE ALSO
 
-Finnigan::RunHeader
+Finnigan::PacketHeader
+Finnigan::Scan
+Finnigan::Scan::Profile
+Finnigan::ScanEvent
 
 =head1 AUTHOR
 

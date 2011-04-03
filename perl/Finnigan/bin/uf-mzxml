@@ -441,7 +441,7 @@ sub read_scan {
     elsif ( $profile ) {
       # if there are no called peaks, treat the profile as a set of peaks
       my $bins;
-      if ( $profile->peak_count > 1) {
+      if ( $profile->nchunks > 1) {
         $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
       }
       else { # the profile is stored as one huge set of bins
@@ -464,7 +464,7 @@ sub read_scan {
     # simply read the profile and ignore the centroids
     if ( $profile ) {
       my $bins;
-      if ( $profile->peak_count > 1) {
+      if ( $profile->nchunks > 1) {
         $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
       }
       else {

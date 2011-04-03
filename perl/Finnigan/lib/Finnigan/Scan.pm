@@ -33,7 +33,11 @@ sub set_inverse_converter {
   $_[0]->{"inverse converter"} = $_[1];
 }
 
-sub peak_count {
+sub nchunks { # instead of the deprecated peak_count()
+  $_[0]->{"peak count"};
+}
+
+sub peak_count { # deprecated
   $_[0]->{"peak count"};
 }
 
