@@ -304,41 +304,48 @@ Finnigan::Profile -- a full-featured decoder for Finnigan scan profiles
   say $profile->nbins;
   $profile->set_converter( $converter_function_ref );
   my $bins = $profile->bins; # calls the converter
-  say $bins->[0]->[0]; # the first bin, M/z
-  say $bins->[0]->[1]; # the first bin, abundance
+  my ($mz, $abundance) = @{$bins->[0]} # data in the first bin
 
 =head1 DESCRIPTION
 
 Finningan::Profile is a full-featured decoder for Finnigan scan
-profiles. The data it generates contain the seek addresses, size and
+profiles. The data it generates contain the seek addresses, sizes and
 types of all decoded elements, no matter how small. That makes it very
-handy in the exploration of the file format and in creating the new
-code, but it is not very efficient in production work.
+handy in the exploration of the file format and in writing new code,
+but it is not very efficient in production work.
 
-In performance-sensitive applications, Finnigan::Scan::Profile can be
-used as a drop-in replacement. It is part of the compound
-Finnigan::Scan module.
+
+In performance-sensitive applications, the more lightweight
+Finnigan::Scan module should be used, which includes
+Finnigan::Scan::Profile and other related submodules. It can be used
+as a drop-in replacement for the full-featured modules, but it does
+not store the seek addresses and object types, greatly reducing the
+overhead.
 
 Every scan done in the B<profile mode> has a profile, which
 is either a time-domain signal or a frequency spectrum accumulated in
 histogram-like bins.
 
-A profile can be either raw or filtered. Filtered profiles are sparse;
-they consist of separate data chunks (Finnigan::ProfileChunk). Each
-chunk consists of a contiguous range of bins containing the
-above-threshold signal. The bins whose values fall below a cerain
-threshold are simply discarded, leaving gaps in the profile -- the
-reason for the ProfileChunk structure to exist.
 
-Raw profiles preserve all data. Since there are no gaps in a raw
-profile, it is represented by a single chunk covering the entire
-range of bins.
+A profile can be either raw or filtered. Filtered profiles are sparse;
+they consist of separate data chunks. Each chunk consists of a
+contiguous range of bins containing the above-threshold signal. The
+bins whose values fall below a cerain threshold are simply discarded,
+leaving gaps in the profile -- the reason for the ProfileChunk
+structure to exist.
+
+One special case is raw profile, which preserves all data. Since there
+are no gaps in a raw profile, it is represented by a single chunk
+covering the entire range of bins, so the same container structure is
+suitable for complete profiles, as well as for sparse ones.
 
 The bins store the signal intensity, and the bin co-ordinates are
 typically the frequencies of Fourier-transformed signal. Since the
 bins are equally spaced in the frequency domain, only the first bin
-frequency is stored in each chunk. The bin width is common for all
-bins and it is stored in the PacketHeader structure.
+frequency is stored in each profile header. The bin width is common
+for all bins and it is also stored in the same header. With these
+data, it is possible to calculate the bin values based on the bin
+indices.
 
 The programs reading these data must convert the frequencies into the
 M/z values using the conversion function specific to the type of
@@ -371,7 +378,7 @@ Get the the value of the first bin in the profile
 
 =item step
 
-Get the bin width and direction of change (usually, the frequency step needed to go from one bin to the next)
+Get the bin width and the direction of change (the frequency step needed to go from one bin to the next is a negative value)
 
 =item chunk, chunks
 
@@ -379,11 +386,11 @@ Get the list of Finnigan::ProfileChunk? objects representing the profile data
 
 =item set_converter($func_ref)
 
-Set the converter function (f → M/z)
+Set the converter function (f -> M/z)
 
 =item set_inverse_converter($func_ref)
 
-Set the inverse converter function (M/z → f)
+Set the inverse converter function (M/z -> f)
 
 =back
 
