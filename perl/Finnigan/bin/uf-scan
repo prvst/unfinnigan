@@ -133,6 +133,7 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
     exit; # done with the task
   }
   if ( exists $args->{-p} ) {
+    # $profile->chunk->[0]->dump(style=>'wiki', relative=>1);
     if ( exists $args->{-e} ) {
       say STDERR sprintf("%d (%x) .. %d (%x)", $profile->addr, $profile->addr, $profile->addr + $profile->size, $profile->addr + $profile->size);
       seek INPUT, $profile->addr, 0;
