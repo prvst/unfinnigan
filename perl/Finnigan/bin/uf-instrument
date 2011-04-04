@@ -71,6 +71,8 @@ uf-log <file>
 
 =head1 OPTIONS
 
+=over 4
+
 =item B<-help>
 
 Print a brief help message and exit.
@@ -97,6 +99,8 @@ Show the structure size in bytes (works with the -d[ump] option).
 
 Show relative addresses of all elemests in the dump. The default is to
 show the absolute seek address.
+
+=back
 
 =head1 DESCRIPTION
 
