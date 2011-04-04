@@ -6,12 +6,18 @@ WriteMakefile(
     NAME              => 'Finnigan',
     VERSION_FROM      => 'lib/Finnigan.pm', # finds $VERSION
     PREREQ_PM         => {
-			  Module::Find => '0.08',
+			  Carp => '1.17',
+			  Data::Hexdumper => '2.01',
 			  DateTime::Format::WindowsFileTime => '0.02',
-                          Getopt::Declare => '1.13',
                           Devel::Size => '0.71',
-                          Data::Hexdumper => '2.01',
-			  XML::Generator => '1.01',
+			  Encode => '2.39',
+			  File::Temp => '0.22',
+                          Getopt::Declare => '1.13',
+                          Getopt::Long => '2.38',
+			  MIME::Base64 => '3.09',
+			  Module::Find => '0.08',
+			  Storable => '2.22',
+			  XML::Generator => '1.03',
                           Tie::IxHash => '1.21',
 			 },
     EXE_FILES         => [
@@ -33,6 +39,7 @@ WriteMakefile(
 			  'bin/uf-mzxml',
                           'bin/mzxml-unpack',
 			 ],
+    'LICENSE'         => 'perl',
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Finnigan.pm', # retrieve abstract from module
        AUTHOR         => 'Gene Selkov <selkovjr@gmail.com>') : ()),
