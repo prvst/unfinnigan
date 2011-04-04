@@ -37,19 +37,36 @@ __END__
 
 =head1 NAME
 
-Finnigan::FractionCollector -- a decoder for FractionCollector, a mass range object in ScanEvent
+Finnigan::Peak -- a full-featured decoder for a single (M/z, abundance) pair, an element of the PeakList structure
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $f = Finnigan::FractionCollector->decode(\*INPUT);
-  say f->low;
-  say f->high;
+  my $peak = Finnigan::Peak->decode(\*INPUT);
+  say $peak->mz;
+  say $peak->abundance;
+  say "$peak";
 
 =head1 DESCRIPTION
 
-This object is just a container for a pair of double-precision floating point
-numbers that define the M/z range of ions collected during a scan.
+This decoder is useless in normal life. It is a full-featured decoder
+for the pair of floating-point numbers representing the centroid
+_M/z_ and intensity of a peak. The data it generates contain the seek
+addresses, sizes and types of both attributes. These features may be
+useful in the exploration of the file format and in writing new code,
+but not in production work.
+
+In performance-sensitive applications, the more lightweight
+Finnigan::Scan module should be used, which includes
+Finnigan::Scan::CentroidList and other related submodules. It does not
+store the seek addresses and object types, greatly reducing the
+overhead.
+
+There is no equivalent object in Finnigan::Scan::CentroidList; it
+simply uses a pair of scalars for the data, since the location data
+and decoding templates are jettisoned, eliminating the need for
+an object.
+
 
 =head1 EXPORT
 
