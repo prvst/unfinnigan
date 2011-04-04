@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 223;
+use Test::More tests => 224;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -65,6 +65,7 @@ is( $mf->translation_table->[1], 'LTQ', 'MethodFile->translation_table (value)')
 is( ($mf->instrument_name(1))[0], 'LTQ Orbitrap XL MS', 'MethodFile->instrument_name(1) (key)' );
 is( ($mf->instrument_name(1))[1], 'LTQ', 'MethodFile->instrument_name(1) (value)');
 # container functions
+is( $mf->container->stringify, "Windows Compound Binary File: 5 nodes", "OLE2File->stringify");
 is( $mf->container->header->stringify, "Version 3.62; block(s) in FAT chain: 1; in mini-FAT chain: 1; in DIF chain: 0", "OLE2Header->stringify" );
 is( $mf->container->dif->stringify, "Double-Indirect FAT; 1/109 entries used", "OLE2DIF->stringify" );
 is( $mf->container->dif->sect->[0], 0, "OLE2DIF->sect used" );
@@ -413,7 +414,7 @@ $bins = $profile->bins;
 is ($bins->[0]->[0], 400.209152455266, "Scan->profile->bins (Mz)");
 is ($bins->[0]->[1], 447.530578613281, "Scan->profile->bins (signal)");
 
-my $c = $scan->centroids;
+$c = $scan->centroids;
 is ($c->count, 580, "Scan->centroids->count");
 is ($c->list->[0]->[0], 400.212463378906, "Scan->centroids->list (Mz)");
 is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
