@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 210;
+use Test::More tests => 223;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -393,9 +393,15 @@ is ($bins->[0]->[0], 400.209152455266, "Profile->bins->[0] (Mz)");
 is ($bins->[0]->[1], 447.530578613281, "Profile->bins->[0] (signal)");
 is ($bins->[-1]->[0], 1993.75819323833, "Profile->bins->[-1] (Mz)");
 is ($bins->[-1]->[1], 590.111206054688, "Profile->bins->[-1] (signal)");
-__END__
+# Peaks
+my $c = Finnigan::Peaks->decode(\*INPUT);
+is ($c->count, 580, "Peaks->count" );
+is ($c->peak->[0]->mz, 400.212463378906, "first Peak->mz" );
+is ($c->peak->[0]->abundance, 1629.47326660156, "first Peak->abundance" );
+is ($c->peak->[-1]->mz, 1993.72521972656, "last Peak->mz" );
+is ($c->peak->[-1]->abundance, 1015.48522949219, "last Peak->abundance" );
 
-# back to the first scan; read with compound decoder
+# Go back to the first scan and re-read with the compound decoder
 seek INPUT, $data_addr, 0;
 is( tell INPUT, 24950, "seek to scan data address (2)" );
 
@@ -415,4 +421,3 @@ is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
 is( tell INPUT, 829706, "seek to scan index address" );
-
