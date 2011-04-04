@@ -17,16 +17,8 @@ sub new {
   return bless $self, $class;
 }
 
-sub converter {
-  $_[0]->{converter};
-}
-
 sub set_converter {
   $_[0]->{converter} = $_[1];
-}
-
-sub inverse_converter {
-  $_[0]->{"inverse converter"};
 }
 
 sub set_inverse_converter {
@@ -243,54 +235,13 @@ sub find_chunk {
   }
 }
 
-
 #----------------------------------------------------------------------------------------
-=head1 NAME
-
-Finnigan::Scan -- a lightweight scan data decoder
-
-=head1 SYNOPSIS
-
-  my $scan = Finnigan::Scan->decode(\*INPUT);
-  say $scan->header->profile_size;
-  say $scan->header->peak_list_size;
-
-  my $profile = $scan->profile;
-  $profile->set_converter( $converter ); # from ScanEvent
-  my $bins = $profile->bins;
-  say $bins->[0]->[0]; # M/z of the first profile bin
-  say $bins->[0]->[1]; # abundance
-
-  my $c = $scan->centroids
-  say $c->count;
-  say $c->list->[0]->[0]; # the first centroid M/z
-  say ($c->list->[0]->[1]; # abundance
-
-=head1 DESCRIPTION
-
-This decoder reads the entire ScanDataPacket, discarding the location
-and type meta-data. It is a more efficient alternative to the
-full-featured combination decoders using the Finnigan::Profile,
-Finnigan::Peaks and Finnigan::Peak modules.
-
-=head2 METHODS
-
-=over 4
-
-=cut
-
 package Finnigan::Scan;
 
 use strict;
 use warnings;
 
 use Finnigan;
-
-=item decode
-
-The constructor method
-
-=cut
 
 sub decode {
   my ($class, $stream) = @_;
@@ -329,6 +280,112 @@ sub decode {
   return bless $self, $class;
 }
 
+sub header {
+  return shift->{header};
+}
+
+sub profile {
+  new Finnigan::Scan::Profile $_[0]->{"raw profile"}, $_[0]->{header}->{data}->{layout}->{value};
+}
+
+sub centroids {
+  new Finnigan::Scan::CentroidList $_[0]->{"raw centroids"};
+}
+
+# end Finnigan::Scan::Profile
+# ----------------------------------------------------------------------------------------
+package Finnigan::Scan::ProfileChunk;
+
+sub new {
+  my ($class, $buf, $offset, $layout) = @_;
+  my $self = {};
+  if ( $layout > 0 ) {
+    @{$self}{'first bin', 'nbins', 'fudge'} = unpack "x${offset} VVf", $buf;
+    $self->{size} = 12;
+  }
+  else {
+    @{$self}{'first bin', 'nbins'} = unpack "x${offset} VV", $buf;
+    $self->{size} = 8;
+  }
+  $offset += $self->{size};
+
+  @{$self->{signal}} = unpack "x${offset} f$self->{nbins}", $buf;
+  $self->{size} += 4 * $self->{nbins};
+
+  return bless $self, $class;
+}
+
+#----------------------------------------------------------------------------------------
+package Finnigan::Scan::CentroidList;
+
+sub new {
+  my ($class, $buf) = @_;
+  my $self = {count => unpack 'V', $buf};
+  my $offset = 4; # V
+
+  my $chunk;
+  foreach my $i (0 .. $self->{count} - 1) {
+    push @{$self->{peaks}}, [unpack "x${offset} ff", $buf];
+    $offset += 8;
+  }
+
+  return bless $self, $class;
+}
+
+sub count {
+  shift->{count};
+}
+
+sub list {
+  shift->{peaks};
+}
+
+1;
+
+__END__
+=head1 NAME
+
+Finnigan::Scan -- a lightweight scan data decoder
+
+=head1 SUBMODULES
+
+Finnigan::Scan::Profile
+
+Finnigan::Scan::ProfileChunk
+
+Finnigan::Scan::CentroidList
+
+=head1 SYNOPSIS
+
+  my $scan = Finnigan::Scan->decode(\*INPUT);
+  say $scan->header->profile_size;
+  say $scan->header->peak_list_size;
+
+  my $profile = $scan->profile;
+  $profile->set_converter( $converter ); # from ScanEvent
+  my $bins = $profile->bins;
+  my ($mz, $abundance) = @{$bins->[0]} # data in the first bin
+
+  my $c = $scan->centroids
+  say $c->count;
+
+  say $c->list->[0]->[0]; # the first centroid M/z
+  say $c->list->[0]->[1]; # abundance
+
+=head1 DESCRIPTION
+
+This decoder reads the entire ScanDataPacket, discarding the location
+and type meta-data. It is a more efficient alternative to the
+full-featured combination decoders using the Finnigan::Profile,
+Finnigan::Peaks and Finnigan::Peak modules.
+
+=head2 METHODS
+
+=over 4
+
+=item decode
+
+The constructor method
 
 =item header
 
@@ -336,31 +393,13 @@ Get the Finnigan::PacketHeader object. It is the only full-featured
 decoder object used in this module; since it occurs only once in each
 scan, there is no significant performance loss.
 
-=cut
-
-sub header {
-  return shift->{header};
-}
-
-
 =item profile
 
 Get the Finingan::Scan::Profile object containing the profile, if it exists
 
-=cut
-sub profile {
-  new Finnigan::Scan::Profile $_[0]->{"raw profile"}, $_[0]->{header}->{data}->{layout}->{value};
-}
-
-
 =item centroids
 
 Get the Finnigan::Scan::CentroidList object containing the peak centroid list, if it exists
-
-=cut
-sub centroids {
-  new Finnigan::Scan::CentroidList $_[0]->{"raw centroids"};
-}
 
 =back
 
@@ -374,9 +413,127 @@ Finnigan::Scan::Profile (lightweight decoder object)
 
 Finnigan::Scan::CentroidList (lightweight decoder object)
 
-=cut
 
-# ----------------------------------------------------------------------------------------
+=head1 NAME
+
+Finnigan::Scan::Profile -- a lightweight decoder for Finnigan scan profiles
+
+=head1 SYNOPSIS
+  use Finnigan;
+
+  my $scan = Finnigan::Scan->decode(\*INPUT);
+  my $profile = $scan->profile;
+  $profile->set_converter( $converter ); # from ScanEvent
+  my $bins = $profile->bins;
+  my ($mz, $abundance) = @{$bins->[0]} # data in the first bin
+
+=head1 DESCRIPTION
+
+Finningan::Scan::Profile is a lightweight decoder for the Profile
+structure. It does not save the location and type information for the
+elements it decodes, nor does it provide element-level accessor
+methods. That makes it fast, at the cost of a slight reduction in
+convenience of access to the data.
+
+It does not do file reads either, decoding part of the stream of
+profile chunks it receives as a constructor argument from the
+caller. Its full-featured equivalent, Finnigan::Profile, does a file
+read for every data element down to a single integer of floating-point
+number, which makes it very slow.
+
+Finnigan::Scan::Profile is good for use in production-level
+programs that need extensive debugging. In a situation that calls for
+detailed exploration (e.g., a new file format), better use
+Finnigan::Peaks, which has an equivalent interface.
+
+Every scan done in the profile mode has a profile, which is either a
+time-domain signal or a frequency spectrum accumulated in
+histogram-like bins.
+
+A profile can be either raw or filtered. Filtered profiles are sparse;
+they consist of separate data chunks. Each chunk consists of a
+contiguous range of bins containing the above-threshold signal. The
+bins whose values fall below a cerain threshold are simply discarded,
+leaving gaps in the profile -- the reason for the ProfileChunk
+structure to exist.
+
+One special case is raw profile, which preserves all data. Since there
+are no gaps in a raw profile, it is represented by a single chunk
+covering the entire range of bins, so the same container structure is
+suitable for complete profiles, as well as for sparse ones.
+
+The bins store the signal intensity, and the bin co-ordinates are
+typically the frequencies of Fourier-transformed signal. Since the
+bins are equally spaced in the frequency domain, only the first bin
+frequency is stored in each profile header. The bin width is common
+for all bins and it is also stored in the same header. With these
+data, it is possible to calculate the bin values based on the bin
+indices.
+
+The programs reading these data must convert the frequencies into the
+M/z values using the conversion function specific to the type of
+analyser used to acquire the signal. The calibrated coefficients for
+this convesion function are stored in the ScanEvent structure (one
+instance of this structure exists for every scan).
+
+The B<bins> method of Finnigan::Scan::Profile returns the converted bins,
+optionally filling the gaps with zeroes.
+
+=head2 METHODS
+
+=over 4
+
+=item new($buffer, $layout)
+
+The constructor method
+
+=item nchunks
+
+Get the number of chunks in the profile
+
+=item set_converter($func_ref)
+
+Set the converter function (f → M/z)
+
+=item set_inverse_converter($func_ref)
+
+Set the inverse converter function (M/z → f)
+
+=item bins
+
+Get the reference to an array of bin values. Each array element
+contains an (M/z, abundance) pair. This method calls the converter set
+by the set_converter method.
+
+=item find_peak_intensity($query_mz)
+
+Get the nearest peak in the profile for a given query value. The
+search will fail if nothing is found within 0.025 kHz of the target
+value (the parameter set internally as $max_dist). This method
+supports the search for precursor intensity in uf-mzxml.  See Also
+
+=back
+
+=head1 SEE ALSO 
+
+Profile (structure)
+
+ProfileChunk (structure)
+
+Finnigan::Scan::ProfileChunk (lightweight decoder)
+
+Finnigan::PacketHeader (decoder object)
+
+Finnigan::Profile (full-featured decoder)
+
+Finnigan::Scan (lightweight decoder)
+
+ScanEvent (structure containing conversion coefficients)
+
+Finnigan::ScanEvent (decoder object)
+
+
+
 =head1 NAME
 
 Finnigan::Scan::ProfileChunk -- a lightweight decoder for a single ProfileChunk structure
@@ -458,30 +615,8 @@ This module defines no accessor method because doing so would defeat its goal of
 
 =back
 
-=cut
 
-package Finnigan::Scan::ProfileChunk;
 
-sub new {
-  my ($class, $buf, $offset, $layout) = @_;
-  my $self = {};
-  if ( $layout > 0 ) {
-    @{$self}{'first bin', 'nbins', 'fudge'} = unpack "x${offset} VVf", $buf;
-    $self->{size} = 12;
-  }
-  else {
-    @{$self}{'first bin', 'nbins'} = unpack "x${offset} VV", $buf;
-    $self->{size} = 8;
-  }
-  $offset += $self->{size};
-
-  @{$self->{signal}} = unpack "x${offset} f$self->{nbins}", $buf;
-  $self->{size} += 4 * $self->{nbins};
-
-  return bless $self, $class;
-}
-
-#----------------------------------------------------------------------------------------
 =head1 NAME
 
 Finnigan::Scan::CentroidList -- a lightweight decoder for PeakList, the list of peak centroids
@@ -518,49 +653,17 @@ which has an equivalent interface.
 
 =over 4
 
-=cut
-
-package Finnigan::Scan::CentroidList;
-
 =item new($buffer)
 
 The constructor method
-
-=cut
-sub new {
-  my ($class, $buf) = @_;
-  my $self = {count => unpack 'V', $buf};
-  my $offset = 4; # V
-
-  my $chunk;
-  foreach my $i (0 .. $self->{count} - 1) {
-    push @{$self->{peaks}}, [unpack "x${offset} ff", $buf];
-    $offset += 8;
-  }
-
-  return bless $self, $class;
-}
-
 
 =item count
 
 Get the number of peaks in the list
 
-=cut
-sub count {
-  shift->{count};
-}
-
-
 =item list
 
 Get the reference to an array containing the pairs of (M/z, abundance) values of each centroided peak
-
-=cut
-sub list {
-  shift->{peaks};
-}
-
 
 =back
 
@@ -583,8 +686,5 @@ This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.0 or,
 at your option, any later version of Perl 5 you may have available.
 
-
 =cut
-
-1;
 
