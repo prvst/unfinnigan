@@ -116,7 +116,7 @@ elsif ( exists $args->{-l} ) {
     $mf->container->list(style => 'html');
   }
   elsif ( exists $args->{-w} ) {
-    $mf->container->(style => 'wiki');
+    $mf->container->list(style => 'wiki');
   }
   else {
     $mf->container->list();
