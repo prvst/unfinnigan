@@ -119,9 +119,65 @@ stored in the parent structure, RunHeader.
 It appears as though RunHeader is a recently introduced wrapper around
 the older SampleInfo structure.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over
+
+=item decode($stream)
+
+The constructor method
+
+=item first_scan
+
+Get the first scan number
+
+=item last_scan
+
+Get the last scan number
+
+=item inst_log_length
+
+Get the number of instrument log records
+
+=item max_ion_current
+
+Get the pointer to the stream of ScanPrarameters? structures
+
+=item low_mz
+
+Get the low end of the M/z range
+
+=item high_mz
+
+Get the high end of the M/z range
+
+=item start_time
+
+Get the start time (retention time in seconds)
+
+=item end_time
+
+Get the end time (retention time in seconds)
+
+=item scan_index_addr
+
+Get the address of the ScanIndex stream
+
+=item data_addr
+
+Get the address of the ScanDataPacket stream
+
+=item inst_log_addr
+
+Get the address of the instrument log records (of GenericRecord type)
+
+=item error_log_addr
+
+Get the address of the Error stream
+
+
+
+=back
 
 =head1 SEE ALSO
 

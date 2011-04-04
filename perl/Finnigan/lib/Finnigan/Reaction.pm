@@ -63,9 +63,27 @@ There are other elements that currently remain unknown: a double (set
 to 1.0 in all observations) and a couple longs.
 
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item precursor
+
+Get the precursor M/z
+
+=item energy
+
+Get the fragmentation energy
+
+=item stringify
+
+Make a short text representation of the object (found inside Therom's "filter line")
+
+=back
 
 =head1 SEE ALSO
 

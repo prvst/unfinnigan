@@ -83,10 +83,35 @@ The key information contained in the Finnigan header is the file
 version number. Since the file structure varies from one version to
 another, the decoders must be aware of it.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
 
+=item decode($stream)
+
+The constructor method
+
+=item version
+
+Get the file version
+
+=item audit_start
+
+Get the start AuditTag object
+
+=item audit_end
+
+Get the end AuditTag object
+
+=item tag
+
+Get the header tag
+
+=item stringify
+
+Create a short string representation of the header data
+
+=back
 
 =head1 SEE ALSO
 

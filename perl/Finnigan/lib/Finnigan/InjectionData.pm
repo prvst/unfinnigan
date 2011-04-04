@@ -51,9 +51,41 @@ sample volume, weight, internal standard (ISTD) amount, and dilution factor.
 
 Finnigan::InjectionData is a component of Finnigan::SeqRow
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item n
+
+Get the sequence table row number
+
+=back
+
+=head2 MISSING ACCESSORS
+
+Since I had not seen this object used by the programs, I did not worry about providing the complete interface for it. Accessors may be added for:
+
+=over 4
+
+=item volume
+
+=item injected volume
+
+(what's the difference between "volume" and "injected volume"?
+
+=item weight
+
+=item internal standard amount
+
+=item dilution factor
+
+=item a couple other numbers of unknown meaning
+
+=back
 
 
 =head1 SEE ALSO

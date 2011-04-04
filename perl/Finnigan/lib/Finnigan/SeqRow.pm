@@ -103,10 +103,23 @@ The file-related tags seem to have the following meaning:
   "file name":    original raw file name (can be basename or full path)
   "path":         directory path where the raw file was created (can be null if full path is given in "file nam")
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
 
+=item decode($stream, $version)
+
+The constructor method
+
+=item injection
+
+Get the Finnigan::InjectionData object
+
+=item file_name
+
+Get the original file name
+
+=back
 
 =head1 SEE ALSO
 

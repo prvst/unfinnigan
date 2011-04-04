@@ -47,15 +47,16 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanIndexEntry -- A full-featured decoder for a single ProfileChunk structure
+Finnigan::ProfileChunk -- A full-featured decoder for a single ProfileChunk structure
 
 =head1 SYNOPSIS
 
   use Finnigan;
 
   my $chunk = Finnigan::ProfileChunk->decode( \*INPUT, $packet_header->layout );
-  say $chunk->nbins;
   say $chunk->first_bin;
+  say $chunk->fudge;
+  my $nbins = $chunk->nbins;
   say $chunk->fudge;
   foreach my $i ( 0 .. $nbins - 1) {
     say $chunk->signal->[$i];

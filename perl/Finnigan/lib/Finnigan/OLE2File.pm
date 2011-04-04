@@ -266,13 +266,15 @@ been verified because the structure of the Data files remains unknown.
 Finnigan::OLE2File decodes the container structure and allows the
 extraction of the leaf nodes -- Header, Data, and Text.
 
-=head1 METHODS
+=head2 METHODS
 
-=head2 decode($stream)
+=over 4
+
+=item decode($stream)
 
 The constructor methad
 
-=head2 list()
+=item list
 
 Prints the directory listing of the entire OLE2 container to
 STDOUT. A typical output may look like this:
@@ -297,15 +299,41 @@ This method is not useful as part of the API (directory listings are
 better understood by humans). But once the path to a node is known, it
 can be retrieved with the B<find> method.
 
-=head2 find($path)
+=item find($path)
 
 Get the directory entry (Finnigan::OLE2DirectoryEntry) matching the
 path supplied in the only argument. The directory entry's B<data>
 method needs to be called in order to extract the node data.
 
-=head1 EXPORT
+=item stringify
 
-None
+Make a short string representation of the object, naming the file type and the number of nodes it contains
+
+=back
+
+=head2 PRIVATE METHODS
+
+=over 4
+
+=item dif
+
+=item fat
+
+=item get_chain
+
+=item header
+
+=item magic
+
+=item read
+
+=item sector_size
+
+=item seek_block
+
+=item stream
+
+=back
 
 =head1 SEE ALSO
 

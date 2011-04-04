@@ -71,9 +71,31 @@ instrument identifiers and some unknown data.
 
 The identifiers include the model name, the serial number and the software version.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item model
+
+Get the first copy of the model attribute (there always seem to be two of them)
+
+=item serial_number
+
+Get the instrument's serial number
+
+=item software_version
+
+Get the version of software that created the data file
+
+=item stringify
+
+Concatenate all IDs in a single line of text
+
+=back
 
 =head1 AUTHOR
 

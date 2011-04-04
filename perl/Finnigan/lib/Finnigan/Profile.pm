@@ -50,16 +50,8 @@ sub chunk { # a syntactic eye-sore remover
   shift->{data}->{"chunks"}->{value};
 }
 
-sub converter {
-  $_[0]->{converter};
-}
-
 sub set_converter {
   $_[0]->{converter} = $_[1];
-}
-
-sub inverse_converter {
-  $_[0]->{"inverse converter"};
 }
 
 sub set_inverse_converter {
@@ -232,58 +224,6 @@ sub print_bins {
   }
 }
 
-sub find_precursor_peak {
-  my ($self, $query) = @_;
-
-  my $raw_query = &{$self->{"inverse converter"}}($query);
-
-  my $start = $self->{data}->{"first value"}->{value};
-  my $step = $self->{data}->{step}->{value};
-  my $chunks = $self->{data}->{chunks}->{value};
-
-  # find the closest point
-  my $closest = my $second_closest = { point => {chunk => 0, n => 0}, dist => 10e6 };
-  foreach my $i ( 0 .. $self->{data}->{"peak count"}->{value} - 1 ) {
-    my $x = $start + ($chunks->[$i]->{data}->{"first bin"}->{value} - 1) * $step;
-    foreach my $j ( 0 .. $chunks->[$i]->{data}->{nbins}->{value} - 1) {
-      $x += $step;
-      my $dist1 = $raw_query - $x;
-      my $dist2 = $x - $raw_query;
-      if ( $dist1 >= 0 and $dist1 < $closest->{dist}) {
-        $closest = { point => {chunk => $i, n => $j}, dist => $dist1 };
-      }
-      if ( $dist2 >= 0 and $dist2 < $second_closest->{dist}) {
-        $second_closest = { point => {chunk => $i, n => $j}, dist => $dist2 };
-      }
-    }
-  }
-
-  if ( $closest->{dist} > 0.1 ) {
-    print STDERR "could not find the precursor peak for M/z $query; the nearest candidate is $closest->{dist} a.u. away\n";
-    return {mz => $query, intensity => 0};
-  }
-  my $i = $closest->{point}->{chunk};
-  my $j = $closest->{point}->{n};
-  my $point1 = {
-                mz => &{$self->{converter}}($start + ($chunks->[$i]->{data}->{"first bin"}->{value} + $j - 1) * $step),
-                intensity => $chunks->[$i]->{data}->{signal}->{value}->[$j]
-               };
-  $i = $second_closest->{point}->{chunk};
-  $j = $second_closest->{point}->{n};
-  my $point2 = {
-                mz => &{$self->{converter}}(
-                                            $start +
-                                            (
-                                             $self->{data}->{chunks}->{value}->[$i]
-                                             ->{data}->{"first bin"}->{value}
-                                             + $j - 1
-                                            ) * $step
-                                           ),
-                intensity => $chunks->[$i]->{data}->{signal}->{value}->[$j]
-               };
-  return $point1->{intensity} > $point2->{intensity} ? $point1 : $point2;
-}
-
 1;
 __END__
 
@@ -360,7 +300,7 @@ optionally filling the gaps with zeroes.
 
 =over 4
 
-=item decode
+=item decode($stream, $layout)
 
 The constructor method
 
@@ -378,7 +318,8 @@ Get the the value of the first bin in the profile
 
 =item step
 
-Get the bin width and the direction of change (the frequency step needed to go from one bin to the next is a negative value)
+Get the bin width and the direction of change (the frequency step
+needed to go from one bin to the next is a negative value)
 
 =item chunk, chunks
 
@@ -392,11 +333,27 @@ Set the converter function (f -> M/z)
 
 Set the inverse converter function (M/z -> f)
 
+=item bins
+
+Get the reference to an array of bin values. Each array element
+contains an (_M/z_, abundance) pair.
+
+=item print_bins
+
+List the bin contents to STDOUT
+
 =back
 
-=head1 EXPORT
+=head1 DEPRECATED
 
-None
+=over 4
+
+=item peak_count
+
+Replaced with B<nchunks>
+
+=back
+
 
 =head1 SEE ALSO
 

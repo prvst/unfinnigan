@@ -62,11 +62,29 @@ to carry the user ID of the person who created the
 files. Additionally, there is a long integer, possibly carrying the
 CRC-32 sum of the data file or a portion of it.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
 
+=item decode($stream)
 
+The constructor method
+
+=item time
+
+Get the timestamp
+
+=item tag1
+
+Get the value of the first tag. The second tag was found to be
+identical in all cases studied, so there is no tag2 accessor, but its
+value can be accessed as $obj->{data}->{"tag[2]"}->{value}.
+
+=item stringify
+
+Returns the timestamp followed by the first tag
+
+=back
 
 =head1 SEE ALSO
 

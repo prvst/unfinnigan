@@ -6,7 +6,7 @@ use warnings;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
-use overload ('""' => 'stringify');
+use overload ('""' => 'name');
 
 sub decode {
   my ($class, $stream, $param) = @_;
@@ -77,14 +77,6 @@ sub type {
   shift->{data}->{type}->{value};
 }
 
-
-sub stringify {
-  my $self = shift;
-  my $name = $self->name;
-  return $name;
-}
-
-
 1;
 __END__
 
@@ -105,19 +97,38 @@ This is an auxiliary decoder used by Finnigan::OLE2File; it is of no use on its 
 The OLE2 Properties are roughly equivalent to index nodes in other filesystems.
 
 
-=head1 METHODS
+=head2 METHODS
 
-=head2 decode($stream, [$big_block_log_size, $charset])
+=over 4
+
+=item decode($stream, [$big_block_log_size, $charset])
 
 The constructor method
 
-=head2 stringify
+=item name
 
-Returns the property name
+Get the property name (equivalent to file name in a regular
+filesystem). This method overloads the double-quote operator.
 
-=head1 EXPORT
+=item type
 
-None
+=item data_size
+
+=item child
+
+=item left
+
+Get the left child
+
+=item right
+
+Get the right child
+
+=item start
+
+Get the starting index of the stream
+
+=back
 
 =head1 SEE ALSO
 

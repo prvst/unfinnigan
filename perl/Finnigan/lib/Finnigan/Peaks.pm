@@ -48,7 +48,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanIndexEntry -- decoder for ScanIndexEntry, a linked list item pointing to scan data
+Finnigan::Peaks -- a decoder for PeaksList, the list of peak centroids
 
 =head1 SYNOPSIS
 
@@ -78,9 +78,40 @@ observations are lacking, I am inclined to interpret it as a
 forward-linked list, simply from common sense.
 
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item count
+
+Get the number of peaks in the list
+
+=item peaks
+
+Get the list of Finnigan::Peak objects
+
+=item peak
+
+Same as B<peaks>.  I find the dereference expressions easier to read
+when the reference name is singular: C<$scan-E<gt>peak-E<gt>[0]>
+(rather than C<$scan-E<gt>peaks-E<gt>[0]>). However, I prefer the
+plural form when there is no dereferencing: C<$peaks =
+$scan-E<gt>peaks;>q
+
+=item all
+
+Get the reference to an array containing the pairs of abundance? values of each centroided peak. This method avoids the expense of calling the Finnigan::Peak accessors.
+
+=item list
+
+Print the entire peak list to STDOUT
+
+=back
+
 
 =head1 SEE ALSO
 

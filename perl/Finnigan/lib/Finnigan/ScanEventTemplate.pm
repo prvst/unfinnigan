@@ -68,9 +68,27 @@ ScanEvent structure corresponding to an individual scan. It is an
 elment of MSScanEvent hirerachy (that's the name used by Thermo),
 which models the grouping of scan events into segments.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode
+
+The constructor method
+
+=item preamble
+
+Get the Finnigan::ScanEventPreamble object
+
+=item fraction_collector
+
+Get the Finnigan::FractionCollector object
+
+=item stringify
+
+Make a short text representation of the object
+
+=back
 
 =head1 SEE ALSO
 

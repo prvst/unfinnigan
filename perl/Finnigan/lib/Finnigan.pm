@@ -23,8 +23,7 @@ __END__
 
 =head1 NAME
 
-Finnigan - A collection of decoder modules for reading data from
-the raw files created by Thermo mass spectrometers
+Finnigan - Thermo/Finnigan mass spec data decoder
 
 =head1 SYNOPSIS
 
@@ -42,6 +41,16 @@ positioned at the start of the structure to be decoded.
 Finnigan is a non-functional package whose only purpose is to pull in all other
 packages in the suite into its namespace. It does no work; all work is
 done in the sub-modules.
+
+=head2 METHODS
+
+=over 4
+
+=item list_modules
+
+Gets the list of all submodules using Modules::Find.
+
+=back
 
 =head1 SEE ALSO
 

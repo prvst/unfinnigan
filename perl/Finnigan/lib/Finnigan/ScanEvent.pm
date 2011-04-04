@@ -225,7 +225,7 @@ Finnigan::ScanEvent -- a decoder for ScanEvent, a detailed scan descriptor
   say join(" ", $e->preamble->list(decode => 'yes'));
   say $e->preamble->analyzer(decode => 'yes');
   $e->fraction_collector->dump;
-  $e->reaction->dump if $e->type == 1 # Reaction will not be present in MS1
+  $e->reaction->dump if $e->preamble->ms_power > 1 # Reaction will not be present in MS1
 
 =head1 DESCRIPTION
 
@@ -247,9 +247,86 @@ to M/z (the other copy of the same coefficients is stored in the
 corresponding ScanParameterSet -- a somewhat overlapping structure in
 a parallel stream).
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream, $version)
+
+The constructor method
+
+=item purge_unused_data
+
+Delete the location, size and type data for all structure
+elements. Calling this method will free some memory when no
+introspection is needeed (the necessary measure in production-grade
+code)
+
+=item np
+
+Get the number of precursor ions
+
+=item preamble
+
+Get the Finnigan::ScanEventPreamble object
+
+=item fraction_collector
+
+Get the Finnigan::FractionCollector object
+
+=item precursors
+
+Get the list full list of precursor descriptors Finnican::Reaction objects
+
+=item reaction($n)
+
+Get the precursor number n (a Finnigan::Reaction object). In the absence of the number argument, it returns the first precursor.
+
+=item nparam
+
+Get the number of conversion coefficients
+
+=item unknown_double
+
+Get the value of the unknown first coefficient (0 in all known cases)
+
+=item I
+
+Get the value of the coefficient I (0 in all known cases, Orbitrap data only)
+
+=item A
+
+Get the value of the coefficient A (0 in all known cases)
+
+=item B
+
+Get the value of the coefficient B (LTQ-FT, Orbitrap)
+
+=item C
+
+Get the value of the coefficient C (LTQ-FT, Orbitrap)
+
+=item D
+
+Get the value of the coefficient D (Orbitrap only)
+
+=item E
+
+Get the value of the coefficient E (Orbitrap only)
+
+=item converter
+
+Returns the pointer to the function for the forward conversion f → M/z
+
+=item inverse_converter
+
+Returns the pointer to the function for the inverse conversion M/z → f
+
+=item stringify
+
+Make a short text representation of the object
+
+=back
 
 =head1 SEE ALSO
 

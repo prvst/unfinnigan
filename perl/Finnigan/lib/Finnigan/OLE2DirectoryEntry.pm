@@ -254,9 +254,51 @@ efficiency of access). The directory entry's constructor method
 B<new()> is called recursively starting from the root directory
 contained in the file's 0-th property.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item new($file, $propertyIndex)
+
+The constructor method. Its first argument is a reference to Finnigan::OLE2File, and the second argument is the index of the file's property (Finnigan::OLE2Property) to be decoded as a directory entry. The root directory is always found in property number 0.
+
+=item list($style)
+
+Lists the directory's contents to STDOUT. The style argument can have
+three values: wiki, html, and plain (or undefined). The wiki and html
+styles have not been implemented yet.
+
+This method is not useful as part of the API (directory listings are
+better understood by humans). But once the path to a node is known, it
+can be retrieved with the find method.
+
+=item find($path)
+
+Get the directory entry (Finnigan::OLE2DirectoryEntry) matching the
+path supplied in the only argument. The directory entry's data method
+needs to be called in order to extract the node data.=back
+
+=back
+
+=head2 PRIVATE METHODS
+
+=over 4
+
+=item data
+
+=item file
+
+=item name
+
+=item render_list_item
+
+=item size
+
+=item start
+
+=item type
+
+=back
 
 =head1 SEE ALSO
 

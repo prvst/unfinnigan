@@ -20,17 +20,22 @@ Finnigan::ScanParameters -- a decoder for ScanParameters, a GenericRecord contai
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $h = Finnigan::ScanParameters->decode(\*INPUT, $generic_header_ref);
-  say $h->n;
-  say $h->charge_state;
+  my $p = Finnigan::ScanParameters->decode(\*INPUT, $generic_header_ref);
+  say $p->charge_state;
 
 =head1 DESCRIPTION
 
 This decoder augments the GenericRecord decoder with the charge_state() method.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item charge_state
+
+Get the charge state of the base ion
+
+=back
 
 =head1 SEE ALSO
 

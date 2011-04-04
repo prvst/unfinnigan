@@ -72,9 +72,32 @@ needs to be preserved. That is why Finnigan::GenericRecord relies on
 the B<field_templates> method of Finnigan::GenericDataHeader to insert
 ordinal numbers into the keys.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item time
+
+Get the timestamp. The timestamp is retention time measured in seconds
+and stored as floating-point value.
+
+=item fields
+
+Get the list of all fields in the record. Each field is decoded with
+the Finnigan::GenericRecord decoder using the definitions from
+Finnigan::GenericDataHeader, and it contains, for example, the
+following data:
+
+{value => '8.1953125', type => 'Float32', addr => 803445, seq => 70, size => 4}
+
+
+
+
+=back
 
 =head1 SEE ALSO
 

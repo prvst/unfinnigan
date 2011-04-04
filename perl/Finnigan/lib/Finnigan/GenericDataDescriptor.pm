@@ -142,9 +142,35 @@ Finnigan::GenericDataDescriptor -- a decoder for GenericDataDescriptor, a key to
 GenericDataDescriptor stores information about the type, size and name
 of a data element in a generic data record.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item type
+
+Get the element type (see Known data types)
+
+=item length
+
+Get the size of the element represented by this descriptor
+
+=item label
+
+Get the element's label. It is the same label that Thermo uses in their GUI, such as Xcalibur.
+
+=item definition
+
+Returns an appropriate decoder template based on descriptor type
+
+=item stringify
+
+Make a short string representation of the descriptor
+
+=back
 
 =head1 SEE ALSO
 

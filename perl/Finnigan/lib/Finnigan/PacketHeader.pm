@@ -81,9 +81,47 @@ Calling this decoder is a pre-requisite to reading any scan data. It
 reads the data packet layout indicator and the sizes of the data
 streams included in the packet.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item layout
+
+Get the layout indicator. Two values have been sighted so far: 0 and 128
+
+=item profile_size
+
+Get the profile size in 4-byte words
+
+=item peak_list_size
+
+Get the peak list size in 4-byte words
+
+=item low_mz
+
+Get the low end of the M/z range
+
+=item high_mz
+
+Get the high end of the M/z range
+
+=back
+
+=head2 UNUSED METHODS
+
+=over 4
+
+=item descriptor_list_size
+
+=item size_of_triplet_stream
+
+=item size_of_unknown_stream
+
+=back
 
 =head1 SEE ALSO
 

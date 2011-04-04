@@ -45,11 +45,19 @@ a text string. The text string is apparently a comment; in one
 instance where it was non-null, it contained this text: '384 Well
 Plate'.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
 
+=item decode($stream)
 
+The constructor method
+
+=item preamble
+
+Get the Finnigan::CASInfoPreamble object
+
+=back
 
 =head1 SEE ALSO
 

@@ -130,9 +130,52 @@ stream lengths and addresses, as well as some unidentified data. Every
 data stream in the file has its address stored in RunHeader or in its
 historical antecedent SampleInfo, which it now includes.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream, $version)
+
+The constructor method
+
+=item sample_info
+
+Get the Finnigan::SampleInfo object
+
+=item self_addr
+
+Get own address
+
+=item trailer_addr
+
+Get the "trailer" address -- the pointer to the stream of ScanEvent
+structures
+
+=item params_addr
+
+Get the pointer to the stream of ScanPrarameters? structures
+
+=item ntrailer
+
+Get the length of the ScanEvent stream
+
+=item nparams
+
+Get the length of the ScanParameters stream
+
+=item nsegs
+
+Get the number of scan segments
+
+=item u1
+
+Get the unknown double 1
+
+=item u2
+
+Get the unknown double 2
+
+=back
 
 =head1 SEE ALSO
 

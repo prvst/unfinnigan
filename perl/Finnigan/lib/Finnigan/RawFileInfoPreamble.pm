@@ -111,9 +111,31 @@ to all other data streams in the file.
 The older versions of this structure did not contain anything except
 the date stamp.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream, $version)
+
+The constructor method
+
+=item timestamp
+
+Get the timestamp in the text form: Wkd Mmm DD YYYY hh:mm:ss.ms
+
+=item data_addr
+
+Get the pointer to the first ScanDataPacket
+
+=item run_header_addr
+
+Get the pointer to RunHeader (which contains further pointers)
+
+=item stringify
+
+Make a concise string representation of the structure
+
+=back
 
 =head1 SEE ALSO
 

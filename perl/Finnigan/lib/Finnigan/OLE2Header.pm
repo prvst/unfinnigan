@@ -21,11 +21,11 @@ sub decode {
                 "reserved"        => ['a6',    'RawBytes'],
                 "csectdir"        => ['V',     'UInt32'],   # Number of sector pointers in directory chain (sector size 4 kb)
                 "bb count"        => ['V',     'UInt32'],   # number of blocks in Big Block Depot (number of SECTs in the FAT chain)
-                "bb start"        => ['V',     'UInt32'],   # the first block in Big Block Depot (first SECT in the Directory chain
+                "bb start"        => ['V',     'UInt32'],   # the first block in Big Block Depot (first SECT in the Directory chain)
                 "transaction"     => ['a4',    'RawBytes'], # transaction signature
                 "ministream max"  => ['V',     'UInt32'],   # max. size of a ministream (4096)
-                "sb start"        => ['V',     'UInt32'],   # the first block in Small Block Depot (first SECT in the mini-FAT chain
-                "sb count"        => ['V',     'UInt32'],   # number of blocks in Small Block Depot (number of SECTs in the mini-FAT chain
+                "sb start"        => ['V',     'UInt32'],   # the first block in Small Block Depot (first SECT in the mini-FAT chain)
+                "sb count"        => ['V',     'UInt32'],   # number of blocks in Small Block Depot (number of SECTs in the mini-FAT chain)
                 "dif start"       => ['V',     'UInt32'],   # the first SECT in the DIF chain (should be 0xfffffffe if the file is smaller than 7Mb)
                 "dif count"       => ['V',     'UInt32'],   # number of SECTs in the DIF chain (should be 0 if the file is smaller than 7Mb)
                );
@@ -101,9 +101,55 @@ The OLE2 header is the first the first object to be decoded on the way
 to parsing the embedded filesystem. It contains the key parameters that
 determine the shape of the filesystem.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item  decode($stream)
+
+The constructor method
+
+=item  bb_count
+
+Get the number of blocks in Big Block Depot (number of SECTs in the FAT chain)
+
+=item  bb_log
+
+Get the log2-size of big blocks
+
+=item  bb_start
+
+Get the first block in Big Block Depot (first SECT in the Directory chain)
+
+=item  dif_count
+
+Get the number of SECTs in the DIF chain (should be 0 if the file is smaller than 7Mb)
+
+=item  dif_start
+
+Get the first SECT in the DIF chain (should be 0xfffffffe if the file is smaller than 7Mb)
+
+=item  ministream_max
+
+Get the maximum size of a ministream (4096)
+
+=item  sb_count
+
+Get the number of blocks in Small Block Depot (number of SECTs in the mini-FAT chain
+
+=item  sb_log
+
+Get the log2-size of small blocks
+
+=item  sb_start
+
+Get the first block in Small Block Depot (first SECT in the mini-FAT chain)
+
+=item stringify
+
+Makes a short text summary consisting of container format version and block use
+
+=back
 
 =head1 SEE ALSO
 

@@ -68,9 +68,28 @@ and decoding templates are jettisoned, eliminating the need for
 an object.
 
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item mz
+
+Get the M/z value, the first in the pair
+
+=item abundance
+
+Get the abundance value, the second in the pair
+
+=item stringify
+
+Get both attributes concatenated with a tab character. Used in the
+list method of the containing object, Finnigan::Peaks
+
+=back
 
 =head1 SEE ALSO
 

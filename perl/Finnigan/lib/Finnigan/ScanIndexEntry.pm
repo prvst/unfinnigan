@@ -113,10 +113,80 @@ start at 1, then "index" will become "previous" and "next" becomes
 observations are lacking, I am inclined to interpret it as a
 forward-linked list, simply from common sense.
 
+Note: The "current/next" theory of the two ordinal numbers in this
+structure may be totally wrong. It may just be that one of these
+numbers is the 0-base index (0 .. n -1), and the other is 1-based: (1
+.. n). It is suspicious that in the last entry in every stream, the
+"next" value is not null, it simply n.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item offset
+
+Get the address of the corresponding ScanDataPacket relative to the
+start of the data stream
+
+=item index
+
+Get this element's index (a valid assumption if the scan data indices
+start at 0, otherwise this is the previous element's index)
+
+=item next
+
+Get the next element's index(a valid assumption if the scan data
+indices start at 0, otherwise this is the current element's index)
+
+=item scan_event
+
+Get the index of this element's ScanEventTemplate in the current scan
+segment
+
+=item scan_segment
+
+Get the index of this element's scan segment in Scan Event Hierarchy
+
+=item data_size
+
+Get the size of the ScanDataPacket this index element is pointing to
+
+=item start_time
+
+Get the current scan's start time
+
+=item total_current
+
+Get the scan's total current (a rough indicator of how many ions were
+scanned)
+
+=item base_intensity
+
+Get the intensity of the most abundant ion
+
+=item base_mz
+
+Get the M/z value of the most abundant ion
+
+=item low_mz
+
+Get the low end of the scan range
+
+=item high_mz
+
+Get the high end of the scan range
+
+=item unknown
+
+Get the only unknown UInt32 stored in the index entry. Its value (or
+some bits in it) seem to correspond to the type of scan, but its
+interpretation is uncertain.
+
+=back
 
 =head1 SEE ALSO
 

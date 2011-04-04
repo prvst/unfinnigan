@@ -67,9 +67,23 @@ There are other data elements in the modern preamble, whose meaning is
 unkonwn.
 
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode
+
+The constructor method
+
+=item preamble
+
+Get the Finnigan::RawFileInfoPreamble object
+
+=item stringify
+
+Make a concise string representation of the structure
+
+=back
 
 =head1 SEE ALSO
 

@@ -47,9 +47,24 @@ Error is a varibale-length structure containing timestamped error
 messages. It implicitly links an error message to a scan using the
 retention time.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item time
+
+Get the entry's timestamp (retention time)
+
+=item message
+
+Get the text message
+
+
+=back
 
 =head1 AUTHOR
 

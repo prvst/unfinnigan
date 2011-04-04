@@ -610,9 +610,78 @@ knows about have not changed, but the version number still has to be
 passed into it so it knows how many bytes to read.
 
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream, $version)
+
+The constructor method
+
+=back
+
+All of the following accessor methods will replace the byte value of
+the flag they access with a symbolic value representing that flag's
+meaning if given a truthy argument. The word 'decode' is a good one to
+use because it makes the code more readable, but any truthy value will
+work.
+
+=over 4
+
+=item list(bool)
+
+Returns an array containing all byte values of ScanEventPreamble
+
+=item corona(bool)
+
+Get the corona status (0:off or 1:on).
+
+=item detector(bool)
+
+Get the detector flag (0:valid or 1:undefined).
+
+=item polarity(bool)
+
+Get the polarity value (0:negative, 1:positive, 2:undefined)
+
+=item scan_mode(bool)
+
+Get the scan mode (0:centroid, 1:profile, 2:undefined)
+
+=item ms_power(bool)
+
+Get the MS power number (0:undefined, 1:MS1, 2:MS2, 3:MS3, 4:MS4,
+5:MS5, 6:MS6, 7:MS7, 8:MS8)
+
+=item scan_type(bool)
+
+Get the scan type (0:Full, 1:Zoom, 2:SIM, 3:SRM, 4:CRM, 5:undefined, 6:Q1, 7:Q3)
+
+=item dependent(bool)
+
+Get the dependent flag (0 for primary MS1 scans, 1 for dependent scan
+types)
+
+=item ionization(bool)
+
+Get the scan type (0:EI, 1:CI, 2:FABI, 3:ESI, 4:APCI, 5:NSI, 6:TSI,
+7:FDI, 8:MALDI, 9:GDI, 10:undefined)
+
+=item wideband(bool)
+
+Get the wideband flag (0:off, 1:on, 2:undefined).
+
+=item analyzer(bool)
+
+Get the scan type (0:ITMS, 1:TQMS, 2:SQMS, 3:TOFMS, 4:FTMS, 5:Sector, 6:undefined)
+
+=item stringify
+
+Makes a short text representation of the set of flags (known as
+"filter line" to the users of Thermo software)
+
+=back
+
 
 =head1 SEE ALSO
 

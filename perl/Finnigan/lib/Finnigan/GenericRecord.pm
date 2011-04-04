@@ -53,9 +53,15 @@ needs to be preserved. That is why Finnigan::GenericRecord relies on
 the B<field_templates> method of Finnigan::GenericDataHeader to insert
 ordinal numbers into the keys.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode
+
+The constructor method
+
+=back
 
 =head1 SEE ALSO
 

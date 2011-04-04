@@ -5,7 +5,6 @@ use warnings;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
-use Data::Dumper;
 
 
 sub decode {
@@ -60,14 +59,6 @@ sub instrument_name {
   return @{$self->translation_table}[2*$i .. 2*$i + 1];
 }
 
-sub time1 {
-  Finnigan::Decoder::from_struct_tm(shift->{tree}->{Time1st});
-}
-
-sub time2 {
-  Finnigan::Decoder::from_struct_tm(shift->{tree}->{Time2nd});
-}
-
 1;
 __END__
 
@@ -94,9 +85,40 @@ The outer container also contains a name translation table mapping the
 names of the instruments into the names used inside the method files.
 
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item header
+
+Get the Finnigan::FileHeader object attached to the method file
+
+=item n
+
+Get the number of entries in the name translation table
+
+=item translation_table
+
+Get the name translation table
+
+=item instrument_name($i)
+
+Get the translation at index $i in the name translation table
+
+=item file_size
+
+Get the size of the Finnigan::OLE2File container
+
+=item container
+
+Get the Finnigan::OLE2File object
+
+
+=back
 
 =head1 SEE ALSO
 

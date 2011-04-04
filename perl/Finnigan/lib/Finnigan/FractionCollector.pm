@@ -44,16 +44,34 @@ Finnigan::FractionCollector -- a decoder for FractionCollector, a mass range obj
 
   use Finnigan;
   my $f = Finnigan::FractionCollector->decode(\*INPUT);
-  say "[" . f->low . ", " . f->high . "]";
+  say "$f";
 
 =head1 DESCRIPTION
 
 This object is just a container for a pair of double-precision floating point
 numbers that define the M/z range of ions collected during a scan.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item low
+
+Get the low M/z
+
+=item high
+
+Get the high M/z
+
+=item stringify
+
+Make a string representation of the object: "[low-high]", as in Thermo's "filter line"
+
+=back
 
 =head1 SEE ALSO
 

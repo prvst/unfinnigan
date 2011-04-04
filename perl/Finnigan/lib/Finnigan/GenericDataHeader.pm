@@ -40,11 +40,6 @@ sub labels {
   shift->{labels};
 }
 
-sub field {
-  my ($self, $i) = @_;
-  return $self->{data}->{"field"}->{value}->[$i];
-}
-
 sub field_templates {
   shift->{templates};
 }
@@ -73,9 +68,43 @@ GenericDataHeader drives the decoding of a generic record. It stores a
 list of GenericDataDescriptor objects, each describing a field in the
 record.
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream)
+
+The constructor method
+
+=item n
+
+Get the number of fields in each record
+
+=item fields
+
+Get the list of Finnigan::GenericDataDescriptor objects. Each
+descriptor object corresponds to a field in the GenericRecord
+structure to be decoded with this header.
+
+=item labels
+
+Get the list of descriptor labels in the order they occur in the header
+
+=item field_templates
+
+Get the list of unpack templates for the entire record in the form
+that can be passed to Finnigan::Decoder.
+
+=item ordered_field_templates
+
+Get the list of unpack templates whose keys are tagged with ordinal
+numbers to disambiguate possible duplicate keys and to preserve the
+order of fields. This is necessary for decoding the
+InstrumentLogRecord structures.
+
+
+
+=back
 
 =head1 SEE ALSO
 

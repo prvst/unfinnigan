@@ -453,7 +453,7 @@ Perl unpack templates are used to decode most fields. For some fields, non-perl 
 
 =over 4
 
-=item C<read($class, $stream, $fields, $any_arg)>
+=item read($class, $stream, $fields, $any_arg)
 
 Returns a new decoder blessed into class C<$class> and initialized
 with the values read from C<$stream> and decoded according to a list
@@ -475,7 +475,7 @@ Here is an example of the template list for a simple decoder:
     "abundance" => ['f', 'Float32'],
   ];
 
-=item C<sub decode($stream, $fields, $any_arg)>
+=item decode($stream, $fields, $any_arg)
 
 This method must be called on a blessed, instantiated Decoder. The
 C<read()> method calls it internally, but it can also be used by the
@@ -486,7 +486,7 @@ one part of an object, analyse it, make decisions about the rest
 construction by decoding more data from the stream.
 
 
-=item C<iterate_scalar($stream, $count, $name, $desc)>
+=item iterate_scalar($stream, $count, $name, $desc)
 
 This method is similar to the C<decode> metod, in that it does not
 instantiate a Decoder, but rather adds data to an existing one. Its
@@ -500,7 +500,7 @@ integers, the template description must be of the form:
   $desc = ['V', 'UInt32']
 
 
-=item C<iterate_object($stream, $count, $name, $class, $any_arg)>
+=item iterate_object($stream, $count, $name, $class, $any_arg)
 
 Similarly to C<iterate_scalar()>, this method can be used to read a
 list of structures into the current decoder's attribute specified in
@@ -509,12 +509,63 @@ complex structures to be decoded with their own decoder specified in
 C<$class>. The optional argument C<$any_arg> can be used to parse
 context information to that decoder.
 
+=item purge_unused_data
+
+Delete the location, size and type data for all structure
+elements. Calling this method will free some memory when no
+introspection is needeed (the necessary measure in production-grade
+code)
+
 =back
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
 
+=item addr
+
+Get the seek address of the decoded object
+
+=item size
+
+Get object size
+
+=item data
+
+Get the object's data hash (equivalent to $obj->{data}). Every data hash element contains the decoded value as well as location and type data.
+
+=item item($key)
+
+Get an item by name (equivalent to $obj->{data}->{$key})
+
+=item values
+
+Extract the simple value hash (no location data, only the element names and values)
+
+=item dump($param)
+
+Dump the object's contents in three different styles, using absolute
+or relative addresses. The attribute $param->{style} can be set to
+wiki or html, or it can be absent or have any other value, it which
+case the dump will have a simple tabular format. The attribute
+$param->{relative}is a Boolean, requesting relative addresses when it
+is set to a truthy value.
+
+=back
+
+=head2 NON-METHODS
+
+=over 4
+
+=item Finnigan::Decoder::from_struct_tm($struct_tm)
+
+Decode a struct_tm structure into text: YY-MM-DD HH:MM:SS
+
+=item Finnigan::Decoder::windows_datetime_in_bytes($windows_date)
+
+Convert Windows date to DateTime
+
+=back
 
 =head1 SEE ALSO
 

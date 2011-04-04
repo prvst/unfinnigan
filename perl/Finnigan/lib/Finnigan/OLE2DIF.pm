@@ -64,9 +64,24 @@ caller of the B<sect> method.
 
 DIF == Double-Indirect File Allocation Table
 
-=head1 EXPORT
+=head2 METHODS
 
-None
+=over 4
+
+=item decode($stream, [$start, $count])
+
+The constructor method. The start and count parameters are reserved for possible future use. Although they are not used at the moment (because Finnigan files do not use non-trivial FAT arrangements), these parameters must still be provided by the caller to avoid the unidentified value errors.
+
+=item sect
+
+Get the array containing the sector allocation table. In this application (embedded method files in the Finnigan data file), it is very likely that only the first of the 109 entries (address 0) will be used.
+
+=item stringify
+
+Get a short text description of the data, e.g., C<Double-Indirect FAT; 1/109 entries used>
+
+=back
+
 
 =head1 SEE ALSO
 
