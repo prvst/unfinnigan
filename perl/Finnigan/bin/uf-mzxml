@@ -446,7 +446,7 @@ sub read_scan {
       }
       else { # the profile is stored as one huge set of bins
         $bins = $profile->bins($range); # this call implicitly uses the forward converter
-        use Data::Dumper;
+        require Data::Dumper;
         print Dumper($bins);
       }
       $peakCount = scalar @$bins;      
@@ -596,6 +596,8 @@ To determine the appropriate range of scans, list all scans in the file using B<
 
 Suppress the instrument error messages stored in the input file. Without this option, the error messages will be printed to STDERR.
 
+=back
+
 =head1 SEE ALSO
 
 Finnigan::Scan
@@ -608,7 +610,5 @@ uf-trailer
  uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
 
   (extract peak centroids from scans 350 through 352)
-
-=cut
 
 =cut
