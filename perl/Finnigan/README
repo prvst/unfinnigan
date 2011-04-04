@@ -1,16 +1,38 @@
-Finnigan version 0.01
+Finnigan version 0.02
 =====================
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+This module is part of the Unfinnigan project aimed at decoding
+the proprietary data files used to acquire data from Thermo mass
+spectrometers. These are are known as "raw" files and they were
+intended to be read with proprietary software (Xcalibur) running
+on the Windows operating system.
 
-A README file is required for CPAN modules since CPAN extracts the
-README file from a module distribution so that people browsing the
-archive can use it get an idea of the modules uses. It is usually a
-good idea to provide version information here so that people can
-decide whether fixes for the module are worth downloading.
+This module allows complete access to scan data without the need
+to install any vendor software.
+
+It can decode several recent file formats (versions 57, 62 and 63)
+and it comes with a suite of command-line tools that can be used
+to examine various elements of the data. One of the tools, uf-mzxml,
+replaces ReAdW in the task of converting the Finnigan data to mzXML.
+
+The module and the tools have been tested in an ongoing SILAC
+proteomics project, where users are writing their own data analysis
+scripts. 
+
+For more details, go to 
+
+  http://code.google.com/p/unfinnigan/
+
+PLATFORM
+
+Thermo software runs only on Intel platforms and therefore every
+word in their files uses little-endian encoding. The (un)Finnigan
+modules have also been tested only on Intel platforms.  
+
+The decoder is built around Perl's unpack() function and there is
+a chance that some of the templates may be incorrectly interpreted
+on a big-endian platform. The tests should reveal that -- please
+let me know if anything breaks.
 
 INSTALLATION
 
@@ -21,11 +43,40 @@ To install this module type the following:
    make test
    make install
 
+To install in user-space (without requiring root permissions),
+run Makefile.PL like this:
+
+   perl Makefile.PL PREFIX=/<your-home-dir>
+
+Everything will work if your environment includes your home directory
+in these variables:
+
+PERL5LIB=...:<your-home-dir>/lib/perl5/site_perl
+PATH=<your-home-dir>/bin:...
+MANPATH=<your-home-dir>/man:...
+
+
 DEPENDENCIES
 
-This module requires these other modules and libraries:
+This module requires these other modules:
 
-  blah blah blah
+   Data::Hexdumper
+   DateTime::Format::WindowsFileTime
+   Devel::Size (only in uf-mzxml, not essential)
+   Encode
+   File::Temp (only in uf-mzxml)
+   Getopt::Declare
+   Getopt::Long
+   MIME::Base64 (in uf-mzxml and mzxml-unpack)
+   Module::Find (not essential)
+   Storable (only in uf-mzxml)
+   XML::Generator (only in uf-mzxml)
+   Tie::IxHash (only in uf-mzxml)
+
+The non-essential dependencies can be removed by commenting out
+the corresponding lines in the code. If you are not going to use
+uf-mzxml, further dependencies can be removed by commenting them
+out in Makefile.PL
 
 COPYRIGHT AND LICENCE
 

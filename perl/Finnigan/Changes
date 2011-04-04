@@ -6,9 +6,10 @@ Revision history for Perl extension Finnigan.
 
 0.02  Mon 14 Feb 2011 14:43:37 MSK
         - optimisations for speed in all decoder objects
-        - new object, Finnigan::Scan, provides a monolithic
-          decoder for scan data that takes just two reads to
+        - new object, Finnigan::Scan, provides a lightweight
+          decoder for scan data that takes just two file reads to
           decode the profile and the centroid list.
         - more test coverage; the most essential manoeuvres
           for reading scan data are now represented.
+        - complete documentation of all modules
 
