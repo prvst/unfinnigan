@@ -78,6 +78,8 @@ extract only scans with numbers between E<lt>fromE<gt> and E<lt>toE<gt>
 
 B<Note:> this option breaks the structure of the output file (the parts preceding and following the selected range of scans are not written). It is mainly useful in checking the XML syntax and the contents of a small number of scans. For extracting the scan data in tabular format, there is a more suitable tool, B<uf-scan>.
 
+=back
+
 =head1 DESCRIPTION
 
 B<mzxml-unpack> will read the given input file and unpack the contents of the B<scan.peaks> element. MzXML uses base64 encoding to save space; unpacking this encoding makes the data human-readable. It does not otherwise change the file structure (unless option -r is used), so in principle, it can be packed again.
@@ -90,7 +92,5 @@ uf-mzxml
 =head1 EXAMPLE
 
   mzxml-unpack sample.raw > sample-unpacked.mzXML
-
-=cut
 
 =cut
