@@ -8,7 +8,6 @@ WriteMakefile(
     PREREQ_PM         => {
 			  Carp => '1.08',
 			  Data::Hexdumper => '2.01',
-			  DateTime::Format::WindowsFileTime => '0.02',
                           Devel::Size => '0.71',
 			  Encode => '2.23',
 			  File::Temp => '0.21',

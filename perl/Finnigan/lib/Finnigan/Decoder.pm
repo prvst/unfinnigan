@@ -2,29 +2,11 @@ package Finnigan::Decoder;
 
 use 5.010000;
 use strict;
-use warnings;
-use DateTime::Format::WindowsFileTime;
+use warnings FATAL => qw( all );
+our $VERSION = 0.02;
+
 use Encode qw//;
 use Carp qw/confess/;
-
-sub windows_datetime_in_bytes {
-  # expects 8 arguments representing windows date in little-endian order
-
-  my @hex = map { sprintf "%2.2X", $_ } @_; # convert to upper-case hex
-  return "null" if "@hex" eq "00 00 00 00 00 00 00 00";
-
-  my $hex_date = join('', @hex[reverse 0..7]); # swap to network format
-  my $dt = DateTime::Format::WindowsFileTime->parse_datetime( $hex_date );
-  # $dt is a regular DateTime object
-  return $dt->ymd . " " . $dt->hms;
-}
-
-sub from_struct_tm {
-  my $ref = shift;
-  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = @$ref;
-  $year += 1900;
-  "${year}-${mon}-${mday} $hour:$min:$sec";
-}
 
 sub read {
   my ($class, $stream, $fields, $any_arg) = @_;
@@ -228,7 +210,7 @@ sub decode {
       $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
         or die "could not read all $bytes_to_read bytes of $name at $current_addr";
-      $value = windows_datetime_in_bytes(unpack "W*", $rec);
+      $value = scalar localtime ((unpack "Q", $rec) / 10000000 - 11644473600); # Windows timestamp is 100s of ns since Jan 1 1601
     }
     else {
       my $bytes_to_read = length(pack($template,()));
@@ -550,20 +532,6 @@ wiki or html, or it can be absent or have any other value, it which
 case the dump will have a simple tabular format. The attribute
 $param->{relative}is a Boolean, requesting relative addresses when it
 is set to a truthy value.
-
-=back
-
-=head2 NON-METHODS
-
-=over 4
-
-=item Finnigan::Decoder::from_struct_tm($struct_tm)
-
-Decode a struct_tm structure into text: YY-MM-DD HH:MM:SS
-
-=item Finnigan::Decoder::windows_datetime_in_bytes($windows_date)
-
-Convert Windows date to DateTime
 
 =back
 

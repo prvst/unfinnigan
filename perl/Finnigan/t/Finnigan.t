@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 224;
+use Test::More tests => 226;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -14,6 +14,12 @@ BEGIN { use_ok('Finnigan') };
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 # set-up
+
+sub num_equal {
+  my( $float1, $float2, $diff ) = @_;
+  abs( $float1 - $float2 ) < ($diff or 0.00001);
+} 
+
 my $file = "t/100225.raw";
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
@@ -25,7 +31,7 @@ binmode INPUT;
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 is( $header->version, 63, "FileHeader->version" );
 is( $header->size, 1356, "FileHeader->size" );
-is( $header->audit_start->time, "2010-02-25 09:02:27", "AuditTag->time" );
+is( $header->audit_start->time, "Thu Feb 25 09:02:27 2010", "AuditTag->time" );
 
 # SeqRow / InjectionData -- sample data
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
@@ -115,10 +121,10 @@ is( $first_scan, 1, "SampleInfo->first_scan" );
 my $last_scan  = $sample_info->last_scan;
 is( $last_scan, 33, "SampleInfo->last_scan" );
 is( $sample_info->max_ion_current, 11508917, "SampleInfo->max_ion_current" );
-is( $sample_info->low_mz, 100, "SampleInfo->low_mz" );
-is( $sample_info->high_mz, 2000, "SampleInfo->high_mz" );
-is( $sample_info->start_time, 0.00581833333333333, "SampleInfo->start_time" );
-is( $sample_info->end_time, 0.242753333333333, "SampleInfo->end_time" );
+ok( num_equal($sample_info->low_mz, 100), "SampleInfo->low_mz" );
+ok( num_equal($sample_info->high_mz, 2000), "SampleInfo->high_mz" );
+ok( num_equal($sample_info->start_time, 0.00581833333333333), "SampleInfo->start_time" );
+ok( num_equal($sample_info->end_time, 0.242753333333333), "SampleInfo->end_time" );
 my $scan_index_addr = $sample_info->scan_index_addr;
 is( $scan_index_addr, 829706, "SampleInfo->scan_index_addr" );
 is( $sample_info->data_addr, $data_addr, "SampleInfo->data_addr" );
@@ -176,13 +182,13 @@ my $inst_log_record;
 foreach my $i (0 .. $inst_log_length - 1) {
   $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header->ordered_field_templates);
 }
-is( $inst_log_record->time, 0.269295006990433, "InstrumentLogRecord->time" );
+ok( num_equal($inst_log_record->time, 0.269295006990433), "InstrumentLogRecord->time" );
 is( $inst_log_record->data->{"1|API SOURCE"}->{value}, "", "InstrumentLogRecord->decode (Instrument Log, 17.1, type 0)" );
 is( $inst_log_record->data->{"4|Vaporizer Thermocouple OK:"}->{value}, 0, "InstrumentLogRecord->decode (Instrument Log, 17.4, type 3)" );
 is( $inst_log_record->data->{"17|Ion Gauge Status:"}->{value}, 1, "InstrumentLogRecord->decode (Instrument Log, 17.17, type 4)" );
 is( $inst_log_record->data->{"32|Power (Watts):"}->{value}, 69, "InstrumentLogRecord->decode (Instrument Log, 17.32, type 6)" );
 is( $inst_log_record->data->{"30|Life (hours):"}->{value}, 18398, "InstrumentLogRecord->decode (Instrument Log, 17.30, type 9)" );
-is( $inst_log_record->data->{"54|Multipole 00 Offset (V):"}->{value}, -2.0935959815979, "InstrumentLogRecord->decode (Instrument Log, 17.54, type 10)" );
+ok( num_equal($inst_log_record->data->{"54|Multipole 00 Offset (V):"}->{value}, -2.0935959815979), "InstrumentLogRecord->decode (Instrument Log, 17.54, type 10)" );
 is( $inst_log_record->data->{"29|Status:"}->{value}, "Running", "InstrumentLogRecord->decode (Instrument Log, 17.29, type 13)" );
 is( $inst_log_record->data->{"158|Divert/Inject valve:"}->{value}, "Inject", "InstrumentLogRecord->decode (Instrument Log, 17.158, last item)" );
 # foreach my $key (sort {(split /\|/, $a)[0] <=> (split /\|/, $b)[0]} keys %{$inst_log_record->data}) {
@@ -268,12 +274,12 @@ is( $index_entry->scan_segment, 0, "ScanIndexEntry->scan_segment (0)" );
 is( $index_entry->next, 1, "ScanIndexEntry->next (0)" );
 is( $index_entry->unknown, 21, "ScanIndexEntry->unknown (0)" );
 is( $index_entry->data_size, 31932, "ScanIndexEntry->data_size (0)" );
-is( $index_entry->start_time, 0.00581833333333333, "ScanIndexEntry->start_time (0)" );
-is( $index_entry->total_current, 10851256, "ScanIndexEntry->total_current (0)" );
-is( $index_entry->base_mz, 1521.9716796875, "ScanIndexEntry->base_mz (0)" );
-is( $index_entry->base_intensity, 796088, "ScanIndexEntry->base_intensity (0)" );
-is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (0)" );
-is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (0)" );
+ok( num_equal($index_entry->start_time, 0.00581833333333333), "ScanIndexEntry->start_time (0)" );
+ok( num_equal($index_entry->total_current, 10851256), "ScanIndexEntry->total_current (0)" );
+ok( num_equal($index_entry->base_mz, 1521.9716796875), "ScanIndexEntry->base_mz (0)" );
+ok( num_equal($index_entry->base_intensity, 796088), "ScanIndexEntry->base_intensity (0)" );
+ok( num_equal($index_entry->low_mz, 400), "ScanIndexEntry->low_mz (0)" );
+ok( num_equal($index_entry->high_mz, 2000), "ScanIndexEntry->high_mz (0)" );
 for my $i (2 .. $nrecords) { # skip to the last index entry
   $index_entry = Finnigan::ScanIndexEntry->decode( \*INPUT );
 }
@@ -284,12 +290,12 @@ is( $index_entry->scan_segment, 0, "ScanIndexEntry->scan_segment (32)" );
 is( $index_entry->next, 33, "ScanIndexEntry->next (32)" );
 is( $index_entry->unknown, 21, "ScanIndexEntry->unknown (32)" );
 is( $index_entry->data_size, 31020, "ScanIndexEntry->data_size (32)" );
-is( $index_entry->start_time, 0.242753333333333, "ScanIndexEntry->start_time (32)" );
-is( $index_entry->total_current, 11508917, "ScanIndexEntry->total_current (32)" );
-is( $index_entry->base_mz, 445.120635986328, "ScanIndexEntry->base_mz (32)" );
-is( $index_entry->base_intensity, 861951.8125, "ScanIndexEntry->base_intensity (32)" );
-is( $index_entry->low_mz, 400, "ScanIndexEntry->low_mz (32)" );
-is( $index_entry->high_mz, 2000, "ScanIndexEntry->high_mz (32)" );
+ok( num_equal($index_entry->start_time, 0.242753333333333), "ScanIndexEntry->start_time (32)" );
+ok( num_equal($index_entry->total_current, 11508917), "ScanIndexEntry->total_current (32)" );
+ok( num_equal($index_entry->base_mz, 445.120635986328), "ScanIndexEntry->base_mz (32)" );
+ok( num_equal($index_entry->base_intensity, 861951.8125), "ScanIndexEntry->base_intensity (32)" );
+ok( num_equal($index_entry->low_mz, 400), "ScanIndexEntry->low_mz (32)" );
+ok( num_equal($index_entry->high_mz, 2000), "ScanIndexEntry->high_mz (32)" );
 is( tell INPUT, $trailer_addr, "should have arrived at the start of ScanEvents stream" );
 
 # read the ScanEvent stream (the "trailer")
@@ -311,7 +317,11 @@ is( $scan_event->fraction_collector->stringify, "[400.00-2000.00]", "ScanEvent->
 is( $scan_event->np, 0, "ScanEvent->np" );
 is( $scan_event->precursors, undef, "ScanEvent->precursors" );
 my $converter = $scan_event->converter;
-is( &$converter(1), 38518081.414831, "ScanEvent->converter");
+ok( num_equal(&$converter(1), 38518081.414831), "ScanEvent->converter");
+my $inverse_converter = $scan_event->inverse_converter;
+ok( num_equal(&$inverse_converter(325.24), 382.095239027303), "ScanEvent->converter");
+ok( num_equal(&$converter(382.095239027303), 325.24), "ScanEvent->converter");
+
 # read the second ScanEvent record
 $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
 is( $scan_event->preamble->analyzer('decode'), "ITMS", "ScanEvent->preamble->analyzer (2)" );
@@ -330,8 +340,8 @@ is( $pr, '445.12@cid35.00', "ScanEvent->precursors (2)" );
 $Finnigan::activationMethod = 'ecd'; # cos we don't know where to look for it
 $pr = $scan_event->reaction->stringify;
 is( $pr, '445.12@ecd35.00', "ScanEvent->precursors (2): setting the activation method)" );
-is( $scan_event->reaction->precursor, 445.121063232422, "ScanEvent->reaction, Reaction->precursor" );
-is( $scan_event->reaction(0)->precursor, 445.121063232422, "ScanEvent->reaction(0), Reaction->precursor" );
+ok( num_equal( $scan_event->reaction->precursor, 445.121063232422), "ScanEvent->reaction, Reaction->precursor" );
+ok( num_equal($scan_event->reaction(0)->precursor, 445.121063232422), "ScanEvent->reaction(0), Reaction->precursor" );
 is( $scan_event->reaction->energy, 35, "ScanEvent->reaction, Reaction->energy" );
 for my $i (3 .. $nrecords) { # skip to the last ScanEvent
   $scan_event = Finnigan::ScanEvent->decode( \*INPUT, $header->version );
@@ -364,60 +374,60 @@ is( tell INPUT, 24950, "seek to scan data address" );
 
 # PacketHeader
 my $ph = Finnigan::PacketHeader->decode( \*INPUT );
-is ($ph->{data}->{"unknown long[1]"}->{value}, 1, "PacketHeader->{unknown long[1]}");
-is ($ph->profile_size, 5624, "PacketHeader->profile_size");
-is ($ph->peak_list_size, 1161, "PacketHeader->peak_list_size");
-is ($ph->layout, 128, "PacketHeader->layout");
-is ($ph->descriptor_list_size, 580, "PacketHeader->descriptor_list_size");
-is ($ph->size_of_unknown_stream, 581, "PacketHeader->size_of_unkonwn_stream");
-is ($ph->size_of_triplet_stream, 27, "PacketHeader->size_of_triplet_stream");
-is ($ph->{data}->{"unknown long[2]"}->{value}, 0, "PacketHeader->{unknown long[2]}");
-is ($ph->low_mz, 400.0, "PacketHeader->low_mz");
-is ($ph->high_mz, 2000.0, "PacketHeader->high_mz");
+is( $ph->{data}->{"unknown long[1]"}->{value}, 1, "PacketHeader->{unknown long[1]}" );
+is( $ph->profile_size, 5624, "PacketHeader->profile_size" );
+is( $ph->peak_list_size, 1161, "PacketHeader->peak_list_size" );
+is( $ph->layout, 128, "PacketHeader->layout" );
+is( $ph->descriptor_list_size, 580, "PacketHeader->descriptor_list_size" );
+is( $ph->size_of_unknown_stream, 581, "PacketHeader->size_of_unkonwn_stream" );
+is( $ph->size_of_triplet_stream, 27, "PacketHeader->size_of_triplet_stream" );
+is( $ph->{data}->{"unknown long[2]"}->{value}, 0, "PacketHeader->{unknown long[2]}" );
+ok( num_equal($ph->low_mz, 400.0), "PacketHeader->low_mz" );
+ok( num_equal($ph->high_mz, 2000.0), "PacketHeader->high_mz" );
 
 # Profile
 my $profile = Finnigan::Profile->decode( \*INPUT, $ph->layout );
-is ($profile->nchunks, 580, "Profile->nchunks");
-is ($profile->nbins, 293046, "Profile->nbins");
-is ($profile->first_value, 344.543619791667, "Profile->first_value");
-is ($profile->step, -0.000651041666666667, "Profile->first_value");
+is( $profile->nchunks, 580, "Profile->nchunks");
+is( $profile->nbins, 293046, "Profile->nbins");
+ok( num_equal($profile->first_value, 344.543619791667), "Profile->first_value");
+ok( num_equal($profile->step, -0.000651041666666667), "Profile->first_value");
 # ProfileChunk
-is (ref $profile->chunk->[0], "Finnigan::ProfileChunk", "ref Profile->chunk->[0]" );
-is ($profile->chunk->[0]->nbins, 5, "ProfileChunk->nbins" );
-is ($profile->chunk->[0]->first_bin, 139, "ProfileChunk->first_bin" );
-is ($profile->chunk->[0]->fudge, 0.000183502677828074, "ProfileChunk->fudge" );
-is ($profile->chunk->[0]->signal->[4], 627.37109375, "ProfileChunk->signal" );
+is( ref $profile->chunk->[0], "Finnigan::ProfileChunk", "ref Profile->chunk->[0]" );
+is( $profile->chunk->[0]->nbins, 5, "ProfileChunk->nbins" );
+is( $profile->chunk->[0]->first_bin, 139, "ProfileChunk->first_bin" );
+ok( num_equal($profile->chunk->[0]->fudge, 0.000183502677828074), "ProfileChunk->fudge" );
+ok( num_equal($profile->chunk->[0]->signal->[4], 627.37109375), "ProfileChunk->signal" );
 # Profile again
 $profile->set_converter( $converter ); # from ScanEvent 1 above
 my $bins = $profile->bins;
-is ($bins->[0]->[0], 400.209152455266, "Profile->bins->[0] (Mz)");
-is ($bins->[0]->[1], 447.530578613281, "Profile->bins->[0] (signal)");
-is ($bins->[-1]->[0], 1993.75819323833, "Profile->bins->[-1] (Mz)");
-is ($bins->[-1]->[1], 590.111206054688, "Profile->bins->[-1] (signal)");
+ok( num_equal($bins->[0]->[0], 400.209152455266), "Profile->bins->[0] (Mz)" );
+ok( num_equal($bins->[0]->[1], 447.530578613281), "Profile->bins->[0] (signal)" );
+ok( num_equal($bins->[-1]->[0], 1993.75819323833), "Profile->bins->[-1] (Mz)" );
+ok( num_equal($bins->[-1]->[1], 590.111206054688), "Profile->bins->[-1] (signal)" );
 # Peaks
 my $c = Finnigan::Peaks->decode(\*INPUT);
-is ($c->count, 580, "Peaks->count" );
-is ($c->peak->[0]->mz, 400.212463378906, "first Peak->mz" );
-is ($c->peak->[0]->abundance, 1629.47326660156, "first Peak->abundance" );
-is ($c->peak->[-1]->mz, 1993.72521972656, "last Peak->mz" );
-is ($c->peak->[-1]->abundance, 1015.48522949219, "last Peak->abundance" );
+is( $c->count, 580, "Peaks->count" );
+ok( num_equal($c->peak->[0]->mz, 400.212463378906), "first Peak->mz" );
+ok( num_equal($c->peak->[0]->abundance, 1629.47326660156), "first Peak->abundance" );
+ok( num_equal($c->peak->[-1]->mz, 1993.72521972656), "last Peak->mz" );
+ok( num_equal($c->peak->[-1]->abundance, 1015.48522949219), "last Peak->abundance" );
 
 # Go back to the first scan and re-read with the compound decoder
 seek INPUT, $data_addr, 0;
 is( tell INPUT, 24950, "seek to scan data address (2)" );
 
 my $scan = Finnigan::Scan->decode( \*INPUT );
-is ( $scan->header->profile_size, 5624, "Scan->header->profile_size");
+is( $scan->header->profile_size, 5624, "Scan->header->profile_size" );
 $profile = $scan->profile;
 $profile->set_converter( $converter ); # from ScanEvent 1 above
 $bins = $profile->bins;
-is ($bins->[0]->[0], 400.209152455266, "Scan->profile->bins (Mz)");
-is ($bins->[0]->[1], 447.530578613281, "Scan->profile->bins (signal)");
+ok( num_equal($bins->[0]->[0], 400.209152455266), "Scan->profile->bins (Mz)" );
+ok( num_equal($bins->[0]->[1], 447.530578613281), "Scan->profile->bins (signal)" );
 
 $c = $scan->centroids;
 is ($c->count, 580, "Scan->centroids->count");
-is ($c->list->[0]->[0], 400.212463378906, "Scan->centroids->list (Mz)");
-is ($c->list->[0]->[1], 1629.47326660156, "Scan->centroids->list (abundance)");
+ok( num_equal($c->list->[0]->[0], 400.212463378906), "Scan->centroids->list (Mz)");
+ok( num_equal($c->list->[0]->[1], 1629.47326660156), "Scan->centroids->list (abundance)");
 
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
