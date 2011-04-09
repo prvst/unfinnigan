@@ -1,7 +1,8 @@
 package Finnigan::ScanParameters;
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
+our $VERSION = 0.02;
 
 use Finnigan;
 our @ISA = ('Finnigan::GenericRecord');

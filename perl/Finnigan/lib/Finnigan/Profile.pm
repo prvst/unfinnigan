@@ -2,8 +2,9 @@ package Finnigan::Profile;
 
 use strict;
 use warnings FATAL => qw( all );
-use Carp;
+our $VERSION = 0.02;
 
+use Carp;
 use Finnigan;
 use base 'Finnigan::Decoder';
 

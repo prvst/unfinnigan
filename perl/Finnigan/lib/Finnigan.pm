@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Module::Find qw/findsubmod/;
 
-our $VERSION = '0.02';
+our $VERSION = '0.0201';
 
 $Finnigan::activationMethod = 'cid';
 
@@ -29,18 +29,21 @@ Finnigan - Thermo/Finnigan mass spec data decoder
 
   use Finnigan;
 
-  my $struct = Finnigan::Object->decode(\*STREAM);
+  my $struct = Finnigan::Object->decode(\*STREAM, $arg);
   $struct->dump;
 
-where 'Object' is a symbol for any of the specific decoder objects,
-such as FileHeader, for example, and STREAM is an open filehandle
-positioned at the start of the structure to be decoded.
+where 'Object' is a symbol for any of the specific decoder objects
+listed below, and STREAM is an open filehandle positioned at the start
+of the structure to be decoded. Some decoders may require an
+additional argument, such as the file fromat version number.
 
 =head1 DESCRIPTION
 
-Finnigan is a non-functional package whose only purpose is to pull in all other
+C<Finnigan> is a non-functional package whose only purpose is to pull in all other
 packages in the suite into its namespace. It does no work; all work is
 done in the sub-modules.
+
+Each C<Finnigan::*> object has a constructor method named C<decode()>, whose first argument
 
 =head2 METHODS
 

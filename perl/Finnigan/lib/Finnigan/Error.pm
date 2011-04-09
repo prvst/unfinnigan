@@ -1,7 +1,8 @@
 package Finnigan::Error;
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
+our $VERSION = 0.02;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
