@@ -1,5 +1,10 @@
+use warnings FATAL => qw( all );
+our $VERSION = 0.02;
+
 # ----------------------------------------------------------------------------------------
 package Finnigan::Scan::Profile;
+
+my $MAX_DIST = 0.025; # kHz
 
 sub new {
   my ($class, $buf, $layout) = @_;
@@ -115,22 +120,21 @@ sub find_peak_intensity {
   # it is not stored as a separate item anywhere in the data file.
   my ($self, $query) = @_;
   my $raw_query = &{$self->{"inverse converter"}}($query);
-  my $max_dist = 0.025; # kHz
 
   # find the closest chunk
   my ($nearest_chunk, $dist) = $self->find_chunk($raw_query);
-  if ($dist > $max_dist) {
-    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${max_dist} kHz of the target frequency $raw_query (M/z $query)";
+  if (not defined $dist or $dist > $MAX_DIST) { # undefind $dist means we're outside the full range of peaks in the scan
+    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${MAX_DIST} kHz of the target frequency $raw_query (M/z $query)";
     return 0;
   }
 
   my @chunk_ix = ($nearest_chunk);
   $i = $nearest_chunk;
-  while ( $i < $self->{"peak count"} - 1 and $self->chunk_dist($i, $i++) <= $max_dist ) { # kHz
+  while ( $i < $self->{"peak count"} - 1 and $self->chunk_dist($i, $i++) <= $MAX_DIST ) { # kHz
     push @chunk_ix, $i;
   }
   $i = $nearest_chunk;
-  while ( $i > 0 and $self->chunk_dist($i, $i--) <= $max_dist ) { # kHz
+  while ( $i > 0 and $self->chunk_dist($i, $i--) <= $MAX_DIST ) { # kHz
     push @chunk_ix, $i;
   }
 
@@ -183,11 +187,11 @@ sub find_chunk {
   my $dist;
 
   ( $upper, $lower ) = ( $first_value, $first_value + $step * $self->{nbins} ) ;
-  if ( $value < $lower or $value > $upper ) {
-    return undef;
+  if ( $value < $lower - $MAX_DIST or $value > $upper + $MAX_DIST) {
+    return (undef, undef);
   }
   else {
-    ( $low_ix, $high_ix ) = ( 0, $self->{"peak count"});
+    ( $low_ix, $high_ix ) = ( 0, $self->{"peak count"} - 1 );
     while ( $low_ix < $high_ix ) {
       die "broken find_chunk algorithm" unless $safety_count--;
       $cur = int ( ( $low_ix + $high_ix ) / 2 );
@@ -224,15 +228,14 @@ sub find_chunk {
     my $dist = (sort {$a <=> $b} (abs($value - $lower), abs($value - $upper)))[0];
 
     my ($closest_chunk, $min_dist) = ($low_ix, $dist);
-    if ( $dist > $last_match[1] ) {
+    if ( $dist > $last_match->[1] ) {
       ($closest_chunk, $min_dist) = @$last_match;
     }
     # say STDERR "      no direct hit; closest chunk is $closest_chunk; distance between $value and [$lower, $upper] is $min_dist";
     return ($closest_chunk, $min_dist);
   }
-  else {
-    die "unexpected condition";
-  }
+
+  die "unexpected condition";
 }
 
 #----------------------------------------------------------------------------------------
@@ -509,8 +512,8 @@ by the set_converter method.
 
 Get the nearest peak in the profile for a given query value. The
 search will fail if nothing is found within 0.025 kHz of the target
-value (the parameter set internally as $max_dist). This method
-supports the search for precursor intensity in uf-mzxml.  See Also
+value (the parameter set internally as $MAX_DIST). This method
+supports the search for precursor intensity in uf-mzxml.
 
 =back
 
