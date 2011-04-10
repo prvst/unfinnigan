@@ -13,3 +13,9 @@ Revision history for Perl extension Finnigan.
           for reading scan data are now represented.
         - complete documentation of all modules
 
+0.0201 Sun 10 Apr 2011 01:05:26 BST
+	- bug fixes in Finnigan::Scan::Profile
+	- removed Data::Format::WindowsFileTime dependency
+	- added $VERSION to all submodules to make PAUSE happy
+	- more robust numeric tests in Finnigan.t
+	- better POD in Finnigan.pm
