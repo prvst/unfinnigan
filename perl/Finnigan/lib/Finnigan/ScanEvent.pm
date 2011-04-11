@@ -332,8 +332,12 @@ Make a short text representation of the object
 =head1 SEE ALSO
 
 Finnigan::ScanEventPreamble
+
 Finnigan::FractionCollector
+
 Finnigan::Reaction
+
+L<uf-trailer>
 
 =head1 AUTHOR
 

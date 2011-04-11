@@ -688,6 +688,9 @@ Makes a short text representation of the set of flags (known as
 
 Finnigan::ScanEvent
 
+<uf-trailer>
+
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

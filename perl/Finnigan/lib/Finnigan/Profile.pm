@@ -359,10 +359,19 @@ Replaced with B<nchunks>
 =head1 SEE ALSO
 
 Finnigan::ProfileChunk
+
 Finnigan::PacketHeader
+
 Finnigan::Scan
+
 Finnigan::Scan::Profile
+
 Finnigan::ScanEvent
+
+Finnigan::ScanIndexEntry
+
+L<uf-scan>
+
 
 =head1 AUTHOR
 

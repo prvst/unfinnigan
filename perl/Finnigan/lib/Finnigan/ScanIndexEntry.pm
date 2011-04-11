@@ -191,7 +191,13 @@ interpretation is uncertain.
 
 =head1 SEE ALSO
 
-Finnigan::RunHeader
+Finnigan::Profile
+
+Finingan::Peaks
+
+Finnigan::Scan
+
+L<uf-index>
 
 =head1 AUTHOR
 

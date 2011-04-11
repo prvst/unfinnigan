@@ -94,9 +94,14 @@ Make a short text representation of the object
 =head1 SEE ALSO
 
 Finnigan::ScanEvent
+
 Finnigan::ScanEventPreamble
+
 Finnigan::FractionCollector
+
 Finnigan::Reaction
+
+L<uf-segments>
 
 =head1 AUTHOR
 

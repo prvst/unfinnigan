@@ -126,6 +126,8 @@ Get the original file name
 
 Finnigan::IjectionData
 
+L<uf-seqrow>
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

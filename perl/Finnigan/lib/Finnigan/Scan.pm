@@ -535,7 +535,7 @@ ScanEvent (structure containing conversion coefficients)
 
 Finnigan::ScanEvent (decoder object)
 
-
+L<uf-scan> (command-line tool)
 
 =head1 NAME
 

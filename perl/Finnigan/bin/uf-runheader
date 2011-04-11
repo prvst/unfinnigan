@@ -185,20 +185,30 @@ file.
 
 By default, it prints a summary of the object's data on a single line.
 
-=head2 EXAMPLES
+=head1 SEE ALSO
 
-uf-runheader sample.raw
+Finnigan::Runheader
 
-  (prints a single line listing a few important numbres in RunHeader)
+Finnigan::SampleInfo
 
-uf-runheader -d sample.raw
+=head1 EXAMPLES
 
-  (dumps the entire RunHeader with absolute addresses)
+=over 4
 
-uf-runheader -sdrwi sample.raw
+=item Print a single line listing a few important numbres in RunHeader:
 
-  (dumps the SampleInfo structure with relative addresses in a wiki
-  table format and shows its size)
+  uf-runheader sample.raw
+
+=item Dump the entire RunHeader with absolute addresses:
+
+  uf-runheader -d sample.raw
+
+=item Dump the SampleInfo structure with relative addresses in a wiki
+table format and show its size:
+
+ uf-runheader -sdrwi sample.raw
+
+=back
 
 =cut
 

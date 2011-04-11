@@ -242,24 +242,28 @@ raw file.
 
 =head1 SEE ALSO
 
-Finnigan::ScanIndexRecord
+Finnigan::ScanIndexEntry
 
 =head1 EXAMPLES
 
-uf-index sample.raw 
+=over 4
 
-  (prints all index entries in the file in a tabular form)
+=item Print all index entries in the file in a tabular form:
 
-uf-index -range 1..5 sample.raw
+  uf-index sample.raw 
 
-  (prints the first five records)
+=item Print the first five records:
 
-uf-index -range 1..5 -format bin sample.raw
+  uf-index -range 1..5 sample.raw
 
-  (shows individual bits in the scan type word)
+=item Show individual bits in the scan type word:
 
-uf-index -rdsn 5 ~/shared/test/sample4.raw 
+  uf-index -range 1..5 -format bin sample.raw
 
-  (dumps the fifth index entry with relative addresses and shows its size)
+=item Dump the fifth index entry with relative addresses and shows its size:
+
+  uf-index -rdsn 5 ~/shared/test/sample4.raw 
+
+=back
 
 =cut

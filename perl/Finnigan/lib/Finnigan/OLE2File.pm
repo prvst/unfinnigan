@@ -336,10 +336,6 @@ Make a short string representation of the object, naming the file type and the n
 
 =back
 
-=head1 SEE ALSO
-
-Finnigan::MethodFile
-
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

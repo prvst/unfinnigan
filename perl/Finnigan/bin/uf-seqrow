@@ -148,19 +148,22 @@ file.
 
 By default, it will dump the SeqRow object in tabular format.
 
-=head1 EXAMPLES
-
-uf-seqrow sample.raw
-
-  (dumps the entire SeqRow structure with absolute addresses)
-
-uf-seqrow -sri sample.raw
-
-  (dumps the InjectionData substructure with relative addresses and
-  prints its size)
-
 =head1 SEE ALSO
 
-[Finnigan::SeqRow]
+Finnigan::SeqRow
+
+=head1 EXAMPLES
+
+=over 4
+
+=item Dump the entire SeqRow structure with absolute addresses:
+
+  uf-seqrow sample.raw
+
+=item Dump the InjectionData substructure with relative addresses and print its size:
+
+  uf-seqrow -sri sample.raw
+
+=back
 
 =cut

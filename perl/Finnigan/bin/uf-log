@@ -244,30 +244,33 @@ Finnigan::InstrumentLogRecord
 
 =head1 EXAMPLES
 
-uf-log sample.raw 
+=over 4
 
-  (lists all log records in the tabular form: <record number, time, label, value>)
+=item List all log records in the tabular form: <record number, time, label, value>
 
-uf-log -n 5 sample.raw
+  uf-log sample.raw 
 
-  (prints the fifth log record)
+=item Print the fifth log record:
 
-uf-log -dswr -n 5 sample.raw
-  (dumps the fifth log record in wiki format with total size and relative addresses)
+  uf-log -n 5 sample.raw
 
-uf-log -header sample.raw
+=item Dump the fifth log record in wiki format with total size and relative addresses:
 
-  (prints the contents of the file header in the tabular form: <type, length, label>)
+  uf-log -dswr -n 5 sample.raw
 
-uf-log -header -dw sample.raw
+=item Print the contents of the file header in the tabular form: <type, length, label>
 
-  (dumps the header in the compact wiki format, with a stringified
-  GenericDataDescriptor list)
+  uf-log -header sample.raw
 
-uf-log -header -daw sample.raw
+=item Dump the header in the compact wiki format, with a stringified GenericDataDescriptor list:
 
-  (dumps the header in the extended wiki format, showing the
-  location of echa GenericDataDescriptor's element)
+  uf-log -header -dw sample.raw
 
+=item Dump the header in the extended wiki format, showing the
+location of echa GenericDataDescriptor's element)
+
+  uf-log -header -daw sample.raw
+
+=back
 
 =cut

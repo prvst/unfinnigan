@@ -126,7 +126,9 @@ Get the high end of the M/z range
 
 =head1 SEE ALSO
 
-Finnigan::RunHeader
+Finnigan::Profile
+
+Finnigan::Peaks
 
 =head1 AUTHOR
 

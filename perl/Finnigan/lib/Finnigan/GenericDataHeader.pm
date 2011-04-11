@@ -109,9 +109,9 @@ InstrumentLogRecord structures.
 
 =head1 SEE ALSO
 
-Finnigan::ScanEventPreamble
-Finnigan::FractionCollector
-Finnigan::Reaction
+Finnigan::GenericDataDescriptor
+
+Finnigan::GenericRecord
 
 =head1 AUTHOR
 

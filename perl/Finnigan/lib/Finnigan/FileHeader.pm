@@ -116,6 +116,7 @@ Create a short string representation of the header data
 
 =head1 SEE ALSO
 
+L<uf-header>
 
 =head1 AUTHOR
 

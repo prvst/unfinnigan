@@ -111,7 +111,7 @@ None
 
 =head1 SEE ALSO
 
-Finnigan::RunHeader
+Finnigan::Profile
 
 =head1 AUTHOR
 

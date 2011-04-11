@@ -66,7 +66,9 @@ The constructor method
 
 =head1 SEE ALSO
 
-Finnigan::ScanEvent
+Finnigan::GenericDataHeader
+
+Finnigan::GenericDataDescriptor
 
 =head1 AUTHOR
 

@@ -228,26 +228,32 @@ file, along with with their directory names.
 
 =head1 SEE ALSO
 
-[MethodFile]
+Finnigan::MethodFile
 
-=head2 EXAMPLES
+Finnigan::OLE2File
 
-uf-meth sample.raw
+=head1 EXAMPLES
 
-(names all instruments described in the file, one name per line)
+=over 4
+
+=item List all instruments described in the method file:
+
+  uf-meth sample.raw
+
+Example output (name translation table):
+
+    Surveyor Sample Pump -> Surveyor Sample Pump
+    Surveyor MS Pump -> Surveyor MS Pump
+    Micro AS -> Micro AS
+    LTQ-FT MS -> LTQ
+
+
+=item List the method file directory:
+
+  uf-meth -l sample.raw
 
 Example output:
-  Surveyor Sample Pump -> Surveyor Sample Pump
-  Surveyor MS Pump -> Surveyor MS Pump
-  Micro AS -> Micro AS
-  LTQ-FT MS -> LTQ
 
-
-uf-meth -l sample.raw
-
-(lists the compound file's directory, one node per line)
-
-Example output:
   LTQ 
     Data (2560 bytes)
     Text (11742 bytes)
@@ -264,20 +270,18 @@ Example output:
     Text (1176 bytes)
     Comments (4 bytes)
 
+=item Print the text description of the analyzer method:
 
-uf-meth sample.raw -p LTQ/Text > method.ltq
-
-(writes the text description of the analyzer method)
-
-
-uf-meth sample.raw -p LTQ/Data > method.ltq.data
-
-(writes the raw binary data of the analyzer method)
+  uf-meth sample.raw -p LTQ/Text > method.ltq
 
 
-uf-meth sample.raw -dp LTQ/Header
+=item Extract the raw binary data of the analyzer method:
 
-(prints the hex dump of LTQ/Header)
+  uf-meth sample.raw -p LTQ/Data > method.ltq.data
+
+=item Prints the hex dump of LTQ/Header:
+
+  uf-meth sample.raw -dp LTQ/Header
 
 Example output:
 
@@ -287,13 +291,14 @@ Example output:
   0x0030 : 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 : ................
   . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-uf-meth -dr sample.raw
+=item Dump the MethodFile structure with relative addresses:
 
-  (dumps the MethodFile structure with relative addresses)
+  uf-meth -dr sample.raw
 
-uf-meth -drH sample.raw
+=item Dump the Finnigan header residing in the MethodFile, with relative addresses:
 
-  (dumps the Finnigan header residing in the MethodFile, with relative addresses)
+  uf-meth -drH sample.raw
 
+=back
 
 =cut

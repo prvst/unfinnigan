@@ -142,6 +142,8 @@ Make a concise string representation of the structure
 
 Finnigan::RawFileInfo
 
+L<uf-rfi>
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

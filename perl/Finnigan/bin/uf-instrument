@@ -115,6 +115,7 @@ It will exit with no output if there are no error messages.
 =head1 SEE ALSO
 
 Finnigan::InstID
-uf-meth
+
+L<uf-meth>
 
 =cut

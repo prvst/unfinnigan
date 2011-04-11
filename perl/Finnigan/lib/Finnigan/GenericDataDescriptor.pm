@@ -175,7 +175,9 @@ Make a short string representation of the descriptor
 
 =head1 SEE ALSO
 
-Finnigan::ScanEvent
+Finnigan::GenericDataHeader
+
+Finnigan::GenericRecord
 
 =head1 AUTHOR
 

@@ -64,6 +64,8 @@ Get the Finnigan::CASInfoPreamble object
 
 Finnigan::CASInfoPreamble
 
+L<uf-casinfo>
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

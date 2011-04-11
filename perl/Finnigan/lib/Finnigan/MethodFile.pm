@@ -125,6 +125,8 @@ Get the Finnigan::OLE2File object
 
 Finnigan::OLE2File
 
+L<uf-meth>
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

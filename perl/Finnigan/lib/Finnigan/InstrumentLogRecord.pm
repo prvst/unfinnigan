@@ -95,14 +95,18 @@ following data:
 
 {value => '8.1953125', type => 'Float32', addr => 803445, seq => 70, size => 4}
 
-
-
-
 =back
+
 
 =head1 SEE ALSO
 
-Finnigan::ScanEvent
+Finnigan::GenericRecord
+
+Finnigan::GenericDataHeader
+
+Finnigan::GenericDataDescriptor
+
+L<uf-log>
 
 =head1 AUTHOR
 

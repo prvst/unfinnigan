@@ -90,6 +90,9 @@ Make a short text representation of the object (found inside Therom's "filter li
 
 Finnigan::ScanEvent
 
+L<uf-trailer>
+
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

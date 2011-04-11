@@ -148,7 +148,7 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-rfi>displays the contents of the RawFileInfo structure, or its
+B<uf-rfi> displays the contents of the RawFileInfo structure, or its
 component RawFileInfoPreamble.
 
 It will return an error message if its input is not a Finnigan raw
@@ -156,25 +156,31 @@ file.
 
 By default, it prints a summary of the object's data on a single line.
 
-=head2 SEE ALSO
+=head1 SEE ALSO
 
 Finnigan::RawFileInfo
+
 Finnigan::RawFileInfoPreamble
+
+
 Finnigan::Runheader
 
-=head2 EXAMPLES
+=head1 EXAMPLES
 
-uf-rfi sample.raw
+=over 4
 
-  (displays a single line with file creation date, followed by the data and  RunHeader addresses)
+=item Display a single line with file creation date, followed by the data and RunHeader addresses:
 
-uf-rfi -d sample.raw
+  uf-rfi sample.raw
 
-  (dumps the entire [RawFileInfo] with absolute addresses)
+=item Dump the entire RawFileInfo structure with absolute addresses:
 
-uf-rfi -dpr sample.raw
+  uf-rfi -d sample.raw
 
-  (dumps the [RawFileInfoPreamble] with relative addresses)
+=item Dump the RawFileInfoPreamble structure with relative addresses:
 
+  uf-rfi -dpr sample.raw
+
+=back
 
 =cut

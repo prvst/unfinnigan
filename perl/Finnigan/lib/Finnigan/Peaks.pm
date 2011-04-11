@@ -61,23 +61,22 @@ Finnigan::Peaks -- a decoder for PeaksList, the list of peak centroids
 
 =head1 DESCRIPTION
 
-ScanIndexEntry is a static (fixed-size) structure containing the
-pointer to a scan, the scan's data size and some auxiliary information
-about the scan.
+This decoder reads the stream of floating-point numbers into a list of
+L<Finnigan::Peak> objects, each containing an (M/z, abundance) pair.
 
-ScanIndexEntry elements seem to form a linked list. Each
-ScanIndexEntry contains the index of the next entry.
+It is a simple but full-featured decoder for the PeakList structure,
+part of ScanDataPacket. The data it generates contain the seek
+addresses, sizes and types of all decoded elements, no matter how
+small. That makes it very handy in the exploration of the file format
+and in writing new code, but it is not very efficient in production
+work.
 
-Although in all observed instances the scans were sequential and their
-indices could be ignored, it may not always be the case.
-
-It is not clear whether scan index numbers start at 0 or at 1. If they
-start at 0, the list link index must point to the next item. If they
-start at 1, then "index" will become "previous" and "next" becomes
-"index" -- the list will be linked from tail to head. Although
-observations are lacking, I am inclined to interpret it as a
-forward-linked list, simply from common sense.
-
+In performance-sensitive applications, the more lightweight
+L<Finnigan::Scan> module should be used, which includes
+L<Finnigan::Scan::CentroidList> and other related submodules. It can be
+used as a drop-in replacement for the full-featured modules, but it
+does not store the seek addresses and object types, greatly reducing
+the overhead.
 
 =head2 METHODS
 
@@ -97,7 +96,7 @@ Get the list of Finnigan::Peak objects
 
 =item peak
 
-Same as B<peaks>.  I find the dereference expressions easier to read
+Same as B<peaks>. I find the dereference expressions easier to read
 when the reference name is singular: C<$scan-E<gt>peak-E<gt>[0]>
 (rather than C<$scan-E<gt>peaks-E<gt>[0]>). However, I prefer the
 plural form when there is no dereferencing: C<$peaks =
@@ -105,7 +104,9 @@ $scan-E<gt>peaks;>q
 
 =item all
 
-Get the reference to an array containing the pairs of abundance? values of each centroided peak. This method avoids the expense of calling the Finnigan::Peak accessors.
+Get the reference to an array containing the pairs of abundance?
+values of each centroided peak. This method avoids the expense of
+calling the Finnigan::Peak accessors.
 
 =item list
 
@@ -116,7 +117,7 @@ Print the entire peak list to STDOUT
 
 =head1 SEE ALSO
 
-Finnigan::RunHeader
+Finnigan::CentroidList
 
 =head1 AUTHOR
 

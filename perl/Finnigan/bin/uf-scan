@@ -259,33 +259,50 @@ Option B<-z> fills the gaps between the profile peaks with zeroes, to create a c
 
 =head1 SEE ALSO
 
-uf-mzxml
+Finnigan::PacketHeader
+
+Finingan::Profile
+
+Finingan::Peaks
+
+Finnigan::Scan
+
+L<uf-mzxml>
 
 =head1 EXAMPLES
 
+=over 4
+
+=item Print all raw profile bins in the 1st scan:
+
  uf-scan -p -n 1 sample.raw
 
-  (prints all raw profile bins in the 1st scan)
+=item Extracts the entire scan profile in the binary form:
 
  uf-scan -ep -n 1 sample.raw
 
-  (extracts the entire scan profile in the binary form)
+=item Same as above, except the bin values will be converted into M/z:
 
  uf-scan -pv -n 1 sample.raw
 
-  (same as above, except the bin values will be converted into M/z)
+=item Same as above, but in addition, all empty bins are wirtten out as well:
 
  uf-scan -pvz -n 1 sample.raw
 
-  (same as above, but in addition, all empty bins are wirtten out as well)
+=item Print the list of centroids in the 1st scan:
 
  uf-scan -l -n 1 sample.raw
 
-  (will print the list of centroids in the 1st scan; note that *uf-scan* does not calculate the peak centroids from the profile; it only lists the existing centroids if they are present)
+Note that B<uf-scan> does not calculate the peak centroids from the
+profile; it only lists the existing centroids if they are present.
+
+=item This command will call R to plot the profile in the given range of M/z values:
 
  uf-scan -plot -n 1 -mz 445.0 .. 445.2 sample.raw | R --vanilla --slave > plot.eps
 
-  This command will call R to plot the profile in the given range of M/z values. If called peaks are present, they will be shown as dots on the graph.
+If called peaks are present, they will be shown as dots on the graph.
+
+=back
 
 =cut
 

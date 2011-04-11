@@ -94,7 +94,9 @@ list method of the containing object, Finnigan::Peaks
 
 =head1 SEE ALSO
 
-Finnigan::ScanEvent
+Finnigan::Peaks
+
+<uf-scan>
 
 =head1 AUTHOR
 

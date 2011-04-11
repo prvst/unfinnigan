@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Module::Find qw/findsubmod/;
 
-our $VERSION = '0.0201';
+our $VERSION = '0.0202';
 
 $Finnigan::activationMethod = 'cid';
 

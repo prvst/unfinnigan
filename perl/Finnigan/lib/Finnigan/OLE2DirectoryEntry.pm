@@ -304,6 +304,7 @@ needs to be called in order to extract the node data.=back
 =head1 SEE ALSO
 
 Finnigan::OLE2File
+
 Finnigan::OLE2Property
 
 =head1 AUTHOR

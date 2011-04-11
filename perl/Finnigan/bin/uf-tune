@@ -219,31 +219,35 @@ dumping the details of its encoding.
 =head1 SEE ALSO
 
 Finnigan::ScanParameters
-uf-params
+
+L<uf-params>
 
 =head1 EXAMPLES
 
-uf-tune sample.raw 
+=over 4
 
-  (lists all tune file entries in the tabular form: <label, value>)
+=item List all tune file entries in the tabular form: <label, value>
 
+  uf-tune sample.raw 
 
-uf-tune -dswr sample.raw
-  (dumps the tune file contents in wiki format with total size and relative addresses)
+=item Dump the tune file contents in wiki format with total size and relative addresses:
 
-uf-tune -header sample.raw
+  uf-tune -dswr sample.raw
 
-  (prints the contents of the tune file header in the tabular form: <type, length, label>)
+=item Print the contents of the tune file header in the tabular form: <type, length, label>
 
-uf-tune -header -dw sample.raw
+  uf-tune -header sample.raw
 
-  (dumps the header in the compact wiki format, with a stringified
-  GenericDataDescriptor list)
+=item Dump the header in the compact wiki format, with a stringified
+  GenericDataDescriptor list:
 
-uf-tune -header -daw sample.raw
+  uf-tune -header -dw sample.raw
 
-  (dumps the header in the extended wiki format, showing the
-  location of echa GenericDataDescriptor's element)
+=item Dump the header in the extended wiki format, showing the
+  location of echa GenericDataDescriptor's element:
 
+  uf-tune -header -daw sample.raw
+
+=back
 
 =cut

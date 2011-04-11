@@ -276,22 +276,29 @@ name stuck. The code in Thermo libraries refers to this stream as
 =head1 SEE ALSO
 
 Finnigan::ScanEvent
+
 Finnigan::ScanEventPreamble
+
 Finnigan::FractionCollector
+
 Finnigan::Reaction
 
 =head1 EXAMPLES
 
-uf-trailer sample.raw 
+=over 4
 
-  (lists all scan events in the file using Thermo's short-hand notation known as "filter line")
+=item List all scan events in the file using Thermo's short-hand notation known as "filter line":
 
-uf-trailer -range 1..5 sample.raw
+  uf-trailer sample.raw 
 
-  (lists the first five records)
+=item List the first five records:
 
-uf-trailer -drn 5 sample.raw
+  uf-trailer -range 1..5 sample.raw
 
-  (dumps the fifth ScanEvent with relative addresses)
+=item Dump the fifth ScanEvent with relative addresses:
+
+  uf-trailer -drn 5 sample.raw
+
+=back
 
 =cut

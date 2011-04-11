@@ -98,6 +98,10 @@ Concatenate all IDs in a single line of text
 
 =back
 
+=head1 SEE ALSO
+
+L<uf-instrument>
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

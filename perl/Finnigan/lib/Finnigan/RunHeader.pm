@@ -182,6 +182,8 @@ Get the unknown double 2
 
 Finnigan::SampleInfo
 
+L<uf-runheader>
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

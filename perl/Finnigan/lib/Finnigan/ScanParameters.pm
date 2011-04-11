@@ -16,7 +16,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::ScanParameters -- a decoder for ScanParameters, a GenericRecord containing various scan meta-data
+Finnigan::ScanParameters -- a decoder for ScanParameters, a GenericRecord containing various scan meta-data.
 
 =head1 SYNOPSIS
 
@@ -26,11 +26,28 @@ Finnigan::ScanParameters -- a decoder for ScanParameters, a GenericRecord contai
 
 =head1 DESCRIPTION
 
-This decoder augments the GenericRecord decoder with the charge_state() method.
+This decoder augments the GenericRecord decoder with the
+B<charge_state> method. Copies of all other elements in this structure
+can be found in other streams, so there is no need in making accessors
+for them. The purpose of this stream is to provide pre-formatted
+human-readable messages describing the scan data; The B<charge_state>
+element seems to be unique in that it either does not exist anywhere
+else, or has not been discovered so far.
+
+The entire set can be printed in the following manner:
+
+  foreach my $key (@{$header->labels}) {
+    say $key  . "\t" . $p->{data}->{$key}->{value};
+  }
+
 
 =head2 METHODS
 
 =over 4
+
+=item decode($stream, $header->field_templates)
+
+The constructor method. It needs a previously decoded header to work.
 
 =item charge_state
 
@@ -41,10 +58,10 @@ Get the charge state of the base ion
 =head1 SEE ALSO
 
 Finnigan::GenericRecord
+
 Finnigan::GenericDataHeader
-Finnigan::ScanEventPreamble
-Finnigan::FractionCollector
-Finnigan::Reaction
+
+L<uf-params>
 
 =head1 AUTHOR
 

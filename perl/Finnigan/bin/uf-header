@@ -162,20 +162,26 @@ parts of its AuditTag) on a single line.
 
 =head1 SEE ALSO
 
-[FileHeader]
+Finnigan::FileHeader
+
+Finnigan::AuditTag
 
 =head1 EXAMPLES
 
- uf-header sample.raw
+=over 4
 
-  (will print the file version and creation date)
+=item Prints the file version and creation date:
 
- uf-header -d sample.raw
+  uf-header sample.raw
 
-  (will dump all header fields)
+=item Dump all header fields:
 
- uf-header -d --atag sample.raw
+  uf-header -d sample.raw
 
-  (will dump the contents of the first [AuditTag])
+=item Dump the contens of the first AuditTag:
+
+  uf-header -d --atag sample.raw
+
+=back
 
 =cut

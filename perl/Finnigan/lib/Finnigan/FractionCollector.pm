@@ -78,6 +78,11 @@ Make a string representation of the object: "[low-high]", as in Thermo's "filter
 
 Finnigan::ScanEvent
 
+Finnigan::ScanEventTemplate
+
+L<uf-trailer>
+
+
 =head1 AUTHOR
 
 Gene Selkov, E<lt>selkovjr@gmail.comE<gt>

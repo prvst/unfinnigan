@@ -155,7 +155,6 @@ Makes a short text summary consisting of container format version and block use
 =head1 SEE ALSO
 
 Finnigan::OLE2File
-Finnigan::MethodFile
 
 Windows Compound Binary File Format Specification
 http://download.microsoft.com/download/0/B/E/0BE8BDD7-E5E8-422A-ABFD-4342ED7AD886/WindowsCompoundBinaryFileFormatSpecification.pdf

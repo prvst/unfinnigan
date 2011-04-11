@@ -148,15 +148,22 @@ file.
 
 By default, it dumps the object in a tabular format.
 
-=head2 EXAMPLES
+=head1 SEE ALSO
 
-uf-casinfo sample.raw
+Finnigan::CASInfo
 
-  (shows the location and size of the preamble and the text following it,
-  with absolute addresses)
+=head1 EXAMPLES
 
-uf-casinfo --preamble --relative sample.raw
+=over 4
 
-  (dumps the contents of the preamble with relative addresses)
+=item Show the location and size of the preamble and the text following it, with absolute addresses:
+
+  uf-casinfo sample.raw
+
+=item Dump the contents of the preamble with relative addresses:
+
+  uf-casinfo --preamble --relative sample.raw
+
+=back
 
 =cut

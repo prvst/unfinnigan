@@ -64,8 +64,11 @@ Get the entry's timestamp (retention time)
 
 Get the text message
 
-
 =back
+
+=head1 SEE ALSO
+
+L<uf-error>
 
 =head1 AUTHOR
 

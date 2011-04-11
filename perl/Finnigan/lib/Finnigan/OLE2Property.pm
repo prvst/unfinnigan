@@ -133,7 +133,6 @@ Get the starting index of the stream
 
 =head1 SEE ALSO
 
-Finnigan::MethodFile
 Finnigan::OLE2File
 
 =head1 AUTHOR

@@ -60,9 +60,9 @@ used to store the sample ID.
 The older versions of RawFileInfoPreamble contained an unpacked
 rpresentation of the file creation date in the UTC time zone.
 
-The modern versions of the preamble also contain the pointer to
-ScanData? and the pointer to RunHeader, which in turn stores pointers
-to all other data streams in the file.
+The modern versions of the preamble also contain the pointer to the
+ScanData stream and the pointer to RunHeader, which in turn stores
+pointers to all other data streams in the file.
 
 There are other data elements in the modern preamble, whose meaning is
 unkonwn.
@@ -89,8 +89,12 @@ Make a concise string representation of the structure
 =head1 SEE ALSO
 
 Finnigan::RawFileInfoPreamble
+
 Finnigan::SeqRow
+
 Finnigan::Runheader
+
+L<uf-rfi>
 
 =head1 AUTHOR
 
