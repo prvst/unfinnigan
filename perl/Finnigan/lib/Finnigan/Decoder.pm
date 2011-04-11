@@ -210,7 +210,8 @@ sub decode {
       $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
         or die "could not read all $bytes_to_read bytes of $name at $current_addr";
-      $value = scalar localtime ((unpack "Q", $rec) / 10000000 - 11644473600); # Windows timestamp is 100s of ns since Jan 1 1601
+      my ($w1, $w2) = unpack "VV", $rec;
+      $value = scalar localtime (($w2 * 4294967296 + $w1) / 10000000 - 11644473600); # Windows timestamp is 100s of ns since Jan 1 1601
     }
     else {
       my $bytes_to_read = length(pack($template,()));
