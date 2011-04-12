@@ -280,21 +280,21 @@ The constructor methad
 Prints the directory listing of the entire OLE2 container to
 STDOUT. A typical output may look like this:
 
-LTQ 
-  Data (7512 bytes)
-  Text (9946 bytes)
-  Header (1396 bytes)
+  LTQ 
+    Data (7512 bytes)
+    Text (9946 bytes)
+    Header (1396 bytes)
 
-EksigentNanoLcCom_DLL 
-  Data (2898 bytes)
-  Text (1924 bytes)
+  EksigentNanoLcCom_DLL 
+    Data (2898 bytes)
+    Text (1924 bytes)
 
-NanoLC-AS1 Autosampler 
-  Data (154 bytes)
+  NanoLC-AS1 Autosampler 
+    Data (154 bytes)
 
-EksigentNanoLc_Channel2 
-  Data (3028 bytes)
-  Text (2398 bytes)
+  EksigentNanoLc_Channel2 
+    Data (3028 bytes)
+    Text (2398 bytes)
 
 This method is not useful as part of the API (directory listings are
 better understood by humans). But once the path to a node is known, it

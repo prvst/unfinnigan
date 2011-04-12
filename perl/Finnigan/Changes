@@ -19,3 +19,9 @@ Revision history for Perl extension Finnigan.
 	- added $VERSION to all submodules to make PAUSE happy
 	- more robust numeric tests in Finnigan.t
 	- better POD in Finnigan.pm
+
+0.0203 Tue 12 Apr 2011 14:21:45 BST
+	- bug fix in Finnigan::Decoder: localtime -> gmtime
+	- replaced the non-portable unpack template Q with VV
+	- POD formatting
+

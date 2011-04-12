@@ -211,7 +211,7 @@ sub decode {
       $nbytes == $bytes_to_read
         or die "could not read all $bytes_to_read bytes of $name at $current_addr";
       my ($w1, $w2) = unpack "VV", $rec;
-      $value = scalar localtime (($w2 * 4294967296 + $w1) / 10000000 - 11644473600); # Windows timestamp is 100s of ns since Jan 1 1601
+      $value = scalar gmtime (($w2 * 4294967296 + $w1) / 10000000 - 11644473600); # Windows timestamp is 100s of ns since Jan 1 1601
     }
     else {
       my $bytes_to_read = length(pack($template,()));

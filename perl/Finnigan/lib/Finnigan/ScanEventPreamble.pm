@@ -589,15 +589,15 @@ is a byte array located at the head of each ScanEvent. It contains
 various boolean flags an enumerated types. For example, it's 41st byte
 contains the analyzer type in all versions:
 
-%ANALYZER = (
-  0 => "ITMS",
-  1 => "TQMS",
-  2 => "SQMS",
-  3 => "TOFMS",
-  4 => "FTMS",
-  5 => "Sector",
-  6 => "undefined"
-);
+  %ANALYZER = (
+    0 => "ITMS",
+    1 => "TQMS",
+    2 => "SQMS",
+    3 => "TOFMS",
+    4 => "FTMS",
+    5 => "Sector",
+    6 => "undefined"
+  );
 
 The ScanEventPreamble decoder provides a number of accessors that
 interpret the enumerated and boolean values.
@@ -605,8 +605,8 @@ interpret the enumerated and boolean values.
 The meaning of some values in ScanEventPreamble remains unknown.
 
 The structure seems to have grown historically: to the 41 bytes in
-v.57, 39 more were added in v.62, and 8 further bytes were added in
-v.63. That does not affect the decoder interface; those values it
+B<v.57>, 39 more were added in B<v.62>, and 8 further bytes were added in
+B<v.63>. That does not affect the decoder interface; those values it
 knows about have not changed, but the version number still has to be
 passed into it so it knows how many bytes to read.
 
@@ -688,7 +688,7 @@ Makes a short text representation of the set of flags (known as
 
 Finnigan::ScanEvent
 
-<uf-trailer>
+L<uf-trailer>
 
 
 =head1 AUTHOR

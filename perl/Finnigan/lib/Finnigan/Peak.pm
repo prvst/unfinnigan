@@ -96,7 +96,7 @@ list method of the containing object, Finnigan::Peaks
 
 Finnigan::Peaks
 
-<uf-scan>
+L<uf-scan>
 
 =head1 AUTHOR
 
