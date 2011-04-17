@@ -1,5 +1,5 @@
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 # ----------------------------------------------------------------------------------------
 package Finnigan::Scan::Profile;
@@ -9,7 +9,7 @@ my $MAX_DIST = 0.025; # kHz
 sub new {
   my ($class, $buf, $layout) = @_;
   my $self = {};
-  @{$self}{'first value', 'step', 'peak count', 'nbins'} = unpack 'ddVV', $buf;
+  @{$self}{'first value', 'step', 'peak count', 'nbins'} = unpack 'd<d<VV', $buf;
   my $offset = 24; # ddVV
 
   my $chunk;
@@ -250,8 +250,9 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $self = {
-        addr => tell $stream
-       };
+	      addr => tell $stream
+	     };
+  my $buf;
   my $nbytes;
   my $bytes_to_read;
   my $current_addr;
@@ -303,7 +304,7 @@ sub new {
   my ($class, $buf, $offset, $layout) = @_;
   my $self = {};
   if ( $layout > 0 ) {
-    @{$self}{'first bin', 'nbins', 'fudge'} = unpack "x${offset} VVf", $buf;
+    @{$self}{'first bin', 'nbins', 'fudge'} = unpack "x${offset} VVf<", $buf;
     $self->{size} = 12;
   }
   else {
@@ -312,7 +313,7 @@ sub new {
   }
   $offset += $self->{size};
 
-  @{$self->{signal}} = unpack "x${offset} f$self->{nbins}", $buf;
+  @{$self->{signal}} = unpack "x${offset} f<$self->{nbins}", $buf;
   $self->{size} += 4 * $self->{nbins};
 
   return bless $self, $class;
@@ -328,7 +329,7 @@ sub new {
 
   my $chunk;
   foreach my $i (0 .. $self->{count} - 1) {
-    push @{$self->{peaks}}, [unpack "x${offset} ff", $buf];
+    push @{$self->{peaks}}, [unpack "x${offset} f<f<", $buf];
     $offset += 8;
   }
 

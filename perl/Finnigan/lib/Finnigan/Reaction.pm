@@ -2,7 +2,7 @@ package Finnigan::Reaction;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -10,11 +10,11 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
 
 my $fields = [
-              "precursor mz"      => ['d', 'Float64'],
-              "unknown double"    => ['d', 'Float64'],
-              "energy"            => ['d', 'Float64'],
-              "unknown long[1]"   => ['V', 'UInt32'],
-              "unknown long[2]"   => ['V', 'UInt32'],
+              "precursor mz"      => ['d<', 'Float64'],
+              "unknown double"    => ['d<', 'Float64'],
+              "energy"            => ['d<', 'Float64'],
+              "unknown long[1]"   => ['V',  'UInt32'],
+              "unknown long[2]"   => ['V',  'UInt32'],
              ];
 
 sub decode {

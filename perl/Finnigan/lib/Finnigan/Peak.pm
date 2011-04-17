@@ -2,7 +2,7 @@ package Finnigan::Peak;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -10,8 +10,8 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
 
 my $fields = [
-              "mz"        => ['f', 'Float32'],
-              "abundance" => ['f', 'Float32'],
+              "mz"        => ['f<', 'Float32'],
+              "abundance" => ['f<', 'Float32'],
              ];
 
 sub decode {

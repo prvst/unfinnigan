@@ -57,7 +57,7 @@ while ( <> ) {
 __END__
 =head1 NAME
 
-mzxml-unpack - convert a Finnigan raw file to mzXML
+mzxml-unpack - decode the base64-encoded scan data in an mzXML file
 
 =head1 SYNOPSIS
 

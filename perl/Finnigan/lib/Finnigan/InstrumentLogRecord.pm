@@ -2,7 +2,7 @@ package Finnigan::InstrumentLogRecord;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -18,7 +18,7 @@ sub decode {
   # GenericDataHeader modifies all keys by adding ordinals to them.
   my $self = Finnigan::Decoder->read($stream,
                                      [
-                                      '0|time' => ['f', 'Float32'],
+                                      '0|time' => ['f<',  'Float32'],
                                       @$field_templates    # ordered templates from GenericDataHeader
                                      ]
                                     );
@@ -42,7 +42,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::InstrumentLogRecord -- the decoder for a single Instrument Log record
+Finnigan::InstrumentLogRecord -- a decoder for a single Instrument Log record
 
 =head1 SYNOPSIS
 
@@ -93,7 +93,13 @@ the Finnigan::GenericRecord decoder using the definitions from
 Finnigan::GenericDataHeader, and it contains, for example, the
 following data:
 
-{value => '8.1953125', type => 'Float32', addr => 803445, seq => 70, size => 4}
+  {
+    value => '8.1953125',
+    type => 'Float32',
+    addr => 803445,
+    seq => 70,
+    size => 4
+  }
 
 =back
 

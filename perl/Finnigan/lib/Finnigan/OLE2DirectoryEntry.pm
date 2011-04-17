@@ -2,7 +2,7 @@ package Finnigan::OLE2DirectoryEntry;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -306,6 +306,8 @@ needs to be called in order to extract the node data.=back
 Finnigan::OLE2File
 
 Finnigan::OLE2Property
+
+L<Windows Compound Binary File Format Specification|http://download.microsoft.com/download/0/B/E/0BE8BDD7-E5E8-422A-ABFD-4342ED7AD886/WindowsCompoundBinaryFileFormatSpecification.pdf>
 
 =head1 AUTHOR
 

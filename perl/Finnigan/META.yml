@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Finnigan
-version:            0.0203
+version:            0.0204
 abstract:           Thermo/Finnigan mass spec data decoder
 author:
     - Gene Selkov <selkovjr@gmail.com>

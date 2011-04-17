@@ -25,3 +25,7 @@ Revision history for Perl extension Finnigan.
 	- replaced the non-portable unpack template Q with VV
 	- POD formatting
 
+0.0204 Sun 17 Apr 2011 11:19:07 BST
+	- forced all platform-dependent unpack templates to
+	  little-endian
+	- minor POD edits

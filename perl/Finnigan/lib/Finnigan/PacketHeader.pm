@@ -2,7 +2,7 @@ package Finnigan::PacketHeader;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -20,8 +20,8 @@ sub decode {
                 "size of unknown stream"  => ['V',      'UInt32'],
                 "size of triplet stream"  => ['V',      'UInt32'],
                 "unknown long[2]"         => ['V',      'UInt32'],
-                "low mz"                  => ['f',      'Float32'],
-                "high mz"                 => ['f',      'Float32'],
+                "low mz"                  => ['f<',      'Float32'],
+                "high mz"                 => ['f<',      'Float32'],
                ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);
@@ -67,7 +67,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::PacketHeader -- decoder for PacketHeader, a substructure of ScanDataPaket
+Finnigan::PacketHeader -- a decoder for PacketHeader, a substructure of ScanDataPaket
 
 =head1 SYNOPSIS
 

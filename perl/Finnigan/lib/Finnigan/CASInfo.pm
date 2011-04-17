@@ -2,7 +2,7 @@ package Finnigan::CASInfo;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -43,8 +43,7 @@ Finnigan::CASInfo -- a decoder for autosampler data
 CASInfo is a structure with uncertain purpose that contains a binary
 preamble with autosampler co-ordinates (CASInfoPreamble), followed by
 a text string. The text string is apparently a comment; in one
-instance where it was non-null, it contained this text: '384 Well
-Plate'.
+instance where it was non-null, it contained this text: C<384 Well Plate>.
 
 =head2 METHODS
 

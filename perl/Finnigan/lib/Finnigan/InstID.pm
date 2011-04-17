@@ -2,7 +2,7 @@ package Finnigan::InstID;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -54,7 +54,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::InstID -- decoder for InstID, a set of instrument identifiers
+Finnigan::InstID -- a decoder for InstID, a set of instrument identifiers
 
 =head1 SYNOPSIS
 

@@ -2,7 +2,7 @@ package Finnigan::RunHeader;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -30,8 +30,8 @@ sub decode {
                           "file name[4]"          => ['U0C520', 'UTF16LE'],
                           "file name[5]"          => ['U0C520', 'UTF16LE'],
                           "file name[6]"          => ['U0C520', 'UTF16LE'],
-                          "unknown double[1]"     => ['d',      'Float64'],
-                          "unknown double[2]"     => ['d',      'Float64'],
+                          "unknown double[1]"     => ['d<',     'Float64'],
+                          "unknown double[2]"     => ['d<',     'Float64'],
                           "file name[7]"          => ['U0C520', 'UTF16LE'],
                           "file name[8]"          => ['U0C520', 'UTF16LE'],
                           "file name[9]"          => ['U0C520', 'UTF16LE'],
@@ -114,7 +114,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::RunHeader -- decoder for RunHeader, the primary file index structure
+Finnigan::RunHeader -- a decoder for RunHeader, the primary file index structure
 
 =head1 SYNOPSIS
 

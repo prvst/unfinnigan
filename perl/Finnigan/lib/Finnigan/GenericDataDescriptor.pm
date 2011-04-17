@@ -2,7 +2,7 @@ package Finnigan::GenericDataDescriptor;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -81,7 +81,7 @@ sub definition {
 
   # c short
   if ( $type == 0x6 ) {
-    return $key => ['s', 'Int16'];
+    return $key => ['s<', 'Int16'];
   }
 
   # c unsigned short
@@ -91,7 +91,7 @@ sub definition {
 
   # c long
   if ( $type == 0x8 ) {
-    return $key => ['l', 'Int32'];
+    return $key => ['l<', 'Int32'];
   }
 
   # c unsigned long
@@ -101,12 +101,12 @@ sub definition {
 
   # c float
   if ( $type == 0xA ) {
-    return $key => ['f', 'Float32'];
+    return $key => ['f<', 'Float32'];
   }
 
   # c double
   if ( $type == 0xB ) {
-    return $key => ['d', 'Float64'];
+    return $key => ['d<', 'Float64'];
   }
 
   # asciiz string

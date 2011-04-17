@@ -2,7 +2,7 @@ package Finnigan::FractionCollector;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -11,8 +11,8 @@ use overload ('""' => 'stringify');
  
 
 my @fields = (
-              "low mz"  => ['d', 'Float64'],
-              "high mz" => ['d', 'Float64'],
+              "low mz"  => ['d<', 'Float64'],
+              "high mz" => ['d<', 'Float64'],
              );
 
 sub decode {
@@ -70,7 +70,7 @@ Get the high M/z
 
 =item stringify
 
-Make a string representation of the object: "[low-high]", as in Thermo's "filter line"
+Make a string representation of the object: C<[low-high]>, as in Thermo's "filter line"
 
 =back
 

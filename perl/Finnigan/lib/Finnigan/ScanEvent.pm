@@ -2,7 +2,7 @@ package Finnigan::ScanEvent;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -36,22 +36,22 @@ sub decode {
   }
   elsif ( $self->nparam == 4 ) {
     my $fields = [
-                  "unknown double"  => ['d',      'Float64'],
-                  "A"               => ['d',      'Float64'],
-                  "B"               => ['d',      'Float64'],
-                  "C"               => ['d',      'Float64'],
+                  "unknown double"  => ['d<', 'Float64'],
+                  "A"               => ['d<', 'Float64'],
+                  "B"               => ['d<', 'Float64'],
+                  "C"               => ['d<', 'Float64'],
                  ];
     $self->SUPER::decode($stream, $fields);
   }
   elsif ( $self->nparam == 7 ) {
     my $fields = [
-                  "unknown double"  => ['d',      'Float64'],
-                  "I"               => ['d',      'Float64'],
-                  "A"               => ['d',      'Float64'],
-                  "B"               => ['d',      'Float64'],
-                  "C"               => ['d',      'Float64'],
-                  "D"               => ['d',      'Float64'],
-                  "E"               => ['d',      'Float64'],
+                  "unknown double"  => ['d<', 'Float64'],
+                  "I"               => ['d<', 'Float64'],
+                  "A"               => ['d<', 'Float64'],
+                  "B"               => ['d<', 'Float64'],
+                  "C"               => ['d<', 'Float64'],
+                  "D"               => ['d<', 'Float64'],
+                  "E"               => ['d<', 'Float64'],
                  ];
     $self->SUPER::decode($stream, $fields);
   }

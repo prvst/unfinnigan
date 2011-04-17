@@ -2,7 +2,7 @@ package Finnigan::Error;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -12,7 +12,7 @@ sub decode {
   my ($class, $stream, $layout) = @_;
 
   my $fields = [
-                "time"     => ['f', 'Float32'],
+                "time"     =>  ['f<',     'Float32'],
                 "message"  =>  ['varstr', 'PascalStringWin32'],
                ];
 
@@ -33,7 +33,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::Error -- the decoder for Error, an error log record
+Finnigan::Error -- a decoder for Error, an error log record
 
 =head1 SYNOPSIS
 

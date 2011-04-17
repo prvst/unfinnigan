@@ -2,7 +2,7 @@ package Finnigan::ProfileChunk;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -13,7 +13,7 @@ my $preamble_0 = [
                   "nbins"         => ['V', 'UInt32'],
                  ];
 
-my $preamble = [@$preamble_0, "fudge" => ['f', 'Float32']];
+my $preamble = [@$preamble_0, "fudge" => ['f<', 'Float32']];
 
 sub decode {
   my $self;
@@ -24,7 +24,7 @@ sub decode {
     $self = Finnigan::Decoder->read($_[1], $preamble_0);
   }
   bless $self, $_[0]; # class
-  return $self->iterate_scalar($_[1], $self->{data}->{"nbins"}->{value}, signal => ['f', 'Float32']);
+  return $self->iterate_scalar($_[1], $self->{data}->{"nbins"}->{value}, signal => ['f<', 'Float32']);
 }
 
 sub nbins {
@@ -48,7 +48,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::ProfileChunk -- A full-featured decoder for a single ProfileChunk structure
+Finnigan::ProfileChunk -- a full-featured decoder for a single ProfileChunk structure
 
 =head1 SYNOPSIS
 

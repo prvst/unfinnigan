@@ -120,7 +120,7 @@ my $first_scan = $sample_info->first_scan;
 is( $first_scan, 1, "SampleInfo->first_scan" );
 my $last_scan  = $sample_info->last_scan;
 is( $last_scan, 33, "SampleInfo->last_scan" );
-is( $sample_info->max_ion_current, 11508917, "SampleInfo->max_ion_current" );
+ok( num_equal($sample_info->max_ion_current, 11508917, 0.1), "SampleInfo->max_ion_current" );
 ok( num_equal($sample_info->low_mz, 100), "SampleInfo->low_mz" );
 ok( num_equal($sample_info->high_mz, 2000), "SampleInfo->high_mz" );
 ok( num_equal($sample_info->start_time, 0.00581833333333333), "SampleInfo->start_time" );
@@ -182,7 +182,7 @@ my $inst_log_record;
 foreach my $i (0 .. $inst_log_length - 1) {
   $inst_log_record = Finnigan::InstrumentLogRecord->decode(\*INPUT, $inst_log_header->ordered_field_templates);
 }
-ok( num_equal($inst_log_record->time, 0.269295006990433), "InstrumentLogRecord->time" );
+ok( num_equal($inst_log_record->time, 0.269295006990433), "InstrumentLogRecord->time (Instrument Log, 17.0, type 11)" );
 is( $inst_log_record->data->{"1|API SOURCE"}->{value}, "", "InstrumentLogRecord->decode (Instrument Log, 17.1, type 0)" );
 is( $inst_log_record->data->{"4|Vaporizer Thermocouple OK:"}->{value}, 0, "InstrumentLogRecord->decode (Instrument Log, 17.4, type 3)" );
 is( $inst_log_record->data->{"17|Ion Gauge Status:"}->{value}, 1, "InstrumentLogRecord->decode (Instrument Log, 17.17, type 4)" );
@@ -209,20 +209,20 @@ is( $nev, 4, "Number of scan event types in the first segment" );
 my $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
 is( join('', $et->preamble->list), "1121111011030000000000004000255255255255000020004222111000000000100000000000000022000000000000002000000000000000200000000000000002140000", "ScanEventTemplate->ScanEventPreamble->list (1)" );
 is( join(' ', $et->preamble->list('decode')), "1 1 undefined undefined positive profile MS1 Full 1 1 False ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 FTMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (1)" );
-is ($et->preamble->corona('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->corona(decode) (1)" );
-is ($et->preamble->detector('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->detector(decode) (1)" );
-is ($et->preamble->polarity('decode'), "positive", "ScanEventTemplate->ScanEventPreamble->polarity(decode) (1)" );
-is ($et->preamble->scan_mode('decode'), "profile", "ScanEventTemplate->ScanEventPreamble->scan_mode(decode) (1)" );
-is ($et->preamble->ms_power('decode'), "MS1", "ScanEventTemplate->ScanEventPreamble->ms_power(decode) (1)" );
-is ($et->preamble->scan_type('decode'), "Full", "ScanEventTemplate->ScanEventPreamble->scan_type(decode) (1)" );
-is ($et->preamble->dependent, 0, "ScanEventTemplate->ScanEventPreamble->dependent (1)" );
-is ($et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)" );
-is ($et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)" );
-is ($et->preamble->analyzer('decode'), "FTMS", "ScanEventTemplate->ScanEventPreamble->analyzer(decode) (1)" );
-is ($et->preamble->stringify, "FTMS + p ESI Full ms", "ScanEventTemplate->ScanEventPreamble->stringify (1)" );
-is ($et->fraction_collector->low, 400, "ScanEventTemplate->FractionCollector->low (1)" );
-is ($et->fraction_collector->high, 2000, "ScanEventTemplate->FractionCollector->high (1)" );
-is ($et->fraction_collector->stringify, "[400.00-2000.00]", "ScanEventTemplate->FractionCollector->stringify (1)" );
+is( $et->preamble->corona('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->corona(decode) (1)" );
+is( $et->preamble->detector('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->detector(decode) (1)" );
+is( $et->preamble->polarity('decode'), "positive", "ScanEventTemplate->ScanEventPreamble->polarity(decode) (1)" );
+is( $et->preamble->scan_mode('decode'), "profile", "ScanEventTemplate->ScanEventPreamble->scan_mode(decode) (1)" );
+is( $et->preamble->ms_power('decode'), "MS1", "ScanEventTemplate->ScanEventPreamble->ms_power(decode) (1)" );
+is( $et->preamble->scan_type('decode'), "Full", "ScanEventTemplate->ScanEventPreamble->scan_type(decode) (1)" );
+is( $et->preamble->dependent, 0, "ScanEventTemplate->ScanEventPreamble->dependent (1)" );
+is( $et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)" );
+is( $et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)" );
+is( $et->preamble->analyzer('decode'), "FTMS", "ScanEventTemplate->ScanEventPreamble->analyzer(decode) (1)" );
+is( $et->preamble->stringify, "FTMS + p ESI Full ms", "ScanEventTemplate->ScanEventPreamble->stringify (1)" );
+ok( num_equal($et->fraction_collector->low, 400), "ScanEventTemplate->FractionCollector->low (1)" );
+ok( num_equal($et->fraction_collector->high, 2000), "ScanEventTemplate->FractionCollector->high (1)" );
+is( $et->fraction_collector->stringify, "[400.00-2000.00]", "ScanEventTemplate->FractionCollector->stringify (1)" );
 # the second scan event template
 $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
 is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (2)" );
@@ -252,9 +252,9 @@ is( $scan_parameters_header->n, 29, "GenericDataHeader->n (ScanParameters stream
 my $tune_file_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 is( $tune_file_header->n, 421, "GenericDataHeader->n (Tune File)" );
 my $tune_file = Finnigan::GenericRecord->decode(\*INPUT, $tune_file_header->ordered_field_templates);
-is( $tune_file->{data}->{"2|Source Type:"}->{value}, "ESI", "GenericRecord->decode (2)" );
-is( $tune_file->{data}->{"3|Capillary Temp (C):"}->{value}, "275", "GenericRecord->decode (3)" );
-is( $tune_file->{data}->{"421|FT Cal. Item 250:"}->{value}, "0", "GenericRecord->decode (421)" );
+is( $tune_file->{data}->{"2|Source Type:"}->{value}, "ESI", "GenericRecord->decode (2), type 13" );
+ok( num_equal($tune_file->{data}->{"3|Capillary Temp (C):"}->{value}, 275), "GenericRecord->decode (3), type 11" );
+ok( num_equal($tune_file->{data}->{"421|FT Cal. Item 250:"}->{value}, 0), "GenericRecord->decode (421), type 11" );
 
 # ScanIndex
 is( tell INPUT, $scan_index_addr, "should have arrived at the start of scan index" );
@@ -350,11 +350,11 @@ is( tell INPUT, $params_addr, "should have arrived at the start of ScanParameter
 
 # Finally reach ScanParameters. Test these, then return to scan data.
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
-is( $p->charge_state, 1, "ScanParameters->charge_state" );
+is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
 for my $i (2 .. $nrecords) { # skip to the end of file
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 }
-is( $p->charge_state, 1, "ScanParameters->charge_state" );
+is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
 is( tell INPUT, 848001, "should have arrived at the null stream near the end of the file" );
 
 # Read the null stream

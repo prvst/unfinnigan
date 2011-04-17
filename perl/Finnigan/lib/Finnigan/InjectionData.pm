@@ -2,7 +2,7 @@ package Finnigan::InjectionData;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -15,11 +15,11 @@ sub decode {
                 "n"               => ['V',       'UInt32'],
                 "unknown_long[2]" => ['V',       'UInt32'],
                 vial              => ['U0C12',   'UTF16LE'],
-                "inj volume"      => ['d',       'Float64'],
-                "weight"          => ['d',       'Float64'],
-                "volume"          => ['d',       'Float64'],
-                "istd amount"     => ['d',       'Float64'],
-                "dilution factor" => ['d',       'Float64'],
+                "inj volume"      => ['d<',      'Float64'],
+                "weight"          => ['d<',      'Float64'],
+                "volume"          => ['d<',      'Float64'],
+                "istd amount"     => ['d<',      'Float64'],
+                "dilution factor" => ['d<',      'Float64'],
                ];
 
   my $self = Finnigan::Decoder->read($stream, $fields);

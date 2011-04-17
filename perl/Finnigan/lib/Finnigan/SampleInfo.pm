@@ -2,7 +2,7 @@ package Finnigan::SampleInfo;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -24,11 +24,11 @@ sub decode {
                 "inst log addr"      => ['V',      'UInt32'],
                 "error log addr"     => ['V',      'UInt32'],
                 "unknown long[5]"    => ['V',      'UInt32'],
-                "max ion current"    => ['d',      'Float64'],
-                "low mz"             => ['d',      'Float64'],
-                "high mz"            => ['d',      'Float64'],
-                "start time"         => ['d',      'Float64'],
-                "end time"           => ['d',      'Float64'],
+                "max ion current"    => ['d<',     'Float64'],
+                "low mz"             => ['d<',     'Float64'],
+                "high mz"            => ['d<',     'Float64'],
+                "start time"         => ['d<',     'Float64'],
+                "end time"           => ['d<',     'Float64'],
                 "unknown area"       => ['C56',    'RawBytes'],
                 "tag[1]"             => ['U0C88',  'UTF16LE'],
                 "tag[2]"             => ['U0C40',  'UTF16LE'],
@@ -93,7 +93,7 @@ __END__
 
 =head1 NAME
 
-Finnigan::SampleInfo -- decoder for SampleInfo, the primary file index structure
+Finnigan::SampleInfo -- a decoder for SampleInfo, the primary file index structure
 
 =head1 SYNOPSIS
 

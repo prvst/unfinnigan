@@ -23,16 +23,6 @@ For more details, go to
 
   http://code.google.com/p/unfinnigan/
 
-PLATFORM
-
-Thermo software runs only on Intel platforms and therefore every
-word in their files uses little-endian encoding. The (un)Finnigan
-modules have also been tested only on Intel platforms.  
-
-The decoder is built around Perl's unpack() function and there is
-a chance that some of the templates may be incorrectly interpreted
-on a big-endian platform. The tests should reveal that -- please
-let me know if anything breaks.
 
 INSTALLATION
 

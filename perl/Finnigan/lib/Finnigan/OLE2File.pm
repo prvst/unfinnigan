@@ -2,7 +2,7 @@ package Finnigan::OLE2File;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -335,6 +335,10 @@ Make a short string representation of the object, naming the file type and the n
 =item stream
 
 =back
+
+=head1 SEE AlSO
+
+L<Windows Compound Binary File Format Specification|http://download.microsoft.com/download/0/B/E/0BE8BDD7-E5E8-422A-ABFD-4342ED7AD886/WindowsCompoundBinaryFileFormatSpecification.pdf>
 
 =head1 AUTHOR
 

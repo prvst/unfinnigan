@@ -3,7 +3,7 @@ package Finnigan::Decoder;
 use 5.010000;
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Encode qw//;
 use Carp qw/confess/;
@@ -454,8 +454,8 @@ to version-sensitive decoders.
 Here is an example of the template list for a simple decoder:
 
   my $fields = [
-    "mz"        => ['f', 'Float32'],
-    "abundance" => ['f', 'Float32'],
+    "mz"        => ['f<', 'Float32'],
+    "abundance" => ['f<', 'Float32'],
   ];
 
 =item decode($stream, $fields, $any_arg)

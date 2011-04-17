@@ -2,17 +2,17 @@ package Finnigan::Profile;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.02;
+our $VERSION = 0.0204;
 
 use Carp;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
 my $preamble = [
-                "first value" => ['d', 'Float64'],
-                "step"        => ['d', 'Float64'],
-                "peak count"  => ['V', 'UInt32'],
-                "nbins"       => ['V', 'UInt32'],
+                "first value" => ['d<', 'Float64'],
+                "step"        => ['d<', 'Float64'],
+                "peak count"  => ['V',  'UInt32'],
+                "nbins"       => ['V',  'UInt32'],
                ];
 
 
