@@ -171,7 +171,8 @@ class Finnigan(Parser):
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield CASInfo(self, "CAS info", "Autosampler data?")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
-            yield MethodFile(self, "method file", "Embedded method file")
+            if VERSION[-1] < 64: # the determinant can be somewhere else, but I don't know yet
+                yield MethodFile(self, "method file", "Embedded method file")
 
             data_addr = self["raw file info/preamble/data addr"].value
 
@@ -184,7 +185,7 @@ class Finnigan(Parser):
             nscans = last_scan_number - first_scan_number + 1
 
             #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 5) + 1):
+            for n in range(1, min(nscans, 15) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
@@ -500,16 +501,36 @@ class RunHeader(FieldSet):
             for index in "789abcd":
                 yield String(self, "file name[%s]" % index, 520, charset="UTF-16-LE", truncate="\0")
 
-            yield UInt32(self, "scan trailer addr", "Absolute seek address of the TrailerScanEvent stream")
-            yield UInt32(self, "scan params addr", "Absolute seek address of the ScanParameters (ScanHeader) stream")
+            if VERSION[-1] < 64:
+                yield UInt32(self, "scan trailer addr", "Absolute seek address of the TrailerScanEvent stream")
+                yield UInt32(self, "scan params addr", "Absolute seek address of the ScanParameters (ScanHeader) stream")
+            else:
+                yield UInt32(self, "former scan trailer addr", "moved to the end of RunHeader (see below)")
+                yield UInt32(self, "former scan params addr", "moved to the end of RunHeader (see below)")
             yield UInt32(self, "unknown length[1]", "I am guessing it is the length of TrailerScanEvent (although it has its own)")
             yield UInt32(self, "unknown length[2]", "I am guessing it is the length of the ScanParameters (ScanHeader) stream")
             yield UInt32(self, "nsegs", "Number of scan segments? -- fairly positive it is")
             yield UInt32(self, "unknown long[1]")
             yield UInt32(self, "unknown long[2]")
-            yield UInt32(self, "own addr", "RunHeader's own address")
-            for index in "34":
-                yield UInt32(self, "unknown long[%s]" % index)
+            if VERSION[-1] < 64:
+                yield UInt32(self, "own addr", "RunHeader's own address")
+                for index in range(3, 4+1):
+                    yield UInt32(self, "unknown long[%s]" % index)
+            else:
+                yield UInt32(self, "former own addr", "moved to the end of RunHeader (see below)")
+                for index in range(3, 4+1):
+                    yield UInt32(self, "unknown long[%s]" % index)
+                yield UInt64(self, "scan index addr", "Absolute seek address of ScanIndex (ScanIndexEntry stream)")
+                yield UInt64(self, "data addr", "Absolute seek address of scan data")
+                yield UInt64(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
+                yield UInt64(self, "error log addr", "Absolute seek address of ErrorLog")
+                yield UInt64(self, "unknown addr[1]")
+                yield UInt64(self, "scan trailer addr", "Absolute seek address of the TrailerScanEvent stream")
+                yield UInt64(self, "scan params addr", "Absolute seek address of the ScanParameters (ScanHeader) stream")
+                yield UInt64(self, "unknown addr[2]")
+                yield UInt64(self, "own addr", "RunHeader's own address")
+                for index in range(5, 28+1):
+                    yield UInt32(self, "unknown long[%s]" % index)
 
 
 class SampleInfo(FieldSet):
@@ -524,10 +545,16 @@ class SampleInfo(FieldSet):
         yield UInt32(self, "inst log length", "The number of instrument status samples logged")
         yield UInt32(self, "unknown long[3]")
         yield UInt32(self, "unknown long[4]")
-        yield UInt32(self, "scan index addr", "Absolute seek address of ScanIndex (ScanIndexEntry stream)")
-        yield UInt32(self, "data addr", "Absolute seek address of scan data")
-        yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
-        yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
+        if VERSION[-1] < 64:
+            yield UInt32(self, "scan index addr", "Absolute seek address of ScanIndex (ScanIndexEntry stream)")
+            yield UInt32(self, "data addr", "Absolute seek address of scan data")
+            yield UInt32(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
+            yield UInt32(self, "error log addr", "Absolute seek address of ErrorLog")
+        else:
+            yield UInt32(self, "former scan index addr", "moved to the end of RunHeader")
+            yield UInt32(self, "former data addr", "moved to the end of RunHeader")
+            yield UInt32(self, "former inst log addr", "moved to the end of RunHeader")
+            yield UInt32(self, "former error log addr", "moved to the end of RunHeader")
         yield UInt32(self, "unknown long[5]")
         yield Float64(self, "max ion current", "The maximum total ion current measured in scans")
         yield Float64(self, "low mz", "Lower end of scan range")
@@ -634,13 +661,25 @@ class RawFileInfoPreamble(FieldSet):
         yield UInt16(self, "minute")
         yield UInt16(self, "second")
         yield UInt16(self, "millisecond")
-        if VERSION[-1] >= 57:
+        if VERSION[-1] >= 57 and VERSION[-1] < 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "data addr", "Absolute address of scan data")
             for index in range(3, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
+        if VERSION[-1] == 64:
+            yield UInt32(self, "unknown long[2]")
+            yield UInt32(self, "unknown long[d]", "former data addr")
+            for index in range(3, 6 + 1):
+                yield UInt32(self, "unknown long[%s]" % index)
+            yield UInt32(self, "unknown long[rh]", "former run header addr")
+            yield RawBytes(self, "padding", 804 - 11 * 4, "padding?")
+            yield UInt32(self, "data addr", "Absolute address of scan data")
+            for index in range(8, 10 + 1):
+                yield UInt32(self, "unknown long[%s]" % index)
+            yield UInt32(self, "run header addr", "Absolute address of RunHeader")
+            yield RawBytes(self, "additional padding", 1012, "padding?")
 
 class MethodFile(FieldSet):
     endian = LITTLE_ENDIAN
@@ -991,7 +1030,7 @@ class TrailerScanEvent(FieldSet):
     def createFields(self):
         yield UInt32(self, "n", "Number of trailer events")
         nrecords = self["n"].value
-        # cannot only show the first few records because they are of
+        # can only show the first few records because they are of
         # variable size and the last record's position will not be
         # known without reading them all
         if 0: # and ABBREVIATE_LISTS and nrecords > 100:
@@ -1012,7 +1051,7 @@ class ScanEvent(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
-        if VERSION[-1] == 63:
+        if VERSION[-1] >= 63:
             yield RawBytes(self, "preamble extension", 8)
         yield UInt32(self, "np", "The number of precursor ions")
         for i in range(1,  self["np"].value + 1):
@@ -1513,7 +1552,10 @@ class ScanIndexEntry(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "offset", "Offset of this scan's data from the start of the scan data stream")
+        if VERSION[-1] < 64:
+            yield UInt32(self, "offset", "Offset of this scan's data from the start of the scan data stream")
+        else:
+            yield UInt32(self, "32-bit offset", "Offset of this scan's data from the start of the scan data stream (unused in the 64-bit version)")
         yield UInt32(self, "index", "This scan's index")
         yield UInt16(self, "scan event", "Scan event number")
         yield UInt16(self, "scan segment", "Scan segment number")
@@ -1526,3 +1568,6 @@ class ScanIndexEntry(FieldSet):
         yield Float64(self, "base mz", "Base Peak M/z")
         yield Float64(self, "low mz")
         yield Float64(self, "high mz")
+        if VERSION[-1] == 64:
+            yield UInt64(self, "offset", "Offset of this scan's data from the start of the scan data stream")
+
