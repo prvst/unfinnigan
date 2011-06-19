@@ -171,13 +171,9 @@ class Finnigan(Parser):
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield CASInfo(self, "CAS info", "Autosampler data?")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
-            if VERSION[-1] < 64: # the determinant can be somewhere else, but I don't know yet
-                yield MethodFile(self, "method file", "Embedded method file")
-
             data_addr = self["raw file info/preamble/data addr"].value
-
-            if data_addr > self.current_size/8:
-                yield RawBytes(self, "parse error", data_addr - self.current_size/8, "If you see this, it is likely that MethodInfo is missing something")
+            if self.absolute_address+self.current_size < data_addr * 8:
+                yield MethodFile(self, "method file", "Embedded method file")
 
             run_header_addr = self["raw file info/preamble/run header addr"].value
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
@@ -190,7 +186,7 @@ class Finnigan(Parser):
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
 
             if run_header_addr > self.current_size/8:
-                yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "This is where the scan data packets are found")
+                yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "Further data packets left unparsed to save memory")
             yield RunHeader(self, "run header", "The directory structure for the entire file")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
@@ -670,10 +666,10 @@ class RawFileInfoPreamble(FieldSet):
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
         if VERSION[-1] == 64:
             yield UInt32(self, "unknown long[2]")
-            yield UInt32(self, "unknown long[d]", "former data addr")
+            yield UInt32(self, "former data addr", "not used in the 64-bit version")
             for index in range(3, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
-            yield UInt32(self, "unknown long[rh]", "former run header addr")
+            yield UInt32(self, "former run header addr", "not used in the 64-bit version")
             yield RawBytes(self, "padding", 804 - 11 * 4, "padding?")
             yield UInt32(self, "data addr", "Absolute address of scan data")
             for index in range(8, 10 + 1):
