@@ -2,7 +2,7 @@ package Finnigan::Peaks;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -54,10 +54,10 @@ Finnigan::Peaks -- a decoder for PeaksList, the list of peak centroids
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
-  say $entry->offset; # returns an offset from the start of scan data stream 
-  say $entry->data_size;
-  $entry->dump;
+  my $peaks = Finnigan::Peaks->decode(\*INPUT);
+  say $peaks->addr;
+  say $peaks->size;
+  $peaks->list;
 
 =head1 DESCRIPTION
 

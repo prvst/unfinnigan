@@ -37,17 +37,18 @@ open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $VERSION = $header->version;
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
-my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
 my $data_addr = $rfi->preamble->data_addr;
 my $run_header_addr = $rfi->preamble->run_header_addr;
 
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
-my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+my $scan_index_addr = $run_header->scan_index_addr;
 my $trailer_addr = $run_header->trailer_addr;
 
 # fast-forward to ScanIndex
@@ -69,14 +70,14 @@ if ( $args->{-a} ) {
   # Read one record and measure its size. We know it's 72, but
   # better be indirect, and there is no time to add a recursive size
   # method to Decoder, to calculate the expected size.
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
   my $record_size = $entry->size;
   $index{0} = $entry->values;
 
   my $nrecords = $stream_size / $record_size;
   die "can't fit the whole number of $record_size\-byte records between $scan_index_addr and $trailer_addr" if $stream_size % $record_size;
   foreach my $n ( 2 .. $nrecords ) {
-    $index{$n - 1} = Finnigan::ScanIndexEntry->decode(\*INPUT)->values;
+    $index{$n - 1} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
   }
 }
 else {
@@ -94,11 +95,11 @@ else {
       unless $n >= $first_scan and $n <= $last_scan;
 
     # get the first entry
-    my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+    my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
     my $size = $entry->size;
     if ($n > 1) {
       seek INPUT, $scan_index_addr + ($n - 1)*$size, 0;
-      $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+      $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
     }
 
     $index{$n-1} = $entry->values;
@@ -113,7 +114,7 @@ else {
       seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
     }
     foreach my $i ($from - 1 .. $to - 1) {
-      $index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT)->values;
+      $index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
     }
   }
 }
@@ -142,7 +143,7 @@ my $to = $ix[-1];
 
 foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
-  my $e = Finnigan::ScanEvent->decode(\*INPUT, $header->version);
+  my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION);
   next if $i < $from;
   # say join " ", $e->preamble->list('decode');
   if ( exists $args->{-d} ) {

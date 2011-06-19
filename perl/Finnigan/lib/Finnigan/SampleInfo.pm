@@ -2,8 +2,9 @@ package Finnigan::SampleInfo;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
+use Carp;
 use Finnigan;
 use base 'Finnigan::Decoder';
 
@@ -12,17 +13,17 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-                "unknown long[1]"    => ['V',      'UInt32'],
-                "unknown long[2]"    => ['V',      'UInt32'],
-                "first scan number"  => ['V',      'UInt32'],
-                "last scan number"   => ['V',      'UInt32'],
-                "inst log length"    => ['V',      'UInt32'],
-                "unknown long[3]"    => ['V',      'UInt32'],
-                "unknown long[4]"    => ['V',      'UInt32'],
-                "scan index addr"    => ['V',      'UInt32'],
-                "data addr"          => ['V',      'UInt32'],
-                "inst log addr"      => ['V',      'UInt32'],
-                "error log addr"     => ['V',      'UInt32'],
+                "unknown long[1]"    => ['V',      'UInt32'],  #  0
+                "unknown long[2]"    => ['V',      'UInt32'],  #  2
+                "first scan number"  => ['V',      'UInt32'],  #  4
+                "last scan number"   => ['V',      'UInt32'],  #  6
+                "inst log length"    => ['V',      'UInt32'],  #  8
+                "unknown long[3]"    => ['V',      'UInt32'],  # 10
+                "unknown long[4]"    => ['V',      'UInt32'],  # 12
+                "scan index addr"    => ['V',      'UInt32'],  # 14 * unused in 64-bit versions
+                "data addr"          => ['V',      'UInt32'],  # 16 *
+                "inst log addr"      => ['V',      'UInt32'],  # 18 *
+                "error log addr"     => ['V',      'UInt32'],  # 20 *
                 "unknown long[5]"    => ['V',      'UInt32'],
                 "max ion current"    => ['d<',     'Float64'],
                 "low mz"             => ['d<',     'Float64'],
@@ -73,19 +74,19 @@ sub end_time {
 }
 
 sub scan_index_addr {
-  shift->{data}->{"scan index addr"}->{value};
+  croak "direct access to SampleInfo->scan_index_addr breaks version compatbility. Use RunHeader->scan_index_addr instead."
 }
 
 sub data_addr {
-  shift->{data}->{"data addr"}->{value};
+  croak "direct access to SampleInfo->data_addr breaks version compatbility. Use RunHeader->data_addr instead."
 }
 
 sub inst_log_addr {
-  shift->{data}->{"inst log addr"}->{value};
+  croak "direct access to SampleInfo->inst_log_addr breaks version compatbility. Use RunHeader->inst_log_addr instead."
 }
 
 sub error_log_addr {
-  shift->{data}->{"error log addr"}->{value};
+  croak "direct access to SampleInfo->error_log_addr breaks version compatbility. Use RunHeader->error_log_addr instead."
 }
 
 1;
@@ -162,20 +163,19 @@ Get the end time (retention time in seconds)
 
 =item scan_index_addr
 
-Get the address of the ScanIndex stream
+Deprecated. See RunHeader->scan_index_addr
 
 =item data_addr
 
-Get the address of the ScanDataPacket stream
+Deprecated. See RunHeader->data_addr
 
 =item inst_log_addr
 
-Get the address of the instrument log records (of GenericRecord type)
+Deprecated. See RunHeader->inst_log_addr
 
 =item error_log_addr
 
-Get the address of the Error stream
-
+Deprecated. See RunHeader->error_log_addr
 
 
 =back

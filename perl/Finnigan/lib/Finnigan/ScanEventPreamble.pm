@@ -2,7 +2,7 @@ package Finnigan::ScanEventPreamble;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -361,6 +361,8 @@ $specific_fields{63} = [
                         "unknown byte[126]" => ['C',    'UInt8'],
                         "unknown byte[127]" => ['C',    'UInt8'],
                        ];
+
+$specific_fields{64} = $specific_fields{63};
 
 # stringify symbols
 my %polarity_symbol = (

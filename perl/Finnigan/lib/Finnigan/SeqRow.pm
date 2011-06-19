@@ -2,7 +2,7 @@ package Finnigan::SeqRow;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -58,6 +58,7 @@ sub decode {
                           "unknown text[s]"  => ['varstr', 'PascalStringWin32'],
                          ];
   $specific_fields{63} = $specific_fields{62};
+  $specific_fields{64} = $specific_fields{62};
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);

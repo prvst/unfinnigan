@@ -2,7 +2,7 @@ package Finnigan::CASInfoPreamble;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';

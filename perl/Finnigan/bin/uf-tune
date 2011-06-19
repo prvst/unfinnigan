@@ -48,7 +48,7 @@ my $run_header = Finnigan::RunHeader->decode(\*INPUT, $file_header->version);
 # tune file header: ErroLog, scan event hierarchy, and ScanParameters header.
 
 # Skip to the error log and read through
-seek INPUT, $run_header->sample_info->error_log_addr, 0;
+seek INPUT, $run_header->error_log_addr, 0;
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
 foreach my $i ( 0 .. $error_log_length - 1) {
   Finnigan::Error->decode(\*INPUT);
@@ -66,6 +66,11 @@ Finnigan::GenericDataHeader->decode(\*INPUT);
 
 # Now at the start of the Tune File header
 my $header = Finnigan::GenericDataHeader->decode(\*INPUT);
+
+if ($header->n == 0) {
+  say STDERR "tune file not present";
+  exit;
+}
 
 if ( $args->{'-header'} ) {  if ( exists $args->{-d} ) {
     if ( exists $args->{-s} ) {

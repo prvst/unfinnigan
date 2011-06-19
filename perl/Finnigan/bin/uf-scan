@@ -34,17 +34,18 @@ open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $VERSION = $header->version;
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
-my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
 my $data_addr = $rfi->preamble->data_addr;
 my $run_header_addr = $rfi->preamble->run_header_addr;
 
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
-my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+my $scan_index_addr = $run_header->scan_index_addr;
 my $trailer_addr = $run_header->trailer_addr;
 
 # fast-forward to ScanIndex
@@ -64,11 +65,11 @@ die "index $n is not in the range of available scan numbers ($first_scan .. $las
   unless $n >= $first_scan and $n <= $last_scan;
 
 # get the first entry
-my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
 my $size = $entry->size;
 if ($n > 1) {
   seek INPUT, $scan_index_addr + ($n - 1)*$size, 0;
-  $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
 }
 
 $scan_index = $entry->values;
@@ -89,7 +90,7 @@ my $trailer_length = unpack 'V', $rec;
 # read all scan events preceding the desired one (they are variable-size structures)
 my $scan_event;
 foreach my $i ( 1 .. $trailer_length) {
-  $scan_event = Finnigan::ScanEvent->decode(\*INPUT, $header->version);
+  $scan_event = Finnigan::ScanEvent->decode(\*INPUT, $VERSION);
   next if $i < $n;
   last;
 }

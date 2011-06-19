@@ -39,7 +39,7 @@ my $run_header_addr = $rfi->preamble->run_header_addr;
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
 my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
-my $error_log_addr = $run_header->sample_info->error_log_addr;
+my $error_log_addr = $run_header->error_log_addr;
 
 # and now skip to the error log
 seek INPUT, $error_log_addr, 0;

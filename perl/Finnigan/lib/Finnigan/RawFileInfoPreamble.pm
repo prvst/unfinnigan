@@ -2,7 +2,7 @@ package Finnigan::RawFileInfoPreamble;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -13,15 +13,15 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @common_fields = (
-                       "unknown long[1]"  => ['V',    'UInt32'],
-                       year               => ['v',    'UInt16'],
-                       month              => ['v',    'UInt16'],
-                       "day of the week"  => ['v',    'UInt16'],
-                       day                => ['v',    'UInt16'],
-                       hour               => ['v',    'UInt16'],
-                       minute             => ['v',    'UInt16'],
-                       second             => ['v',    'UInt16'],
-                       millisecond        => ['v',    'UInt16'],
+                       "method file present"  => ['V',    'UInt32'],
+                       year                   => ['v',    'UInt16'],
+                       month                  => ['v',    'UInt16'],
+                       "day of the week"      => ['v',    'UInt16'],
+                       day                    => ['v',    'UInt16'],
+                       hour                   => ['v',    'UInt16'],
+                       minute                 => ['v',    'UInt16'],
+                       second                 => ['v',    'UInt16'],
+                       millisecond            => ['v',    'UInt16'],
                       );
 
   my %specific_fields;
@@ -34,11 +34,28 @@ sub decode {
                           "unknown_long[5]"   => ['V',    'UInt32'],
                           "unknown_long[6]"   => ['V',    'UInt32'],
                           "run header addr"   => ['V',    'UInt32'],
-                          unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (the structure seems to be fixed-size)
+                          unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (804 is the fixed size of RawFileInfoPreamble prior to v.64)
                          ];
 
   $specific_fields{62} = $specific_fields{57};
   $specific_fields{63} = $specific_fields{57};
+
+  $specific_fields{64} = [
+                          "unknown_long[2]"                => ['V',     'UInt32'],
+                          "32-bit data addr (unused)"      => ['V',     'UInt32'],
+                          "unknown_long[3]"                => ['V',     'UInt32'],
+                          "unknown_long[4]"                => ['V',     'UInt32'],
+                          "unknown_long[5]"                => ['V',     'UInt32'],
+                          "unknown_long[6]"                => ['V',     'UInt32'],
+                          "32-b run header addr (unused)"  => ['V',     'UInt32'],
+                          "unknown_area[1]"                => ['C760',  'RawBytes'],
+                          "data addr"                      => ['Q<',    'UInt64'],
+                          "unknown_long[7]"                => ['V',     'UInt32'],
+                          "unknown_long[8]"                => ['V',     'UInt32'],
+                          "run header addr"                => ['Q<',    'UInt64'],
+                          "unknown_area[2]"                => ['C1008', 'RawBytes'],
+                         ];
+
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);

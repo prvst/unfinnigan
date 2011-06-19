@@ -648,7 +648,7 @@ class RawFileInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]")
+        yield UInt32(self, "method file present", "This is still a theory in testing")
         yield UInt16(self, "year")
         yield UInt16(self, "month")
         yield UInt16(self, "day of the week")
@@ -663,19 +663,19 @@ class RawFileInfoPreamble(FieldSet):
             for index in range(3, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
-            yield RawBytes(self, "padding", 804 - 12 * 4, "padding?")
+            yield RawBytes(self, "padding", 804 - 12 * 4, "padding?") # 804 is the fixed size of RawFileInfoPreamble prior to v.64
         if VERSION[-1] == 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "former data addr", "not used in the 64-bit version")
             for index in range(3, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "former run header addr", "not used in the 64-bit version")
-            yield RawBytes(self, "padding", 804 - 11 * 4, "padding?")
-            yield UInt32(self, "data addr", "Absolute address of scan data")
-            for index in range(8, 10 + 1):
+            yield RawBytes(self, "unknown area[1]", 804 - 11 * 4, "padding?")
+            yield UInt64(self, "data addr", "Absolute address of scan data")
+            for index in range(7, 8 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
-            yield UInt32(self, "run header addr", "Absolute address of RunHeader")
-            yield RawBytes(self, "additional padding", 1012, "padding?")
+            yield UInt64(self, "run header addr", "Absolute address of RunHeader")
+            yield RawBytes(self, "unknown area[2]", 1008, "padding?")
 
 class MethodFile(FieldSet):
     endian = LITTLE_ENDIAN

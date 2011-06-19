@@ -2,7 +2,7 @@ package Finnigan::RunHeader;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -50,11 +50,76 @@ sub decode {
                           "unknown long[3]"       => ['V',      'UInt32'],
                           "unknown long[4]"       => ['V',      'UInt32'],
                          ];
+
   $specific_fields{62} = $specific_fields{57};
   $specific_fields{63} = $specific_fields{57};
 
+  $specific_fields{64} = [
+                          "file name[1]"          => ['U0C520', 'UTF16LE'],
+                          "file name[2]"          => ['U0C520', 'UTF16LE'],
+                          "file name[3]"          => ['U0C520', 'UTF16LE'],
+                          "file name[4]"          => ['U0C520', 'UTF16LE'],
+                          "file name[5]"          => ['U0C520', 'UTF16LE'],
+                          "file name[6]"          => ['U0C520', 'UTF16LE'],
+                          "unknown double[1]"     => ['d<',     'Float64'],
+                          "unknown double[2]"     => ['d<',     'Float64'],
+                          "file name[7]"          => ['U0C520', 'UTF16LE'],
+                          "file name[8]"          => ['U0C520', 'UTF16LE'],
+                          "file name[9]"          => ['U0C520', 'UTF16LE'],
+                          "file name[a]"          => ['U0C520', 'UTF16LE'],
+                          "file name[b]"          => ['U0C520', 'UTF16LE'],
+                          "file name[c]"          => ['U0C520', 'UTF16LE'],
+                          "file name[d]"          => ['U0C520', 'UTF16LE'],
+                          "32-bit scan trailer addr (defunct)"     => ['V',      'UInt32'],
+                          "32-bit scan params addr (defunct)"      => ['V',      'UInt32'],
+                          "unknown length[1]"     => ['V',      'UInt32'],
+                          "unknown length[2]"     => ['V',      'UInt32'],
+                          "nsegs"                 => ['V',      'UInt32'],
+                          "unknown long[1]"       => ['V',      'UInt32'],
+                          "unknown long[2]"       => ['V',      'UInt32'],
+                          "32-bit own addr (defunct)"              => ['V',      'UInt32'],
+                          "unknown long[3]"       => ['V',      'UInt32'],
+                          "unknown long[4]"       => ['V',      'UInt32'],
+
+			  "scan index addr"       => ['Q<',     'Uint64'],
+			  "data addr"             => ['Q<',     'Uint64'],
+			  "inst log addr"         => ['Q<',     'Uint64'],
+			  "error log addr"        => ['Q<',     'Uint64'],
+			  "unknown addr[1]"       => ['Q<',     'Uint64'],
+			  "scan trailer addr"     => ['Q<',     'Uint64'],
+			  "scan params addr"      => ['Q<',     'Uint64'],
+			  "unknown addr[2]"       => ['Q<',     'Uint64'],
+			  "own addr"              => ['Q<',     'Uint64'],
+
+                          "unknown long[5]"       => ['V',      'UInt32'],
+                          "unknown long[6]"       => ['V',      'UInt32'],
+                          "unknown long[7]"       => ['V',      'UInt32'],
+                          "unknown long[8]"       => ['V',      'UInt32'],
+                          "unknown long[9]"       => ['V',      'UInt32'],
+                          "unknown long[10]"      => ['V',      'UInt32'],
+                          "unknown long[11]"      => ['V',      'UInt32'],
+                          "unknown long[12]"      => ['V',      'UInt32'],
+                          "unknown long[13]"      => ['V',      'UInt32'],
+                          "unknown long[14]"      => ['V',      'UInt32'],
+                          "unknown long[15]"      => ['V',      'UInt32'],
+                          "unknown long[16]"      => ['V',      'UInt32'],
+                          "unknown long[17]"      => ['V',      'UInt32'],
+                          "unknown long[18]"      => ['V',      'UInt32'],
+                          "unknown long[19]"      => ['V',      'UInt32'],
+                          "unknown long[20]"      => ['V',      'UInt32'],
+                          "unknown long[21]"      => ['V',      'UInt32'],
+                          "unknown long[22]"      => ['V',      'UInt32'],
+                          "unknown long[23]"      => ['V',      'UInt32'],
+                          "unknown long[24]"      => ['V',      'UInt32'],
+                          "unknown long[25]"      => ['V',      'UInt32'],
+                          "unknown long[26]"      => ['V',      'UInt32'],
+                          "unknown long[27]"      => ['V',      'UInt32'],
+                          "unknown long[28]"      => ['V',      'UInt32'],
+                         ];
+
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
+  $self->{version} = $version;
 
   return bless $self, $class;
 }
@@ -73,6 +138,46 @@ sub trailer_addr {
 
 sub params_addr {
   shift->{data}->{"scan params addr"}->{value};
+}
+
+sub scan_index_addr {
+  my $self = shift;
+  if ($self->{version} >= 64 ) {
+    return $self->{data}->{"scan index addr"}->{value};
+  }
+  else {
+    return $self->sample_info->{data}->{"scan index addr"}->{value};
+  }
+}
+
+sub data_addr {
+  my $self = shift;
+  if ($self->{version} >= 64 ) {
+    return $self->{data}->{"data addr"}->{value};
+  }
+  else {
+    return $self->sample_info->{data}->{"data addr"}->{value};
+  }
+}
+
+sub inst_log_addr {
+  my $self = shift;
+  if ($self->{version} >= 64 ) {
+    return $self->{data}->{"inst log addr"}->{value};
+  }
+  else {
+    return $self->sample_info->{data}->{"inst log addr"}->{value};
+  }
+}
+
+sub error_log_addr {
+  my $self = shift;
+  if ($self->{version} >= 64 ) {
+    return $self->{data}->{"error log addr"}->{value};
+  }
+  else {
+    return $self->sample_info->{data}->{"error log addr"}->{value};
+  }
 }
 
 sub ntrailer {
@@ -122,7 +227,8 @@ Finnigan::RunHeader -- a decoder for RunHeader, the primary file index structure
   my $rh = Finnigan::RunHeader->decode(\*INPUT, $version);
   my $first_scan_number = $rh->first_scan;
   my $last_scan_number = $rh->last_scan;
-  my $scan_index_addr = $rh->sample_info->scan_index_addr;
+  my $max_ion_current = $rh->sample_info->max_ion_current;
+  my $data_addr = $rh->data_addr;
 
 =head1 DESCRIPTION
 
@@ -130,6 +236,10 @@ Decodes RunHeader, the static (fixed-size) structure containing data
 stream lengths and addresses, as well as some unidentified data. Every
 data stream in the file has its address stored in RunHeader or in its
 historical antecedent SampleInfo, which it now includes.
+
+Note: Starting with v.64, the stream addresses are stored as 64-bit
+integers and because SampleInfo has no space to accommodate the wider
+pointers, they have been moved to RunHeader proper.
 
 =head2 METHODS
 
@@ -155,6 +265,22 @@ structures
 =item params_addr
 
 Get the pointer to the stream of ScanPrarameters? structures
+
+=item scan_index_addr
+
+Get the address of the ScanIndex stream
+
+=item data_addr
+
+Get the address of the ScanDataPacket stream
+
+=item inst_log_addr
+
+Get the address of the instrument log records (of GenericRecord type)
+
+=item error_log_addr
+
+Get the address of the Error stream
 
 =item ntrailer
 

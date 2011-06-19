@@ -2,7 +2,7 @@ package Finnigan::ScanIndexEntry;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
@@ -23,8 +23,30 @@ my $fields = [
               "high mz"          => ['d<', 'Float64'],
              ];
 
+my $fields64 = [
+              "32-bit offset (defunct)" => ['V',  'UInt32'],
+              "index"                   => ['V',  'UInt32'],
+              "scan event"              => ['v',  'UInt16'],
+              "scan segment"            => ['v',  'UInt16'],
+              "next"                    => ['V',  'UInt32'],
+              "unknown long"            => ['V',  'UInt32'],
+              "data size"               => ['V',  'UInt32'],
+              "start time"              => ['d<', 'Float64'],
+              "total current"           => ['d<', 'Float64'],
+              "base intensity"          => ['d<', 'Float64'],
+              "base mz"                 => ['d<', 'Float64'],
+              "low mz"                  => ['d<', 'Float64'],
+              "high mz"                 => ['d<', 'Float64'],
+              "offset"                  => ['Q<', 'Uint64'],
+             ];
+
 sub decode {
-  return bless Finnigan::Decoder->read($_[1], $fields), $_[0];
+  if ($_[2] == 64) {
+    return bless Finnigan::Decoder->read($_[1], $fields64), $_[0];
+  }
+  else {
+    return bless Finnigan::Decoder->read($_[1], $fields), $_[0];
+  }
 }
 
 sub offset {
@@ -90,7 +112,7 @@ Finnigan::ScanIndexEntry -- a decoder for ScanIndexEntry, a linked list element 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
   say $entry->offset; # returns an offset from the start of scan data stream 
   say $entry->data_size;
   $entry->dump;
@@ -124,7 +146,7 @@ numbers is the 0-base index (0 .. n -1), and the other is 1-based: (1
 
 =over 4
 
-=item decode($stream)
+=item decode($stream, $version)
 
 The constructor method
 

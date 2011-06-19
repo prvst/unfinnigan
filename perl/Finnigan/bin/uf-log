@@ -44,7 +44,7 @@ my $run_header_addr = $rfi->preamble->run_header_addr;
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
 my $run_header = Finnigan::RunHeader->decode(\*INPUT, $file_header->version);
-my $inst_log_addr = $run_header->sample_info->inst_log_addr;
+my $inst_log_addr = $run_header->inst_log_addr;
 my $inst_log_length = $run_header->sample_info->inst_log_length;
 
 # can't FF; have to read the istrument IDs to reach the InstrumentLog

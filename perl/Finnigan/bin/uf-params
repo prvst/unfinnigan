@@ -52,7 +52,7 @@ my $params_addr = $run_header->params_addr;
 # scan parameters header.
 
 # Skip to the error log and read through
-seek INPUT, $run_header->sample_info->error_log_addr, 0;
+seek INPUT, $run_header->error_log_addr, 0;
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
 foreach my $i ( 0 .. $error_log_length - 1) {
   Finnigan::Error->decode(\*INPUT);

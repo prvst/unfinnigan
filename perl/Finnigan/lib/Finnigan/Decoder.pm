@@ -3,7 +3,7 @@ package Finnigan::Decoder;
 use 5.010000;
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0204;
+our $VERSION = 0.0205;
 
 use Encode qw//;
 use Carp qw/confess/;

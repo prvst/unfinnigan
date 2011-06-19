@@ -37,16 +37,17 @@ open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $VERSION = $header->version;
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
-my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
 my $run_header_addr = $rfi->preamble->run_header_addr;
 
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
-my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+my $scan_index_addr = $run_header->scan_index_addr;
 
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
@@ -58,11 +59,11 @@ if ( exists $args->{-d} ) {
   die "index $n is not in the range of available scan numbers ($first_scan .. $last_scan)"
     unless $n >= $first_scan and $n <= $last_scan;
 
-  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+  my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
   my $size = $entry->size;
   if ($n > 1) {
     seek INPUT, $scan_index_addr + ($n - 1)*$size, 0;
-    $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+    $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
   }
   if ( exists $args->{-s} ) {
     say "size: $size";
@@ -95,14 +96,14 @@ else {
     # Read one record and measure its size. We know it's 72, but
     # better be indirect, and there is no time to add a recursive size
     # method to Decoder, to calculate the expected size.
-    my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+    my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
     print_as_table_row($entry);
     my $record_size = $entry->size;
 
     my $nrecords = $stream_size / $record_size;
     die "can't fit the whole number of $record_size\-byte records between $scan_index_addr and $trailer_addr" if $stream_size % $record_size;
     foreach my $n ( 2 .. $nrecords ) {
-      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
+      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION));
     }
   }
   else {
@@ -123,7 +124,7 @@ else {
     }
     say join "\t", qw/Index Next ScanSegment ScanEvent Offset DataSize Unknown StartTime LowMz HighMz BaseIntensity BaseMz TotalCurrent/;
     foreach my $index ($from - 1 .. $to - 1) {
-      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT));
+      print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION));
     }
   }
 }

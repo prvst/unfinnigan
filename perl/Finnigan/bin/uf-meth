@@ -49,6 +49,11 @@ my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+
+if ( $rfi->preamble->data_addr == tell INPUT ) {
+  say STDERR "Method file not present";
+  exit;
+}
 my $mf = Finnigan::MethodFile->decode(\*INPUT);
 
 if ( exists $args->{-s} ) {

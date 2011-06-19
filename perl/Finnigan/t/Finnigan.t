@@ -113,6 +113,13 @@ is( $params_addr, 838794, "RunHeader->params_addr" );
 is( $run_header->ntrailer, 33, "RunHeader->ntrailer" );
 is( $run_header->nparams, 33, "RunHeader->nparams" );
 is( $run_header->nsegs, 1, "RunHeader->nsegs" );
+my $scan_index_addr = $run_header->scan_index_addr;
+is( $scan_index_addr, 829706, "RunHeader->scan_index_addr" );
+is( $run_header->data_addr, $data_addr, "RunHeader->data_addr" );
+my $inst_log_addr = $run_header->inst_log_addr;
+is( $inst_log_addr, 792726, "RunHeader->inst_log_addr" );
+my $error_log_addr = $run_header->error_log_addr;
+is( $error_log_addr, 803810, "RunHeader->ERROR>_log_addr" );
 my $sample_info = $run_header->sample_info;
 
 # SampleInfo
@@ -125,15 +132,8 @@ ok( num_equal($sample_info->low_mz, 100), "SampleInfo->low_mz" );
 ok( num_equal($sample_info->high_mz, 2000), "SampleInfo->high_mz" );
 ok( num_equal($sample_info->start_time, 0.00581833333333333), "SampleInfo->start_time" );
 ok( num_equal($sample_info->end_time, 0.242753333333333), "SampleInfo->end_time" );
-my $scan_index_addr = $sample_info->scan_index_addr;
-is( $scan_index_addr, 829706, "SampleInfo->scan_index_addr" );
-is( $sample_info->data_addr, $data_addr, "SampleInfo->data_addr" );
-my $inst_log_addr = $sample_info->inst_log_addr;
-is( $inst_log_addr, 792726, "SampleInfo->inst_log_addr" );
 my $inst_log_length = $sample_info->inst_log_length;
 is( $inst_log_length, 17, "SampleInfo->inst_log_length" );
-my $error_log_addr = $sample_info->error_log_addr;
-is( $error_log_addr, 803810, "SampleInfo->error_log_addr" );
 
 # -------------------------------------------------------------------------------
 # With all pointers now on hand, we could go ahead and read the ScanEvent stream 
@@ -258,7 +258,7 @@ ok( num_equal($tune_file->{data}->{"421|FT Cal. Item 250:"}->{value}, 0), "Gener
 
 # ScanIndex
 is( tell INPUT, $scan_index_addr, "should have arrived at the start of scan index" );
-my $index_entry       = Finnigan::ScanIndexEntry->decode( \*INPUT );
+my $index_entry       = Finnigan::ScanIndexEntry->decode( \*INPUT, $header->version );
 # measure scan index record size
 my $record_size = $index_entry->size;
 is( $index_entry->size, 72, "ScanIndexEntry->size" );
@@ -281,7 +281,7 @@ ok( num_equal($index_entry->base_intensity, 796088), "ScanIndexEntry->base_inten
 ok( num_equal($index_entry->low_mz, 400), "ScanIndexEntry->low_mz (0)" );
 ok( num_equal($index_entry->high_mz, 2000), "ScanIndexEntry->high_mz (0)" );
 for my $i (2 .. $nrecords) { # skip to the last index entry
-  $index_entry = Finnigan::ScanIndexEntry->decode( \*INPUT );
+  $index_entry = Finnigan::ScanIndexEntry->decode( \*INPUT, $header->version );
 }
 is( $index_entry->offset, 721572, "ScanIndexEntry->offset (32)" );
 is( $index_entry->index, 32, "ScanIndexEntry->index (32)" );

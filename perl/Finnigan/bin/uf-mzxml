@@ -40,17 +40,18 @@ open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
+my $VERSION = $header->version;
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
-my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
 my $data_addr = $rfi->preamble->data_addr;
 my $run_header_addr = $rfi->preamble->run_header_addr;
 
 # fast-forward to RunHeader
 seek INPUT, $run_header_addr, 0;
-my $run_header = Finnigan::RunHeader->decode(\*INPUT, $header->version);
-my $scan_index_addr = $run_header->sample_info->scan_index_addr;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+my $scan_index_addr = $run_header->scan_index_addr;
 my $trailer_addr = $run_header->trailer_addr;
 my $params_addr = $run_header->params_addr;
 
@@ -70,7 +71,7 @@ my $first_scan = $run_header->sample_info->first_scan;
 my $last_scan = $run_header->sample_info->last_scan;
 
 # get the first entry
-my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT);
+my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
 my $size = $entry->size;
 seek INPUT, $scan_index_addr, 0; # step back for simplicity; we just
                                  # need to know the record size at
@@ -84,7 +85,7 @@ if ( $from > $first_scan) {
   seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
 }
 foreach my $i ($from - 1 .. $to - 1) {
-  $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT)->values;
+  $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
 }
 
 # say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
@@ -106,7 +107,7 @@ my $trailer_length = unpack 'V', $rec;
 my %scan_event;
 foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
-  my $e = Finnigan::ScanEvent->decode(\*INPUT, $header->version)->purge_unused_data;
+  my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION)->purge_unused_data;
   next if $n < $from;
   if ($n == $from and $e->preamble->dependent) {
     say STDERR "Range error: cannot form valid mzXML starting with the dependent scan $n";
@@ -128,7 +129,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
 # log and the scan hierarchy must be read.
 
 # error log
-my $error_log_addr = $run_header->sample_info->error_log_addr;
+my $error_log_addr = $run_header->error_log_addr;
 seek INPUT, $error_log_addr, 0;
 
 # read the number of ErrorLog records
@@ -145,7 +146,7 @@ my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{dat
 foreach my $i ( 0 .. $nsegs - 1) {
   my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
   foreach my $j ( 0 .. $n - 1) {
-    Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
+    Finnigan::ScanEventTemplate->decode(\*INPUT, $VERSION);
   }
 }
 
@@ -423,6 +424,7 @@ sub read_scan {
   my $dependent = $scan_event->{$i}->preamble->dependent;
   if ( not $dependent ) {
     $parent_scan_data = $profile ? $profile : $peaks;
+    $parent_scan_data->{type} = $profile ? 'profile' : 'centroid';
     $parent_scan_data->{"scan number"} = $n;
   }
 
@@ -432,11 +434,10 @@ sub read_scan {
   my $peakCount;
   if ( exists $args->{-c} ) {
     $peakCount = $peaks->count;
+    my $pos = tell $scandata_fh;
     if ( $peakCount ) {
       # say STDERR "freezing peak list $scan_event->{$i} at $i";
-      my $pos = tell $scandata_fh;
       print $scandata_fh freeze $peaks->list;
-      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
     }
     elsif ( $profile ) {
       # if there are no called peaks, treat the profile as a set of peaks
@@ -449,15 +450,16 @@ sub read_scan {
         require Data::Dumper;
         print Dumper($bins);
       }
-      $peakCount = scalar @$bins;      
+      $peakCount = scalar @$bins;
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
       my $pos = tell $scandata_fh;
       print $scandata_fh freeze $bins;
-      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
     }
     else {
-      die "no data in scan $i?";
+      my $scan_no = $i + 1;
+      print $scandata_fh freeze [];
     }
+    $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
   }
   else {
     say STDERR "reading the profile...";
@@ -505,10 +507,14 @@ sub read_scan {
   if ( $ms_power == 2 ) {
     $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
     my $prec_mz = $scan_event{$i}->reaction->precursor;
+    my $intensity = 0;
     $parent_scan_data->{"dependent scan number"} = $n;
+    if ($parent_scan_data->{type} eq 'profile') {
+      $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
+    }
     return (\%scanAttr, {
                          Mz => $prec_mz,
-                         intensity => $parent_scan_data->find_peak_intensity($prec_mz)
+                         intensity => $intensity
                         }
            );
   }
