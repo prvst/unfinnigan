@@ -938,7 +938,7 @@ class ScanEventTemplate(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
-        if VERSION[-1] == 63:
+        if VERSION[-1] >= 63:
             yield RawBytes(self, "preamble extension", 8)
         if VERSION[-1] < 57:
             yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
@@ -1102,7 +1102,7 @@ class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
         for n in range(1, nsegs + 1):
             yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
         yield ScanIndex(self, "scan index", "A set of ScanIndexEntry records")
-        yield TrailerScanEvent(self, "trailer scan event", "Something called TrailerScanEvent")
+        yield TrailerScanEvent(self, "trailer scan event", "Scan metadata: type, scan mode, type, ionization, conversion coefficients, &c.")
         yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
 
