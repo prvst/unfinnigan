@@ -224,8 +224,8 @@ Give the full path to extract a single component from the compound OLE2 containe
 
 =head1 DESCRIPTION
 
-B<uf-meth>displays the contents of the [MethodFile] structure, its
-component [FileHeader]. and the compound file (OLE2) storage embedded
+B<uf-meth> displays the contents of the [MethodFile] structure, its
+component [FileHeader], and the compound file (OLE2) storage embedded
 within.
 
 By default, it lists the instrument methods comtained in the compound

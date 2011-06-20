@@ -294,7 +294,7 @@ Finnigan::Reaction
 
 =item List the first five records:
 
-  uf-trailer -range 1..5 sample.raw
+  uf-trailer -range 1 .. 5 sample.raw
 
 =item Dump the fifth ScanEvent with relative addresses:
 

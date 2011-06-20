@@ -255,11 +255,11 @@ Finnigan::ScanIndexEntry
 
 =item Print the first five records:
 
-  uf-index -range 1..5 sample.raw
+  uf-index -range 1 .. 5 sample.raw
 
 =item Show individual bits in the scan type word:
 
-  uf-index -range 1..5 -format bin sample.raw
+  uf-index -range 1 .. 5 -format bin sample.raw
 
 =item Dump the fifth index entry with relative addresses and shows its size:
 
