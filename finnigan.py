@@ -590,7 +590,7 @@ class SeqRow(FieldSet):
 
             if VERSION[-1] == 57:
                 pass
-            elif VERSION[-1] >= 62:
+            elif VERSION[-1] >= 60:
                 for index in "efghijklmnopqrs":
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
@@ -980,7 +980,7 @@ class ScanEventPreamble(FieldSet):
             yield RawBytes(self, "unknown data[2]", 7)
             yield Enum(UInt8(self, "analyzer"), ANALYZER)
 
-            if VERSION[-1] == 57:
+            if VERSION[-1] <= 60:
                 yield RawBytes(self, "unknown data", 39)
             else:
                 yield RawBytes(self, "unknown data", 79)
