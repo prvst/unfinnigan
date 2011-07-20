@@ -187,6 +187,8 @@ $specific_fields{57} = [
                         "unknown byte[79]"  => ['C',    'UInt8'],
                        ];
 
+$specific_fields{60} = $specific_fields{57};
+
 $specific_fields{62} = [
                         "unknown byte[41]"  => ['C',    'UInt8'],
                         "unknown byte[42]"  => ['C',    'UInt8'],

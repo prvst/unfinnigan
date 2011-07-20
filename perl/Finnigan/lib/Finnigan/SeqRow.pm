@@ -35,8 +35,8 @@ sub decode {
                           "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
                           "unknown long"     => ['V',      'UInt32'],
                          ];
-  
-  $specific_fields{62} = [
+
+  $specific_fields{60} = [
                           "vial"             => ['varstr', 'PascalStringWin32'],
                           "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
                           "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
@@ -57,8 +57,9 @@ sub decode {
                           "unknown text[r]"  => ['varstr', 'PascalStringWin32'],
                           "unknown text[s]"  => ['varstr', 'PascalStringWin32'],
                          ];
-  $specific_fields{63} = $specific_fields{62};
-  $specific_fields{64} = $specific_fields{62};
+  $specific_fields{62} = $specific_fields{60};
+  $specific_fields{63} = $specific_fields{60};
+  $specific_fields{64} = $specific_fields{60};
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);

@@ -37,6 +37,7 @@ sub decode {
                           unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (804 is the fixed size of RawFileInfoPreamble prior to v.64)
                          ];
 
+  $specific_fields{60} = $specific_fields{57};
   $specific_fields{62} = $specific_fields{57};
   $specific_fields{63} = $specific_fields{57};
 

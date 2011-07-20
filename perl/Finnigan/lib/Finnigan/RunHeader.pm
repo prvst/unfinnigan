@@ -51,6 +51,7 @@ sub decode {
                           "unknown long[4]"       => ['V',      'UInt32'],
                          ];
 
+  $specific_fields{60} = $specific_fields{57};
   $specific_fields{62} = $specific_fields{57};
   $specific_fields{63} = $specific_fields{57};
 
