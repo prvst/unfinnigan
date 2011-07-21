@@ -1,0 +1,844 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings FATAL => qw( all );
+use feature qw/state say/;
+use 5.010;
+
+use Getopt::Declare;
+use Finnigan;
+use XML::Generator;
+use Tie::IxHash;
+use Storable qw(freeze thaw);
+use MIME::Base64;
+use File::Temp;
+use Devel::Size qw(size total_size);
+
+my %thermoInstId = (
+                    'Accela PDA' => 'MS:1000623',
+                    'DELTA plusAdvantage' => 'MS:1000153',
+                    'DELTAplusXP' => 'MS:1000154',
+                    'DFS' => 'MS:1000640',
+                    'DSQ II' => 'MS:1000641',
+                    'DSQ' => 'MS:1000634',
+                    'Element 2' => 'MS:1000646',
+                    'Element GD' => 'MS:1000647',
+                    'Element XR' => 'MS:1000645',
+                    'Exactive' => 'MS:1000649',
+                    'GC IsoLink' => 'MS:1000648',
+                    'GC Quantum' => 'MS:1000558',
+                    'ITQ 1100' => 'MS:1000637',
+                    'ITQ 700' => 'MS:1000635',
+                    'ITQ 900' => 'MS:1000636',
+                    'LCQ Advantage' => 'MS:1000167',
+                    'LCQ Classic' => 'MS:1000168',
+                    'LCQ Deca XP Plus' => 'MS:1000169',
+                    'LCQ Deca' => 'MS:1000554',
+                    'LCQ Fleet' => 'MS:1000578',
+                    'LTQ FT Ultra' => 'MS:1000557',
+                    'LTQ FT' => 'MS:1000448',
+                    'LTQ Orbitrap Discovery' => 'MS:1000555',
+                    'LTQ Orbitrap Velos' => 'MS:1001742',
+                    'LTQ Orbitrap XL ETD' => 'MS:1000639',
+                    'LTQ Orbitrap XL' => 'MS:1000556',
+                    'LTQ Orbitrap' => 'MS:1000449',
+                    'LTQ Velos ETD' => 'MS:1000856',
+                    'LTQ Velos' => 'MS:1000855',
+                    'LTQ XL ETD' => 'MS:1000638',
+                    'LTQ XL' => 'MS:1000854',
+                    'LTQ' => 'MS:1000447',
+                    'LXQ' => 'MS:1000450',
+                    'MALDI LTQ Orbitrap' => 'MS:1000643',
+                    'MALDI LTQ XL' => 'MS:1000642',
+                    'PolarisQ' => 'MS:1000185',
+                    'Surveyor MSQ' => 'MS:1000193',
+                    'Surveyor PDA' => 'MS:1000622',
+                    'TEMPUS TOF' => 'MS:1000196',
+                    'TRACE DSQ' => 'MS:1000197',
+                    'TRITON' => 'MS:1000198',
+                    'TSQ Quantum Access' => 'MS:1000644',
+                    'TSQ Quantum Ultra AM' => 'MS:1000743',
+                    'TSQ Quantum Ultra' => 'MS:1000751',
+                    'TSQ Quantum' => 'MS:1000199',
+                    'TSQ Vantage' => 'MS:1001510',
+                    'neptune' => 'MS:1000179',
+);
+
+my %thermoInstDef = (
+                    'Accela PDA' => "Accela PDA",
+                    'DELTA plusAdvantage' => "ThermoFinnigan DELTA plusAdvantage MS",
+                    'DELTAplusXP' => "ThermoFinnigan DELTAplusXP MS",
+                    'DFS' => "Thermo Scientific DFS HR GC-MS",
+                    'DSQ II' => "Thermo Scientific DSQ II GC-MS",
+                    'DSQ' => "ThermoFinnigan DSQ GC-MS",
+                    'Element 2' => "Thermo Scientific Element 2 HR-ICP-MS",
+                    'Element GD' => "Thermo Scientific Element GD Glow Discharge MS",
+                    'Element XR' => "Thermo Scientific Element XR HR-ICP-MS",
+                    'Exactive' => "Thermo Scientific Exactive MS",
+                    'GC IsoLink' => "Thermo Scientific GC IsoLink Isotope Ratio MS",
+                    'GC Quantum' => "GC Quantum",
+                    'ITQ 1100' => "Thermo Scientific ITQ 1100 GC-MS",
+                    'ITQ 700' => "Thermo Scientific ITQ 700 GC-MS",
+                    'ITQ 900' => "Thermo Scientific ITQ 900 GC-MS",
+                    'LCQ Advantage' => "ThermoFinnigan LCQ Advantage MS",
+                    'LCQ Classic' => "ThermoFinnigan LCQ Classic MS",
+                    'LCQ Deca XP Plus' => "ThermoFinnigan LCQ Deca XP Plus MS",
+                    'LCQ Deca' => "ThermoFinnigan LCQ Deca",
+                    'LCQ Fleet' => "LCQ Fleet",
+                    'LTQ FT Ultra' => "LTQ FT Ultra",
+                    'LTQ FT' => "Finnigan LTQ FT MS",
+                    'LTQ Orbitrap Discovery' => "LTQ Orbitrap Discovery",
+                    'LTQ Orbitrap Velos' => "Finnigan LTQ Orbitrap Velos MS",
+                    'LTQ Orbitrap XL ETD' => "Thermo Scientific LTQ Orbitrap XL MS with ETD",
+                    'LTQ Orbitrap XL' => "LTQ Orbitrap XL",
+                    'LTQ Orbitrap' => "Finnigan LTQ Orbitrap MS",
+                    'LTQ Velos ETD' => "Thermo Scientific LTQ Velos MS with ETD",
+                    'LTQ Velos' => "Thermo Scientific LTQ Velos MS",
+                    'LTQ XL ETD' => "Thermo Scientific LTQ XL MS with ETD",
+                    'LTQ XL' => "Thermo Scientific LTQ XL MS",
+                    'LTQ' => "Finnigan LTQ MS",
+                    'LXQ' => "Finnigan LXQ MS",
+                    'MALDI LTQ Orbitrap' => "Thermo Scientific MALDI LTQ Orbitrap MS",
+                    'MALDI LTQ XL' => "Thermo Scientific MALDI LTQ XL MS",
+                    'PolarisQ' => "ThermoFinnigan PolarisQ MS",
+                    'Surveyor MSQ' => "ThermoFinnigan Surveyor MSQ MS",
+                    'Surveyor PDA' => "Surveyor PDA",
+                    'TEMPUS TOF' => "ThermoFinnigan TEMPUS TOF MS",
+                    'TRACE DSQ' => "ThermoFinnigan TRACE DSQ MS",
+                    'TRITON' => "ThermoFinnigan TRITON MS",
+                    'TSQ Quantum Access' => "Thermo Scientific TSQ Quantum Access MS",
+                    'TSQ Quantum Ultra AM' => "Thermo Scientific TSQ Quantum Ultra AM",
+                    'TSQ Quantum Ultra' => "Thermo Scientific TSQ Quantum Ultra",
+                    'TSQ Quantum' => "ThermoFinnigan TSQ Quantum MS",
+                    'TSQ Vantage' => "TSQ Vantage",
+                    'neptune' => "ThermoFinnigan NEPTUNE MS",
+                   );
+
+# test case:
+#  uf-mzml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
+
+my $args = new Getopt::Declare q{
+  [strict]
+  -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
+  -c[entroids]				write peak centroids instead of scan profiles
+  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
+  -q[uiet]				suppress the instrument error messages
+  <file>				input file [required]
+}
+  or exit(-1);
+
+my $file = $args->{"<file>"};
+-e $file or die "file '$file' does not exist";
+-f $file or die "'$file' is not a plain file";
+-s $file or die "'$file' has zero size";
+
+# -----------------------------------------------------------------------------
+say STDERR "This tool is not functional yet. I have just started working on it";
+
+$Finnigan::activationMethod = lc $args->{-a}{"<symbol"} if exists $args->{-a};
+
+open INPUT, "<$file" or die "can't open '$file': $!";
+binmode INPUT;
+
+my $header = Finnigan::FileHeader->decode(\*INPUT);
+my $VERSION = $header->version;
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
+my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
+
+my $method_file = Finnigan::MethodFile->decode(\*INPUT, $VERSION);
+my %translate = @{$method_file->translation_table};
+my $shortInstId = $method_file->translation_table->[1]; # This may be wrong, but generally they seem to write the analyzer as the first item
+
+my $data_addr = $rfi->preamble->data_addr;
+my $run_header_addr = $rfi->preamble->run_header_addr;
+
+# fast-forward to RunHeader
+seek INPUT, $run_header_addr, 0;
+my $run_header = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+my $scan_index_addr = $run_header->scan_index_addr;
+my $trailer_addr = $run_header->trailer_addr;
+my $params_addr = $run_header->params_addr;
+
+# InstID follows immediately
+my $inst = Finnigan::InstID->decode(\*INPUT);
+
+# ---------------------------------------------------------------------
+# fast-forward to ScanIndex
+seek INPUT, $scan_index_addr, 0;
+
+my %scan_index;
+# this code is not fool-proof and is not finished! It assumes that
+# there are exactly as many entries in ScanIndex as would fit
+# between $first_scan and $last_scan. In other words, the internal
+# indices and links are not checked.
+my $first_scan = $run_header->sample_info->first_scan;
+my $last_scan = $run_header->sample_info->last_scan;
+
+# get the first entry
+my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
+my $size = $entry->size;
+seek INPUT, $scan_index_addr, 0; # step back for simplicity; we just
+                                 # need to know the record size at
+                                 # this point, to be able to skip records
+my $from = exists $args->{-r} ? $args->{-r}{"<from>"} : $first_scan;
+my $to = exists $args->{-r} ? $args->{-r}{"<to>"} : $last_scan;
+die "inverted range: [$from .. $to]" if $from > $to;
+
+if ( $from > $first_scan) {
+  # skip these entries
+  seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
+}
+foreach my $i ($from - 1 .. $to - 1) {
+  $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
+}
+
+# say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
+
+# ---------------------------------------------------------------------
+# Now go read the trailer. Because the trailer records are of variable
+# size, they are not directly addressable and all of them must be
+# read, up to the highest number in the range.
+seek INPUT, $trailer_addr, 0;
+
+# read the number of ScanEvent records in the file
+my $rec;
+my $bytes_to_read = 4;
+my $nbytes = read INPUT, $rec, $bytes_to_read;
+$nbytes == $bytes_to_read
+  or die "could not read all $bytes_to_read bytes of the trailer scan events count at $trailer_addr";
+my $trailer_length = unpack 'V', $rec;
+
+my %scan_event;
+foreach my $i ( 0 .. $trailer_length - 1) {
+  my $n = $i + 1;
+  my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION)->purge_unused_data;
+  next if $n < $from;
+  if ($n == $from and $e->preamble->dependent) {
+    say STDERR "Range error: cannot form valid mzXML starting with the dependent scan $n";
+    exit -1;
+  }
+
+  $scan_event{$i} = $e;
+  last if $n == $to;
+}
+
+# say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+
+# ---------------------------------------------------------------------
+# Now read the ScanParameters stream. Its records have variable size
+# and are not directly addressable, so all of them must be read, up to
+# the highest number in the range.
+
+# First, in order to reach the ScanParameters header, the error
+# log and the scan hierarchy must be read.
+
+# error log
+my $error_log_addr = $run_header->error_log_addr;
+seek INPUT, $error_log_addr, 0;
+
+# read the number of ErrorLog records
+my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+foreach my $i ( 0 .. $error_log_length - 1) {
+  my $e = Finnigan::Error->decode(\*INPUT);
+  unless ( exists $args->{'-q'} ) {
+    say STDERR "Error: (time = " . $e->time . "): " . $e->message;
+  }
+}
+
+# read the scan even hierarchy, even though it is not used -- just to reach the next object
+my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
+foreach my $i ( 0 .. $nsegs - 1) {
+  my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
+  foreach my $j ( 0 .. $n - 1) {
+    Finnigan::ScanEventTemplate->decode(\*INPUT, $VERSION);
+  }
+}
+
+# now the file pointer is at the start of GenericDataHeader for ScanParameters
+my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
+
+# with the header on hand, skip to the ScanParameters stream and grab
+# the precurser charge for all scans.
+seek INPUT, $params_addr, 0;
+
+my %charge_state;
+foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
+  my $n = $i + 1;
+  my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
+  next if $n < $from;
+  my $charge = $p->charge_state;
+  $charge_state{$i} = $charge if $charge;
+  last if $n == $to;
+}
+
+# say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+
+#------------------------------------------------------------------------------------------
+# This is a reasonably good point to start generating the output. We
+# know everything about the data, but haven't started reading the data
+# itself
+
+my $parent_scan_data; # for looking up the precursor ion for each of
+                      # the dependent MS2 scans
+
+my %scan_data;
+my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.dat' );
+binmode $scandata_fh;
+
+my $xmlgen = XML::Generator->new(
+                                 pretty => 1,
+                                 # conformance => 'strict',
+                                 namespace => ['http://psi.hupo.org/ms/mzml'],
+                                );
+
+
+# XML-related stuff ----------------------------------------------------
+tie my %cvAttr1, 'Tie::IxHash';
+%cvAttr1 = (
+            id => 'MS',
+            fullName => 'Proteomics Standards Initiative Mass Spectrometry Ontology',
+            version => '1.18.1',
+            URI => 'http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo'
+           );
+
+tie my %cvAttr2, 'Tie::IxHash';
+%cvAttr2 = (
+            id => 'UO',
+            fullName => 'Unit Ontology',
+            version => '1.20',
+            URI => 'http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/unit.obo'
+           );
+
+# File content description ---------------------------------------------
+tie my %fileContentAttr, 'Tie::IxHash';
+%fileContentAttr = (
+                    cvRef => 'MS',
+                    accession => 'MS:1000580',
+                    name => 'MSn spectrum'
+                   );
+
+tie my %sourceFileAttr, 'Tie::IxHash';
+my @path = split m{[\\/]}, $seq_row->file_name;
+my $name = pop @path;
+my $path = $seq_row->path || join "/", @path;
+%sourceFileAttr = (
+                   id => 'source',
+                   name => $name,
+                   location => "file:///$path"
+                  );
+
+tie my %sourceFileAttr1, 'Tie::IxHash';
+%sourceFileAttr1 = (
+                    cvRef => 'MS',
+                    accession => 'MS:1000563',
+                    name => 'Thermo RAW file',
+                    value => ''
+                   );
+
+tie my %sourceFileAttr2, 'Tie::IxHash';
+%sourceFileAttr2 = (
+                    cvRef => 'MS',
+                    accession => 'MS:1000768',
+                    name => 'Thermo nativeID format'
+                   );
+
+tie my %sourceFileAttr3, 'Tie::IxHash';
+%sourceFileAttr3 = (
+                    cvRef => 'MS',
+                    accession => 'MS:1000568',
+                    name => 'MD5',
+                    value => ''
+                   );
+
+# Acquisition Software ------------------------------------------
+tie my %softwareAttr1, 'Tie::IxHash';
+%softwareAttr1 = (
+                    id => 'Xcalibur', # What elese? It does not name itself in the file.
+                    version => decode_string($inst->software_version),
+                   );
+
+tie my %softwareCvAttr1, 'Tie::IxHash';
+%softwareCvAttr1 = (
+                     cvRef => 'MS',
+                     accession => 'MS:1000532',
+                     name => 'Xcalibur',
+                     value => ''
+                    );
+# Conversion Software -------------------------------------------
+tie my %softwareAttr2, 'Tie::IxHash';
+%softwareAttr2 = (
+                    id => 'Unfinnigan', # What elese? It does not name itself in the file.
+                    version => $Finnigan::VERSION
+                   );
+
+tie my %softwareCvAttr2, 'Tie::IxHash';
+%softwareCvAttr2 = (
+                     cvRef => 'MS',
+                     accession => 'MS:0000000',
+                     name => 'Unfinnigan, uf-mzml',
+                     value => ''
+                    );
+
+# Instrument ----------------------------------------------------
+tie my %instModelCvAttr, 'Tie::IxHash';
+my $model = decode_string($inst->model);
+%instModelCvAttr = (
+                    cvRef => 'MS',
+                    accession => $thermoInstId{$model} || 'MS:0000000',
+                    name => $model,
+                    value => ''
+                   );
+
+tie my %instSerialNoCvAttr, 'Tie::IxHash';
+%instSerialNoCvAttr = (
+                       cvRef => 'MS',
+                       accession => 'MS:1000529',
+                       name => 'instrument serial number',
+                       value => decode_string($inst->serial_number)
+                      );
+
+
+tie my %msRunAttr, 'Tie::IxHash';
+%msRunAttr = (
+              scanCount => $last_scan - $first_scan + 1,
+              startTime => sprintf("PT%.4fS", 60 * $run_header->sample_info->start_time),
+              endTime   => sprintf("PT%.4fS", 60 * $run_header->sample_info->end_time),
+             );
+
+tie my %msManufacturerAttr, 'Tie::IxHash';
+%msManufacturerAttr = (
+              category => 'msManufacturer',
+              value => 'Thermo Scientific', # although it does not come from the file
+             );
+
+tie my %msIonisationAttr, 'Tie::IxHash';
+%msIonisationAttr = (
+              category => 'msIonisation',
+              value => $scan_event{$from - 1}->preamble->ionization(decode => 1), # not knowing better;
+                                                 # it can probably be found in the method file
+             );
+
+tie my %msAnalyzerAttr, 'Tie::IxHash';
+%msAnalyzerAttr = (
+              category => 'msMassAnalyzer',
+              value => $scan_event{$from - 1}->preamble->analyzer(decode => 1), # not knowing better;
+                                                 # it can probably be found in the method file
+             );
+
+tie my %msDetectorAttr, 'Tie::IxHash';
+%msDetectorAttr = (
+              category => 'msDetector',
+              value => $scan_event{$from - 1}->preamble->detector(decode => 1), # not knowing better;
+                                                 # it can probably be found in the method file
+             );
+
+tie my %dataProcessingAttr, 'Tie::IxHash';
+if ( exists $args->{-c} ) {
+  $dataProcessingAttr{centroided}++;
+}
+
+tie my %convSoftwareAttr, 'Tie::IxHash';
+%convSoftwareAttr = (
+                     type => 'conversion',
+                     name => 'unfinnigan',
+                     version => $Finnigan::VERSION,
+                    );
+
+tie my %xmlDecl, 'Tie::IxHash';
+%xmlDecl = (
+            'xmlns:xs' => 'http://www.w3.org/2001/XMLSchema-instance',
+            'xs:schemaLocation' => 'http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.0.xsd',
+            accession => '?',
+            version => '1.1.0',
+            id => '?'
+           );
+
+my $xml = $xmlgen->mzML(
+  ['http://psi.hupo.org/ms/mzml'],
+  \%xmlDecl,
+  $xmlgen->cvList({count => 2},
+    $xmlgen->cv(\%cvAttr1),
+    $xmlgen->cv(\%cvAttr2)
+  ),
+  $xmlgen->fileDescription(
+    $xmlgen->fileContent(
+     $xmlgen->cvParam(\%fileContentAttr)
+    ),
+    $xmlgen->sourceFileList({count => 1},
+      $xmlgen->sourceFile(\%sourceFileAttr,
+        $xmlgen->cvParam(\%sourceFileAttr1),
+        $xmlgen->cvParam(\%sourceFileAttr2),
+        $xmlgen->cvParam(\%sourceFileAttr3)
+      )
+    )
+  ),
+  $xmlgen->softwareList({count => 2},
+    $xmlgen->software(\%softwareAttr1,
+      $xmlgen->cvParam(\%softwareCvAttr1)
+    ),
+    $xmlgen->software(\%softwareAttr2,
+      $xmlgen->cvParam(\%softwareCvAttr2)
+    )
+  ),
+  $xmlgen->instrumentConfigurationList({count => 1},
+    $xmlgen->instrumentConfiguration({id => $shortInstId},
+      $xmlgen->cvParam(\%instModelCvAttr),
+      $xmlgen->cvParam(\%instSerialNoCvAttr),
+    ),
+  ),
+  $xmlgen->msRun(\%msRunAttr,
+    $xmlgen->msInstrument(
+      $xmlgen->msManufacturer(\%msManufacturerAttr),
+      $xmlgen->msIonisation(\%msIonisationAttr),
+      $xmlgen->msMassAnalyzer(\%msAnalyzerAttr),
+      $xmlgen->msDetector(\%msDetectorAttr),
+    ),
+    $xmlgen->dataProcessing(
+      \%dataProcessingAttr,
+      $xmlgen->software(\%convSoftwareAttr),
+    ),
+    map {
+      my $n = $_;
+      # say STDERR "in outer map ($n)";
+      my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+      # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+      tie my %peakAttr, 'Tie::IxHash';
+      %peakAttr = (
+        precision       => 32,
+        byteOrder       => "network",
+        contentType     => "m/z-int",
+        compressionType => "none",
+        compressedLen   => 0,
+      );
+      $xmlgen->scan(
+        $attr,
+        $xmlgen->peaks(\%peakAttr, "=== cut ==="),
+        map {
+          my $n = $_;
+          my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
+
+          # say STDERR "  in inner map ($n)";
+          my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+
+          tie my %precursorAttr, 'Tie::IxHash';
+          if ( $isMS2 ) {
+            %precursorAttr = (
+              precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
+              precursorCharge     => $charge_state{$n-1},
+              activationMethod    => uc $Finnigan::activationMethod,
+            );
+            delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
+          }
+
+          tie my %peaksAttr, 'Tie::IxHash';
+          %peaksAttr = (
+            precision       => 32,
+            byteOrder       => "network",
+            contentType     => "m/z-int",
+            compressionType => "none",
+            compressedLen   => 0,
+          );
+          if ( $isMS2 ) {
+            $xmlgen->scan(
+              $attr,
+              $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
+              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+            )
+          }
+          else { # for MS1 scans like SIM or zoom scans
+            $xmlgen->scan(
+              $attr,
+              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+            )
+          }
+        } dependent_scans(\%scan_event, $n)
+      );
+    } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
+  )
+);
+
+say STDERR "xml object size: " . total_size($xml);
+
+my @xml_chunk = split "=== cut ===", "$xml";
+
+say '<?xml version="1.0" encoding="UTF-8"?>';
+
+my %xml_scan_offset;
+foreach my $n ( $from .. $to ) {
+  my $i = $n - 1;
+  my $chunk_no = $n - $from;
+
+  my $rec;
+  my ($pos, $bytes_to_read) = @{$scan_data{$i}};
+  seek $scandata_fh, $pos, 0;
+  my $nbytes = read $scandata_fh, $rec, $bytes_to_read;
+  $nbytes == $bytes_to_read
+    or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
+  my $peaks = thaw $rec;
+
+  my $buf;
+  foreach my $peak ( @$peaks ) {
+    $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
+  }
+  print $xml_chunk[$chunk_no];
+  $xml_scan_offset{$i} = tell STDOUT;
+  if ( $buf ) {
+    print encode_base64($buf, "");
+  }
+  else {
+    say STDERR "no data in scan $n";
+  }
+}
+substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
+say $xml_chunk[-1];
+
+my $index_offset = tell STDOUT;
+say qq( <index name="scan" >);
+foreach my $i (sort { $a <=> $b } keys %xml_scan_offset ) {
+  my $n = $i + 1;
+  say qq(   <offset id="$n">$xml_scan_offset{$i}</offset>);
+}
+say " </index>";
+say " <indexOffset>$index_offset</indexOffset>";
+say " <sha1></sha1>";
+say "</mzXML>";
+
+close $scandata_fh;
+
+sub min($$) { $_[$_[0] > $_[1]] }
+
+sub decode_string {
+  my $buf = shift;
+  $buf =~ s/\x00//g;
+  return $buf;
+}
+
+sub dependent_scans {
+  my ($scan_event, $scan_no) = @_;
+  my @list = ();
+  return unless $scan_event->{$scan_no - 1};
+  my $ms_power = $scan_event->{$scan_no - 1}->preamble->ms_power;
+  return unless $ms_power == 1; # assume ms2 scans have no further dependents
+  for ( my $i = $scan_no; 1; $i++ ) {
+    last unless $scan_event{$i};
+    last unless $scan_event->{$i}->preamble->dependent;
+    push @list, $i + 1;
+  }
+  return @list;
+}
+
+sub read_scan {
+  my ($n, $args, $scan_index, $scan_event, $scan_data) = @_;
+  my $i = $n-1;
+
+  seek INPUT, $data_addr + $scan_index->{$i}->{offset}, 0;
+
+  my $scan = Finnigan::Scan->decode( \*INPUT );
+  my $ph = $scan->header;
+  my $profile;
+  $profile = $scan->profile if $ph->profile_size;
+  if ( $profile ) {
+    $profile->set_converter($scan_event->{$i}->converter);
+    $profile->set_inverse_converter($scan_event->{$i}->inverse_converter);
+  }
+  my $peaks;
+  $peaks = $scan->centroids if $ph->peak_list_size;
+  my $ms_power = $scan_event->{$i}->preamble->ms_power;
+  my $dependent = $scan_event->{$i}->preamble->dependent;
+  if ( not $dependent ) {
+    $parent_scan_data = $profile ? $profile : $peaks;
+    $parent_scan_data->{type} = $profile ? 'profile' : 'centroid';
+    $parent_scan_data->{"scan number"} = $n;
+  }
+
+  # the M/z range; use the full range for now; consider adding a command-line argument;
+  my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
+
+  my $peakCount;
+  if ( exists $args->{-c} ) {
+    $peakCount = $peaks->count;
+    my $pos = tell $scandata_fh;
+    if ( $peakCount ) {
+      # say STDERR "freezing peak list $scan_event->{$i} at $i";
+      print $scandata_fh freeze $peaks->list;
+    }
+    elsif ( $profile ) {
+      # if there are no called peaks, treat the profile as a set of peaks
+      my $bins;
+      if ( $profile->nchunks > 1) {
+        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+      }
+      else { # the profile is stored as one huge set of bins
+        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+        require Data::Dumper;
+        print Dumper($bins);
+      }
+      $peakCount = scalar @$bins;
+      say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
+      my $pos = tell $scandata_fh;
+      print $scandata_fh freeze $bins;
+    }
+    else {
+      my $scan_no = $i + 1;
+      print $scandata_fh freeze [];
+    }
+    $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
+  }
+  else {
+    say STDERR "reading the profile...";
+    # simply read the profile and ignore the centroids
+    if ( $profile ) {
+      my $bins;
+      if ( $profile->nchunks > 1) {
+        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+      }
+      else {
+        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+      }
+      $peakCount = scalar @$bins;      
+      say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
+      my $pos = tell $scandata_fh;
+      print $scandata_fh freeze $bins;
+      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
+    }
+    else {
+      say STDERR "No profile in scan $n? Try to extract centroids by adding the -c option";
+      exit -1;
+    }
+  }
+  my %polarity_symbol = (
+                         0 => "-",
+                         1 => "+",
+                         2 => "any",
+                        );
+
+  tie my %scanAttr, 'Tie::IxHash';
+  %scanAttr = (
+               num           => $n,
+               msLevel       => $ms_power,
+               peaksCount    => $peakCount,
+               polarity      => $polarity_symbol{$scan_event->{$i}->preamble->polarity},
+               scanType      => $scan_event->{$i}->preamble->scan_type(decode => 1),
+               filterLine    => "$scan_event->{$i}",
+               retentionTime => sprintf("PT%.4fS", 60 * $scan_index->{$i}->{"start time"}),
+               lowMz         => $scan_index->{$i}->{"low mz"},
+               highMz        => $scan_index->{$i}->{"high mz"},
+               basePeakMz    => $scan_index->{$i}->{"base mz"},
+               basePeakIntensity => $scan_index->{$i}->{"base intensity"},
+               totIonCurrent => $scan_index->{$i}->{"total current"},
+              );
+  if ( $ms_power == 2 ) {
+    $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
+    my $prec_mz = $scan_event{$i}->reaction->precursor;
+    my $intensity = 0;
+    $parent_scan_data->{"dependent scan number"} = $n;
+    if ($parent_scan_data->{type} eq 'profile') {
+      $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
+    }
+    return (\%scanAttr, {
+                         Mz => $prec_mz,
+                         intensity => $intensity
+                        }
+           );
+  }
+  else {
+    return (\%scanAttr);
+  }
+}
+
+
+sub get_stat_info {  ## this will only work in Linux
+  my $ref = {};
+
+  ### open and read the main stat file
+  if( ! open(_INFO,"</proc/$$/stat") ){
+    die "Couldn't open /proc/$$/stat [$!]";
+  }
+  my @info = split(/\s+/,<_INFO>);
+  close(_INFO);
+
+  ### these are all the props (skip some)
+  # pid(0) comm(1) state ppid pgrp session tty
+  # tpgid(7) flags minflt cminflt majflt cmajflt
+  # utime(13) stime cutime cstime counter
+  # priority(18) timeout itrealvalue starttime vsize rss
+  # rlim(24) startcode endcode startstack kstkesp kstkeip
+  # signal(30) blocked sigignore sigcatch wchan
+  ###
+
+  ### get the important ones
+  $ref = {utime  => $info[13] / 100,
+          stime  => $info[14] / 100,
+          cutime => $info[15] / 100,
+          cstime => $info[16] / 100,
+          vsize  => $info[22],
+          rss    => $info[23] * 4};
+
+  return $ref;
+}
+
+__END__
+=head1 NAME
+
+uf-mzxml - convert a Finnigan raw file to mzXML
+
+=head1 SYNOPSIS
+
+uf-mzxml [options] <file>
+
+ Options:
+
+  -a[ctivationMethod] <symbol>     specify ion activation method [CID by default]
+  -c[entroids]                     write peak centroids instead of scan profiles
+  -r[ange] <from> .. <to>          write only scans with numbers between <from> and <to>
+  <file>                           input file
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-help>
+
+Prints a brief help message and exits.
+
+=item B<-a[ctivationMethod] <symbolE<gt>>
+
+Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzXML> attribute is set to 'CID' (Collision-Induced Dissociation). It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
+
+=item B<-c[entroids]>
+
+Prefer centroids to raw profiles.
+
+B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, it is skipped.
+
+=item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
+
+Selects a range of scans to process.
+
+B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Otherwise, the program will crash with the following message:
+
+  C<Range error: cannot form valid mzXML starting with the dependent scan ###>
+
+To determine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
+
+=item B<-q[uiet]>
+
+Suppress the instrument error messages stored in the input file. Without this option, the error messages will be printed to STDERR.
+
+=back
+
+=head1 SEE ALSO
+
+Finnigan::Scan
+Finnigan::Profile
+Finnigan::ProfileChunk
+uf-trailer
+
+=head1 EXAMPLE
+
+ uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
+
+  (extract peak centroids from scans 350 through 352)
+
+=cut

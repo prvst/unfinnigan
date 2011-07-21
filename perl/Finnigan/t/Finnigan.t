@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 226;
+use Test::More tests => 227;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -37,6 +37,7 @@ is( $header->audit_start->time, "Thu Feb 25 09:02:27 2010", "AuditTag->time" );
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
 is( $seq_row->size, 260, "SeqRow->size" );
 is( $seq_row->file_name, 'C:\Xcalibur\calsolution\100225.raw', "SeqRow->file_name" );
+is( $seq_row->path, '', "SeqRow->path" );
 is( $seq_row->injection->size, 64, "InjectionData->size" );
 is( $seq_row->injection->n, 1, "InjectionData->n" );
 # untested in SeqRow::InjectionData: volume, injected volume, internal standard amount, dilution factor, the unknowns

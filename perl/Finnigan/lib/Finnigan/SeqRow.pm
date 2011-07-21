@@ -75,6 +75,10 @@ sub file_name {
   shift->{data}->{"file name"}->{value};
 }
 
+sub path {
+  shift->{data}->{path}->{value};
+}
+
 1;
 
 __END__

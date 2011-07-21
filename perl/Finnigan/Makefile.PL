@@ -16,7 +16,7 @@ WriteMakefile(
 			  MIME::Base64 => '3.07',
 			  Module::Find => '0.06',
 			  Storable => '2.18',
-			  XML::Generator => '1.03',
+			  XML::Generator => '1.01',
                           Tie::IxHash => '1.21',
 			 },
     EXE_FILES         => [
@@ -36,6 +36,7 @@ WriteMakefile(
 			  'bin/uf-index',
 			  'bin/uf-trailer',
 			  'bin/uf-mzxml',
+			  'bin/uf-mzml',
                           'bin/mzxml-unpack',
 			 ],
     'LICENSE'         => 'perl',
