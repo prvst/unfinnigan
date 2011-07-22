@@ -509,9 +509,7 @@ sub read_scan {
     my $prec_mz = $scan_event{$i}->reaction->precursor;
     my $intensity = 0;
     $parent_scan_data->{"dependent scan number"} = $n;
-    if ($parent_scan_data->{type} eq 'profile') {
-      $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
-    }
+    $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
     return (\%scanAttr, {
                          Mz => $prec_mz,
                          intensity => $intensity

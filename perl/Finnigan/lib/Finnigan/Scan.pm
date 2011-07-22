@@ -1,10 +1,13 @@
 use warnings FATAL => qw( all );
-our $VERSION = 0.0205;
+our $VERSION = 0.0206;
+use feature qw/say/;
+use 5.010;
 
 # ----------------------------------------------------------------------------------------
 package Finnigan::Scan::Profile;
 
 my $MAX_DIST = 0.025; # kHz
+my $MAX_DIST_MZ = 0.001; # M/z
 
 sub new {
   my ($class, $buf, $layout) = @_;
@@ -118,13 +121,14 @@ sub find_peak_intensity {
   # Finds the nearest peak in the profile for a given query value.
   # One possible use is to look up the precursor ion intensity, since
   # it is not stored as a separate item anywhere in the data file.
+  # Return the intensity the peak matching the query M/z.
   my ($self, $query) = @_;
   my $raw_query = &{$self->{"inverse converter"}}($query);
 
   # find the closest chunk
   my ($nearest_chunk, $dist) = $self->find_chunk($raw_query);
   if (not defined $dist or $dist > $MAX_DIST) { # undefind $dist means we're outside the full range of peaks in the scan
-    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${MAX_DIST} kHz of the target frequency $raw_query (M/z $query)";
+    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${MAX_DIST} M/z of the target frequency $raw_query (M/z $query)";
     return 0;
   }
 
@@ -342,6 +346,67 @@ sub count {
 
 sub list {
   shift->{peaks};
+}
+
+sub find_peak_intensity {
+  # Finds the nearest peak in the profile for a given query value.
+
+  my ($self, $query) = @_;
+
+  # find the closest peak
+  my ($nearest_peak, $dist) = $self->find_peak($query);
+  if (not defined $dist or $dist > $MAX_DIST_MZ) { # undefind $dist means we're outside the full range of peaks in the scan
+    say STDERR "$self->{'dependent scan number'}: could not find a profile peak in parent scan $self->{'scan number'} within ${MAX_DIST_MZ} M/z the target value $query";
+    return 0;
+  }
+
+  return $self->{peaks}->[$nearest_peak]->[1];
+}
+
+sub find_peak {
+  # Use binary search to find a pair of peaks
+  # surrounding the probe value
+
+  # One possible use is to look up the precursor ion intensity, since
+  # it is not stored as a separate item anywhere in the data file.
+
+  my ( $self, $value) = @_;
+  my ( $lower, $upper, $low_ix, $high_ix, $mid_ix );
+  my $safety_count = 15;
+  my $dist;
+
+  sub num_equal {
+    my( $float1, $float2, $diff ) = @_;
+    abs( $float1 - $float2 ) < ($diff or 0.00001);
+  }
+
+  ( $low_ix, $high_ix ) = ( 0, $self->{count} - 1 );
+  ( $lower, $upper ) = ($self->{peaks}->[$low_ix]->[0], $self->{peaks}->[$high_ix]->[0]);
+  if ( $value < $lower - $MAX_DIST_MZ or $value > $upper + $MAX_DIST_MZ) {
+    return (undef, undef);
+  }
+  else {
+    my $dist;
+    while ( $low_ix <= $high_ix ) {
+      die "broken find_peak algorithm" unless $safety_count--;
+      $mid_ix = $low_ix + int ( ( $high_ix - $low_ix ) / 2 );
+      my $peak = $self->{peaks}->[$mid_ix];
+      $dist = abs($value - $peak->[0]);
+      # say STDERR "    testing: $mid_ix [$peak->[0]] against $value";
+      if ( num_equal($peak->[0], $value, $MAX_DIST_MZ ) ) {
+        return ($mid_ix, $dist)
+      }
+      elsif ( $peak->[0] < $value) {
+        # say STDERR "      distance = $dist, shifting up";
+        $low_ix = $mid_ix + 1;
+      }
+      else { # $peak->[0] > $value
+        # say STDERR "      distance = $dist; shifting down";
+        $high_ix = $mid_ix - 1;
+      }
+    }
+    return (undef, $dist);    
+  }
 }
 
 1;

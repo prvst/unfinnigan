@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 227;
+use Test::More tests => 232;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -426,9 +426,16 @@ ok( num_equal($bins->[0]->[0], 400.209152455266), "Scan->profile->bins (Mz)" );
 ok( num_equal($bins->[0]->[1], 447.530578613281), "Scan->profile->bins (signal)" );
 
 $c = $scan->centroids;
-is ($c->count, 580, "Scan->centroids->count");
-ok( num_equal($c->list->[0]->[0], 400.212463378906), "Scan->centroids->list (Mz)");
-ok( num_equal($c->list->[0]->[1], 1629.47326660156), "Scan->centroids->list (abundance)");
+$c->{'scan number'} = 1; # to support scan number reporting inside Scan::find_peak_intensity()
+$c->{'dependent scan number'} = 2;
+is( $c->count, 580, "Scan->centroids->count" );
+ok( num_equal($c->list->[0]->[0], 400.212463378906), "Scan->centroids->list (Mz)" );
+ok( num_equal($c->list->[0]->[1], 1629.47326660156), "Scan->centroids->list (abundance)" );
+is( ($c->find_peak(1622.96887207031))[0], 538, "Scan->find_peak, exact match" );
+is( ($c->find_peak(1622.968))[0], 538, "Scan->find_peak, off a bit" );
+is( ($c->find_peak(1622.6))[0], undef, "Scan->find_peak, far off" );
+ok( num_equal($c->find_peak_intensity(1622.968), 232378.640625), "Scan->find_peak_intensity, off a bit" );
+is( $c->find_peak_intensity(1622.6), 0, "Scan->find_peak_intensity, far off" );
 
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
