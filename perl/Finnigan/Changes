@@ -1,5 +1,9 @@
 Revision history for Perl extension Finnigan.
 
+0.0206 Fri Jul 22 01:36:02 BST 2011
+        - Added support for v.60
+        - Added precursor intensity search to Finnigan::Scan::CentroidList
+
 0.0205 Sun 19 Jun 2011 18:03:04 BST
 	- API changes required to accommodate the 64-bit file pointers in the v.64 file format
 

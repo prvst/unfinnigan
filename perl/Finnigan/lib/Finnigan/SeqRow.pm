@@ -2,7 +2,7 @@ package Finnigan::SeqRow;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0205;
+our $VERSION = 0.0206;
 
 use Finnigan;
 use base 'Finnigan::Decoder';
