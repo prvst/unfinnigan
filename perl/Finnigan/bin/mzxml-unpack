@@ -27,30 +27,104 @@ my $from = exists $args->{-r} ? $args->{-r}{"<from>"} : 0;
 my $to = exists $args->{-r} ? $args->{-r}{"<to>"} : 2**31 - 1;
 die "inverted range: [$from .. $to]" if $from > $to;
 
-$/ = "</peaks>";
-while ( <> ) {
-  if ( s/(<peaks[^>]+>)(.*)$// ) {
-    my ($tag, $data) = ($1, $2);
-    s/\n$//;
-    if ( /scan num="(\d+)"/ ) {
-      next unless $1 >= $from and $1 <= $to;
+my $head;
+for my $i (1 .. 5) {
+  $head .= <>;
+}
+
+my ($type, $binaryTag);
+
+if ($head =~ /<mzML/m) {
+  $type = 'mzML';
+}
+elsif ($head =~ /<mzXML/) {
+  $type = 'mzXML';
+}
+else {
+  say STDERR "can't recognise file format:";
+  say STDERR $head . "...";
+}
+
+print $head;
+
+if ( $type eq 'mzXML' ) {
+  $/ = '</peaks>';
+  while ( <> ) {
+    if ( s/(<peaks[^>]+>)(.*)$// ) {
+      my ($tag, $data) = ($1, $2);
+      s/\n$//;
+      if ( /scan num="(\d+)"/ ) {
+        next unless $1 >= $from and $1 <= $to;
+      }
+      else {
+        die "cannot determine scan number";
+      }
+
+      say "$_$tag";
+
+      my @spec = unpack("f<*", decode_base64($data));
+      foreach my $i (0 .. scalar @spec / 2 - 1) {
+        say join("\t", @spec[2*$i .. 2*$i+1]);
+      }
+
+      print "</peaks>";
     }
     else {
-      die "cannot determine scan number";
+      print;
     }
-
-    say "$_$tag";
-
-    # $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
-    my @spec = map {unpack "f", $_} map {pack "V", $_} unpack("N*", decode_base64($data));
-    foreach my $i (0 .. scalar @spec / 2 - 1) {
-      say join("\t", @spec[2*$i .. 2*$i+1]);
-    }
-
-    say "</peaks>";
   }
-  else {
-    #print;
+} # mzXML
+
+else { # mzML
+  $/ = '</binaryDataArrayList>';
+  while ( <> ) {
+    chomp;
+
+    my $chromatogram = 0;
+    if ( /<chromatogramList/) {
+      $chromatogram = 1;
+    }
+
+    if ( /<spectrum[^>]+scan=(\d+)/s ) {
+      next unless $1 >= $from and $1 <= $to;
+    }
+
+    if ( s/^(.*<binaryDataArrayList\s+count\s*=\s*"(\d+)">)(.+)$//s ) {
+      my ($tag, $n, $tail) = ($1, $2, $3);
+      print "$_$tag";
+
+      foreach my $chunk ( split m{</binaryDataArray>\s*}, $tail) {
+        if ( $chunk =~ m{^(.*<binaryDataArray.+<binary>)(.*)(</binary>.*)$}s ) {
+          my ($head, $data, $tail) = ($1, $2, $3);
+
+          my ($size) = ( $head =~ /<cvParam.+name="(\d\d-bit)/ );
+
+          say $head;
+
+          my @list;
+          if ( $size eq '32-bit' ) {
+            @list = unpack("f<*", decode_base64($data));
+          }
+          elsif ( $size eq '64-bit' ) {
+            @list = unpack("d<*", decode_base64($data));
+          }
+          else {
+            die "unknown number size: $size";
+          }
+
+          say join "\n", @list;
+
+          print "$tail</binaryDataArray>\n            ";
+        }
+        else {
+          say STDERR "<binaryDataArray>...<binary> not matched in: " . substr($chunk, 0, 500) . "...\n";
+        }
+      }
+      print '</binaryDataArrayList>';
+    }
+    else {
+      print;
+    }
   }
 }
 
