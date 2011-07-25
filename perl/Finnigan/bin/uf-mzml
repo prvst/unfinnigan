@@ -5,14 +5,20 @@ use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
-use Getopt::Declare;
-use Finnigan;
-use XML::Generator;
-use Tie::IxHash;
-use Storable qw(freeze thaw);
-use MIME::Base64;
-use File::Temp;
+use Data::UUID; 
 use Devel::Size qw(size total_size);
+use Digest::SHA1;
+use File::Basename qw(basename);
+use File::Temp;
+use Finnigan;
+use Getopt::Declare;
+use MIME::Base64;
+use Storable qw(freeze thaw);
+use Tie::IxHash;
+use XML::Generator;
+
+my $ug = new Data::UUID;
+my $guid = $ug->create_hex();
 
 my %thermoInstId = (
                     'Accela PDA' => 'MS:1000623',
@@ -114,6 +120,31 @@ my %thermoInstDef = (
                     'neptune' => "ThermoFinnigan NEPTUNE MS",
                    );
 
+my %accession = (
+  'electrospray ionization' => 'MS:1000073',
+  'electrospray inlet' => 'MS:1000057',
+  'orbitrap' => 'MS:1000484',
+  'inductive detector' => 'MS:1000624',
+  'radial ejection linear ion trap' => 'MS:1000083',
+  'electron multiplier' => 'MS:1000253',
+);
+
+my %components = (
+  'LTQ Orbitrap XL' => [
+    [
+      ['source', ['electrospray ionization', 'electrospray inlet']],
+      ['analyzer', ['orbitrap']],
+      ['detector', ['inductive detector']]
+    ],
+    [
+      ['source', ['electrospray ionization', 'electrospray inlet']],
+      ['analyzer', ['radial ejection linear ion trap']],
+      ['detector', ['electron multiplier']]
+    ],
+  ]
+);
+
+
 # test case:
 #  uf-mzml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
 
@@ -132,6 +163,8 @@ my $file = $args->{"<file>"};
 -f $file or die "'$file' is not a plain file";
 -s $file or die "'$file' has zero size";
 
+my $basename = basename($file, qw/.raw .RAW/);
+
 # -----------------------------------------------------------------------------
 say STDERR "This tool is not functional yet. I have just started working on it";
 
@@ -139,6 +172,11 @@ $Finnigan::activationMethod = lc $args->{-a}{"<symbol"} if exists $args->{-a};
 
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
+
+my $sha1 = new Digest::SHA1;
+$sha1->addfile(\*INPUT);
+my $digest = $sha1->hexdigest;
+seek INPUT, 0, 0; # rewind
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $VERSION = $header->version;
@@ -210,6 +248,7 @@ $nbytes == $bytes_to_read
 my $trailer_length = unpack 'V', $rec;
 
 my %scan_event;
+my %ms_power;
 foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
   my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION)->purge_unused_data;
@@ -220,6 +259,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   }
 
   $scan_event{$i} = $e;
+  $ms_power{$e->preamble->ms_power}++;
   last if $n == $to;
 }
 
@@ -298,7 +338,7 @@ tie my %cvAttr1, 'Tie::IxHash';
 %cvAttr1 = (
             id => 'MS',
             fullName => 'Proteomics Standards Initiative Mass Spectrometry Ontology',
-            version => '1.18.1',
+            version => '3.4.1',
             URI => 'http://psidev.cvs.sourceforge.net/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo'
            );
 
@@ -306,24 +346,33 @@ tie my %cvAttr2, 'Tie::IxHash';
 %cvAttr2 = (
             id => 'UO',
             fullName => 'Unit Ontology',
-            version => '1.20',
+            version => '18:03:2011',
             URI => 'http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/unit.obo'
            );
 
 # File content description ---------------------------------------------
-tie my %fileContentAttr, 'Tie::IxHash';
-%fileContentAttr = (
-                    cvRef => 'MS',
-                    accession => 'MS:1000580',
-                    name => 'MSn spectrum'
+tie my %fileContentAttr1, 'Tie::IxHash';
+%fileContentAttr1 = (
+                     cvRef => 'MS',
+                     accession => 'MS:1000579',
+                     name => 'MS1 spectrum',
+                     value => '',
+                   );
+tie my %fileContentAttr2, 'Tie::IxHash';
+%fileContentAttr2 = (
+                     cvRef => 'MS',
+                     accession => 'MS:1000580',
+                     name => 'MSn spectrum',
+                     value => '',
                    );
 
+# Source File list ------------------------------------------------------
 tie my %sourceFileAttr, 'Tie::IxHash';
 my @path = split m{[\\/]}, $seq_row->file_name;
 my $name = pop @path;
 my $path = $seq_row->path || join "/", @path;
 %sourceFileAttr = (
-                   id => 'source',
+                   id => 'RAW1',
                    name => $name,
                    location => "file:///$path"
                   );
@@ -331,56 +380,28 @@ my $path = $seq_row->path || join "/", @path;
 tie my %sourceFileAttr1, 'Tie::IxHash';
 %sourceFileAttr1 = (
                     cvRef => 'MS',
-                    accession => 'MS:1000563',
-                    name => 'Thermo RAW file',
+                    accession => 'MS:1000768',
+                    name => 'Thermo nativeID format',
                     value => ''
                    );
 
 tie my %sourceFileAttr2, 'Tie::IxHash';
 %sourceFileAttr2 = (
                     cvRef => 'MS',
-                    accession => 'MS:1000768',
-                    name => 'Thermo nativeID format'
+                    accession => 'MS:1000563',
+                    name => 'Thermo RAW file',
+                    value => ''
                    );
 
 tie my %sourceFileAttr3, 'Tie::IxHash';
 %sourceFileAttr3 = (
                     cvRef => 'MS',
-                    accession => 'MS:1000568',
-                    name => 'MD5',
-                    value => ''
+                    accession => 'MS:1000569',
+                    name => 'SHA-1',
+                    value => $digest
                    );
 
-# Acquisition Software ------------------------------------------
-tie my %softwareAttr1, 'Tie::IxHash';
-%softwareAttr1 = (
-                    id => 'Xcalibur', # What elese? It does not name itself in the file.
-                    version => decode_string($inst->software_version),
-                   );
-
-tie my %softwareCvAttr1, 'Tie::IxHash';
-%softwareCvAttr1 = (
-                     cvRef => 'MS',
-                     accession => 'MS:1000532',
-                     name => 'Xcalibur',
-                     value => ''
-                    );
-# Conversion Software -------------------------------------------
-tie my %softwareAttr2, 'Tie::IxHash';
-%softwareAttr2 = (
-                    id => 'Unfinnigan', # What elese? It does not name itself in the file.
-                    version => $Finnigan::VERSION
-                   );
-
-tie my %softwareCvAttr2, 'Tie::IxHash';
-%softwareCvAttr2 = (
-                     cvRef => 'MS',
-                     accession => 'MS:0000000',
-                     name => 'Unfinnigan, uf-mzml',
-                     value => ''
-                    );
-
-# Instrument ----------------------------------------------------
+# InstID (referenceableParamGroupList) -------------------------------------
 tie my %instModelCvAttr, 'Tie::IxHash';
 my $model = decode_string($inst->model);
 %instModelCvAttr = (
@@ -399,12 +420,84 @@ tie my %instSerialNoCvAttr, 'Tie::IxHash';
                       );
 
 
-tie my %msRunAttr, 'Tie::IxHash';
-%msRunAttr = (
-              scanCount => $last_scan - $first_scan + 1,
-              startTime => sprintf("PT%.4fS", 60 * $run_header->sample_info->start_time),
-              endTime   => sprintf("PT%.4fS", 60 * $run_header->sample_info->end_time),
-             );
+
+# Acquisition Software ------------------------------------------
+tie my %softwareAttr1, 'Tie::IxHash';
+%softwareAttr1 = (
+                    id => 'Xcalibur', # What elese? It does not name itself in the file.
+                    version => decode_string($inst->software_version),
+                   );
+
+tie my %softwareCvAttr1, 'Tie::IxHash';
+%softwareCvAttr1 = (
+                     cvRef => 'MS',
+                     accession => 'MS:1000532',
+                     name => 'Xcalibur',
+                     value => ''
+                    );
+
+# Conversion Software -------------------------------------------
+tie my %softwareAttr2, 'Tie::IxHash';
+%softwareAttr2 = (
+                    id => $0,
+                    version => $Finnigan::VERSION
+                   );
+
+tie my %softwareCvAttr2, 'Tie::IxHash';
+%softwareCvAttr2 = (
+                     cvRef => 'MS',
+                     accession => 'MS:0000000',
+                     name => 'Unfinnigan',
+                     value => ''
+                    );
+
+# Instrument Configuration ------------------------------------------
+
+my %translatedComponent;
+my $i = 1;
+foreach my $component ( @{$components{$model}} ) {
+  foreach my $subcomponent (@$component) {
+    my ($type, $features) = @$subcomponent;
+    foreach my $feature (@$features) {
+      tie my %featureAttr, 'Tie::IxHash';
+      %featureAttr = (
+                      cvRef => 'MS',
+                      accession => $accession{$feature},
+                      name => $feature,
+                      value => '',
+                     );
+      $translatedComponent{$i}->{$type}->{$feature} = \%featureAttr;
+    }
+  }
+  $i++;
+}
+
+# Processing method ------------------------------------------
+tie my %processingMethodAttr, 'Tie::IxHash';
+%processingMethodAttr = (
+                         order => 0,
+                         softwareRef => 'uf-mzml'
+                        );
+
+tie my %processingMethodCvAttr, 'Tie::IxHash';
+%processingMethodCvAttr = (
+                    cvRef => 'MS',
+                    accession => 'MS:1000544',
+                    name => 'Conversion to mzML',
+                    value => ''
+                   );
+
+
+
+
+# Run -----------------------------------------------------------
+tie my %runAttr, 'Tie::IxHash';
+%runAttr = (
+            id => $guid,
+            defaultInstrumentConfigurationRef => 'IC1',
+            startTimeStamp => $rfi->preamble->xmlTimestamp,
+            defaultSourceFileRef => 'RAW1'
+           );
 
 tie my %msManufacturerAttr, 'Tie::IxHash';
 %msManufacturerAttr = (
@@ -445,124 +538,170 @@ tie my %convSoftwareAttr, 'Tie::IxHash';
                      version => $Finnigan::VERSION,
                     );
 
+tie my %indexedXmlDecl, 'Tie::IxHash';
+%indexedXmlDecl = (
+                   'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+                   'xsi:schemaLocation' => 'http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.1_idx.xsd'
+                  );
+
 tie my %xmlDecl, 'Tie::IxHash';
 %xmlDecl = (
-            'xmlns:xs' => 'http://www.w3.org/2001/XMLSchema-instance',
-            'xs:schemaLocation' => 'http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.0.xsd',
-            accession => '?',
-            version => '1.1.0',
-            id => '?'
+            'xmlns' => 'http://psi.hupo.org/ms/mzml',
+            'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+            'xsi:schemaLocation' => 'http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.0.xsd',
+            id => $basename,
+            version => '1.1.0'
            );
 
-my $xml = $xmlgen->mzML(
+my $xml = $xmlgen->indexedmzML(
   ['http://psi.hupo.org/ms/mzml'],
-  \%xmlDecl,
-  $xmlgen->cvList({count => 2},
-    $xmlgen->cv(\%cvAttr1),
-    $xmlgen->cv(\%cvAttr2)
-  ),
-  $xmlgen->fileDescription(
-    $xmlgen->fileContent(
-     $xmlgen->cvParam(\%fileContentAttr)
+  \%indexedXmlDecl,
+  $xmlgen->mzML(
+    ['http://psi.hupo.org/ms/mzml'],
+    \%xmlDecl,
+    $xmlgen->cvList({count => 2},
+      $xmlgen->cv(\%cvAttr1),
+      $xmlgen->cv(\%cvAttr2)
     ),
-    $xmlgen->sourceFileList({count => 1},
-      $xmlgen->sourceFile(\%sourceFileAttr,
-        $xmlgen->cvParam(\%sourceFileAttr1),
-        $xmlgen->cvParam(\%sourceFileAttr2),
-        $xmlgen->cvParam(\%sourceFileAttr3)
+    $xmlgen->fileDescription(
+      $xmlgen->fileContent(
+        map {$xmlgen->cvParam($_->[0])} grep {$_->[1]} (
+         [\%fileContentAttr1, $ms_power{'1'}],
+         [\%fileContentAttr2, (grep {$_ ne '1'} %ms_power)[0]] # there are other powers besides 1
+        )
+      ),
+      $xmlgen->sourceFileList({count => 1},
+        $xmlgen->sourceFile(\%sourceFileAttr,
+          $xmlgen->cvParam(\%sourceFileAttr1),
+          $xmlgen->cvParam(\%sourceFileAttr2),
+          $xmlgen->cvParam(\%sourceFileAttr3)
+        )
       )
-    )
-  ),
-  $xmlgen->softwareList({count => 2},
-    $xmlgen->software(\%softwareAttr1,
-      $xmlgen->cvParam(\%softwareCvAttr1)
     ),
-    $xmlgen->software(\%softwareAttr2,
-      $xmlgen->cvParam(\%softwareCvAttr2)
-    )
-  ),
-  $xmlgen->instrumentConfigurationList({count => 1},
-    $xmlgen->instrumentConfiguration({id => $shortInstId},
-      $xmlgen->cvParam(\%instModelCvAttr),
-      $xmlgen->cvParam(\%instSerialNoCvAttr),
+    $xmlgen->referenceableParamGroupList({count => 1},
+      $xmlgen->referenceableParamGroup({
+        id => 'CommonInstrumentParams'},
+        $xmlgen->cvParam(\%instModelCvAttr),
+        $xmlgen->cvParam(\%instSerialNoCvAttr),
+      )
     ),
-  ),
-  $xmlgen->msRun(\%msRunAttr,
-    $xmlgen->msInstrument(
-      $xmlgen->msManufacturer(\%msManufacturerAttr),
-      $xmlgen->msIonisation(\%msIonisationAttr),
-      $xmlgen->msMassAnalyzer(\%msAnalyzerAttr),
-      $xmlgen->msDetector(\%msDetectorAttr),
+    $xmlgen->softwareList({count => 2},
+      $xmlgen->software(\%softwareAttr1,
+        $xmlgen->cvParam(\%softwareCvAttr1)
+      ),
+      $xmlgen->software(\%softwareAttr2,
+        $xmlgen->cvParam(\%softwareCvAttr2)
+      )
     ),
-    $xmlgen->dataProcessing(
-      \%dataProcessingAttr,
-      $xmlgen->software(\%convSoftwareAttr),
+    $xmlgen->instrumentConfigurationList({count => scalar keys %translatedComponent},
+      map {
+        my $n = $_;
+        my $ordinal = 1;
+        $xmlgen->instrumentConfiguration({id => "IC$n"},
+          $xmlgen->referenceableParamGroupRef({ref => 'CommonInstrumentParams'}),
+          $xmlgen->componentList({count => scalar keys %{$translatedComponent{$n}}},
+            map {
+              my $subcomponent = $_;
+              my $type = $subcomponent->[0];
+              $xmlgen->$type({order => $ordinal++},
+                map {
+                  $xmlgen->cvParam($translatedComponent{$n}->{$type}->{$_})
+                } @{$subcomponent->[1]} # features
+              );
+            } @{$components{$model}->[$n-1]}
+          ),
+          $xmlgen->softwareRef({ref => 'Xcalibur'})
+        );
+      } sort {$a <=> $b} keys %translatedComponent
     ),
-    map {
-      my $n = $_;
-      # say STDERR "in outer map ($n)";
-      my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
-      # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
-      tie my %peakAttr, 'Tie::IxHash';
-      %peakAttr = (
-        precision       => 32,
-        byteOrder       => "network",
-        contentType     => "m/z-int",
-        compressionType => "none",
-        compressedLen   => 0,
-      );
-      $xmlgen->scan(
-        $attr,
-        $xmlgen->peaks(\%peakAttr, "=== cut ==="),
-        map {
-          my $n = $_;
-          my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
 
-          # say STDERR "  in inner map ($n)";
-          my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+    $xmlgen->dataProcessingList({count => 1},
+      $xmlgen->dataProcessing({id => 'mzml-conversion'},
+        $xmlgen->processingMethod(
+          \%processingMethodAttr,
+          $xmlgen->cvParam(\%processingMethodCvAttr)
+        )
+      )
+    ),
 
-          tie my %precursorAttr, 'Tie::IxHash';
-          if ( $isMS2 ) {
-            %precursorAttr = (
-              precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
-              precursorCharge     => $charge_state{$n-1},
-              activationMethod    => uc $Finnigan::activationMethod,
+    $xmlgen->run(\%runAttr,
+      $xmlgen->msInstrument(
+        $xmlgen->msManufacturer(\%msManufacturerAttr),
+        $xmlgen->msIonisation(\%msIonisationAttr),
+        $xmlgen->msMassAnalyzer(\%msAnalyzerAttr),
+        $xmlgen->msDetector(\%msDetectorAttr),
+      ),
+      $xmlgen->dataProcessing(
+        \%dataProcessingAttr,
+        $xmlgen->software(\%convSoftwareAttr),
+      ),
+      map {
+        my $n = $_;
+        # say STDERR "in outer map ($n)";
+        my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+        # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+        tie my %peakAttr, 'Tie::IxHash';
+        %peakAttr = (
+          precision       => 32,
+          byteOrder       => "network",
+          contentType     => "m/z-int",
+          compressionType => "none",
+          compressedLen   => 0,
+        );
+        $xmlgen->scan(
+          $attr,
+          $xmlgen->peaks(\%peakAttr, "=== cut ==="),
+          map {
+            my $n = $_;
+            my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
+    
+            # say STDERR "  in inner map ($n)";
+            my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+    
+            tie my %precursorAttr, 'Tie::IxHash';
+            if ( $isMS2 ) {
+              %precursorAttr = (
+                precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
+                precursorCharge     => $charge_state{$n-1},
+                activationMethod    => uc $Finnigan::activationMethod,
+              );
+              delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
+            }
+    
+            tie my %peaksAttr, 'Tie::IxHash';
+            %peaksAttr = (
+              precision       => 32,
+              byteOrder       => "network",
+              contentType     => "m/z-int",
+              compressionType => "none",
+              compressedLen   => 0,
             );
-            delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
-          }
-
-          tie my %peaksAttr, 'Tie::IxHash';
-          %peaksAttr = (
-            precision       => 32,
-            byteOrder       => "network",
-            contentType     => "m/z-int",
-            compressionType => "none",
-            compressedLen   => 0,
-          );
-          if ( $isMS2 ) {
-            $xmlgen->scan(
-              $attr,
-              $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
-              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-            )
-          }
-          else { # for MS1 scans like SIM or zoom scans
-            $xmlgen->scan(
-              $attr,
-              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-            )
-          }
-        } dependent_scans(\%scan_event, $n)
-      );
-    } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
-  )
-);
+            if ( $isMS2 ) {
+              $xmlgen->scan(
+                $attr,
+                $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
+                $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+              )
+            }
+            else { # for MS1 scans like SIM or zoom scans
+              $xmlgen->scan(
+                $attr,
+                $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+              )
+            }
+          } dependent_scans(\%scan_event, $n)
+        ); # $xmlgen->scan (parent)
+      } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
+    )
+  ) # $xmlgen->mzXML
+); # $xmlgen->indexedmzXML
 
 say STDERR "xml object size: " . total_size($xml);
 
 my @xml_chunk = split "=== cut ===", "$xml";
 
-say '<?xml version="1.0" encoding="UTF-8"?>';
+#say '<?xml version="1.0" encoding="UTF-8"?>';
+say '<?xml version="1.0" encoding="ISO-8859-1"?>';
 
 my %xml_scan_offset;
 foreach my $n ( $from .. $to ) {

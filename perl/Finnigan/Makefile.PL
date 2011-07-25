@@ -8,8 +8,11 @@ WriteMakefile(
     PREREQ_PM         => {
 			  Carp => '1.08',
 			  Data::Hexdumper => '2.01',
+                          Data::UUID => '1.06',
                           Devel::Size => '0.71',
+                          Digest::SHA1 => '2.13',
 			  Encode => '2.23',
+                          File::Basename => '2.77',
 			  File::Temp => '0.21',
                           Getopt::Declare => '1.13',
                           Getopt::Long => '2.37',

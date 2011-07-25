@@ -85,6 +85,19 @@ sub timestamp {
                               ;
 }
 
+sub xmlTimestamp {
+  my $self = shift;
+  sprintf(
+    '%04d-%02d-%02dT%02d:%02d:%02.0fZ',
+    $self->{data}->{year}->{value},
+    $self->{data}->{month}->{value},
+    $self->{data}->{day}->{value},
+    $self->{data}->{hour}->{value},
+    $self->{data}->{minute}->{value},
+    $self->{data}->{second}->{value} + $self->{data}->{millisecond}->{value} / 1000
+  );
+}
+
 sub run_header_addr {
   shift->{data}->{"run header addr"}->{value};
 }

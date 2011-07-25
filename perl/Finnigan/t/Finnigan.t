@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 232;
+use Test::More tests => 233;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -52,6 +52,7 @@ is( $cas_info->preamble->size, 24, "CasInfoPreamble->size" );
 # RawFileInfo / RawFileInfoPreamble -- the root index structure; interesting information is all in the preamble
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; RunHeader addr: 777542", "RawFileInfo->stringify" );
+is( $rfi->preamble->xmlTimestamp, '2010-02-25T09:02:28Z', "RawFileInfoPreamble->xmlTimestamp" );
 is( $rfi->size, 844, "RawFileInfo->size" );
 is( $rfi->preamble->size, 804, "RawFileInfoPreamble->size" );
 my $data_addr = $rfi->preamble->data_addr;
