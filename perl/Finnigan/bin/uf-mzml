@@ -127,6 +127,21 @@ my %accession = (
   'inductive detector' => 'MS:1000624',
   'radial ejection linear ion trap' => 'MS:1000083',
   'electron multiplier' => 'MS:1000253',
+
+  'MS1 spectrum' => 'MS:1000579',
+  'ms level' => 'MS:1000511',
+  'positive scan' => 'MS:1000130',
+  'profile spectrum' => 'MS:1000128',
+  'base peak m/z' => 'MS:1000504',
+  'base peak intensity' => 'MS:1000505',
+  'total ion current' => 'MS:1000285',
+  'lowest observed m/z' => 'MS:1000528',
+  'highest observed m/z' => 'MS:1000527',
+  'no combination' => 'MS:1000795',
+  'scan start time' => 'MS:1000016',
+  'filter string' => 'MS:1000512',
+  'preset scan configuration' => 'MS:1000616',
+  'ion injection time' => 'MS:1000927',
 );
 
 my %components = (
@@ -489,7 +504,6 @@ tie my %processingMethodCvAttr, 'Tie::IxHash';
 
 
 
-
 # Run -----------------------------------------------------------
 tie my %runAttr, 'Tie::IxHash';
 %runAttr = (
@@ -499,11 +513,17 @@ tie my %runAttr, 'Tie::IxHash';
             defaultSourceFileRef => 'RAW1'
            );
 
-tie my %msManufacturerAttr, 'Tie::IxHash';
-%msManufacturerAttr = (
-              category => 'msManufacturer',
-              value => 'Thermo Scientific', # although it does not come from the file
-             );
+# Spectrum list -------------------------------------------------
+tie my %spectrumListAttr, 'Tie::IxHash';
+%spectrumListAttr = (
+                     count => $to - $from + 1,
+                     defaultDataProcessingRef => 'mzml-conversion',
+                    );
+
+
+
+
+
 
 tie my %msIonisationAttr, 'Tie::IxHash';
 %msIonisationAttr = (
@@ -553,6 +573,7 @@ tie my %xmlDecl, 'Tie::IxHash';
             version => '1.1.0'
            );
 
+my $spectrumIndex = 0;
 my $xml = $xmlgen->indexedmzML(
   ['http://psi.hupo.org/ms/mzml'],
   \%indexedXmlDecl,
@@ -625,74 +646,86 @@ my $xml = $xmlgen->indexedmzML(
     ),
 
     $xmlgen->run(\%runAttr,
-      $xmlgen->msInstrument(
-        $xmlgen->msManufacturer(\%msManufacturerAttr),
-        $xmlgen->msIonisation(\%msIonisationAttr),
-        $xmlgen->msMassAnalyzer(\%msAnalyzerAttr),
-        $xmlgen->msDetector(\%msDetectorAttr),
-      ),
-      $xmlgen->dataProcessing(
-        \%dataProcessingAttr,
-        $xmlgen->software(\%convSoftwareAttr),
-      ),
-      map {
-        my $n = $_;
-        # say STDERR "in outer map ($n)";
-        my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
-        # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
-        tie my %peakAttr, 'Tie::IxHash';
-        %peakAttr = (
-          precision       => 32,
-          byteOrder       => "network",
-          contentType     => "m/z-int",
-          compressionType => "none",
-          compressedLen   => 0,
-        );
-        $xmlgen->scan(
-          $attr,
-          $xmlgen->peaks(\%peakAttr, "=== cut ==="),
-          map {
-            my $n = $_;
-            my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
-    
-            # say STDERR "  in inner map ($n)";
-            my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
-    
-            tie my %precursorAttr, 'Tie::IxHash';
-            if ( $isMS2 ) {
-              %precursorAttr = (
-                precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
-                precursorCharge     => $charge_state{$n-1},
-                activationMethod    => uc $Finnigan::activationMethod,
+      $xmlgen->spectrumList(
+        \%spectrumListAttr,
+        map {
+          my $n = $_;
+          # say STDERR "in outer map ($n)";
+          my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+          # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
+
+          tie my %spectrumAttr, 'Tie::IxHash';
+          %spectrumAttr = (
+                           index => $spectrumIndex++,
+                           id => "controllerType=x controllerNumber=x scan=$n",
+                           defaultArrayLength => $scanData->{length}
+          );
+
+          tie my %peakAttr, 'Tie::IxHash';
+          %peakAttr = (
+                           index => $spectrumIndex++,
+          );
+
+	  $xmlgen->spectrum(
+            \%spectrumAttr,
+
+            (
+             map {
+               tie my %attr, 'Tie::IxHash';
+               %attr = (
+                       cvRef => 'MS',
+                       accession => $accession{$_} || 'unknown',
+                       name => $_,
+                       value => $scanData->{spectrum_param}->{$_}
+                      );
+               $xmlgen->cvParam(\%attr)
+             } @{$scanData->{spectrum_param_keys}}
+            ), # this paren is needed to prevent map from eating up the list that follows
+
+            $xmlgen->peaks(\%peakAttr, "=== cut ==="),
+            map {
+              my $n = $_;
+              my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
+
+              # say STDERR "  in inner map ($n)";
+              my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+
+              tie my %precursorAttr, 'Tie::IxHash';
+              if ( $isMS2 ) {
+                %precursorAttr = (
+                  precursorIntensity  => sprintf("%.2f", $scanData->{precursorIntensity}),
+                  precursorCharge     => $charge_state{$n-1},
+                  activationMethod    => uc $Finnigan::activationMethod,
+                );
+                delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
+              }
+
+              tie my %peaksAttr, 'Tie::IxHash';
+              %peaksAttr = (
+                precision       => 32,
+                byteOrder       => "network",
+                contentType     => "m/z-int",
+                compressionType => "none",
+                compressedLen   => 0,
               );
-              delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
-            }
-    
-            tie my %peaksAttr, 'Tie::IxHash';
-            %peaksAttr = (
-              precision       => 32,
-              byteOrder       => "network",
-              contentType     => "m/z-int",
-              compressionType => "none",
-              compressedLen   => 0,
-            );
-            if ( $isMS2 ) {
-              $xmlgen->scan(
-                $attr,
-                $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
-                $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-              )
-            }
-            else { # for MS1 scans like SIM or zoom scans
-              $xmlgen->scan(
-                $attr,
-                $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-              )
-            }
-          } dependent_scans(\%scan_event, $n)
-        ); # $xmlgen->scan (parent)
-      } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
-    )
+              if ( $isMS2 ) {
+                $xmlgen->scan(
+                  $scanData->{attr},
+                  $xmlgen->precursorMz(\%precursorAttr, $scanData->{precursorMz}),
+                  $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+                )
+              }
+              else { # for MS1 scans like SIM or zoom scans
+                $xmlgen->scan(
+                  $scanData->{attr},
+                  $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+                )
+              }
+            } dependent_scans(\%scan_event, $n)
+          ); # $xmlgen->scan (parent)
+        } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
+      ) # $xmlgen->spectrumList
+    ) # $xmlgen->run
   ) # $xmlgen->mzXML
 ); # $xmlgen->indexedmzXML
 
@@ -867,7 +900,61 @@ sub read_scan {
                basePeakIntensity => $scan_index->{$i}->{"base intensity"},
                totIonCurrent => $scan_index->{$i}->{"total current"},
               );
+
+  my %spectrum_param;
+  my @spectrum_param_keys = (
+                    'ms level',
+                    'positive scan',
+                    'negative scan',
+                    'unknown (any) polarity scan',
+                    'profile spectrum',
+                    'base peak m/z',
+                    'base peak intensity',
+                    'total ion current',
+                    'lowest observed m/z',
+                    'highest observed m/z',
+                   );
+
+  $spectrum_param{'ms level'} = $ms_power;
+  $spectrum_param{'negative scan'} = '' if $scan_event->{$i}->preamble->polarity == 0;
+  $spectrum_param{'positive scan'} = '' if $scan_event->{$i}->preamble->polarity == 1;
+  $spectrum_param{'unknown (any) polarity'} = '' if $scan_event->{$i}->preamble->polarity == 2;
+  $spectrum_param{'profile spectrum'} = '' if $ph->profile_size;
+  $spectrum_param{'base peak m/z'} = $scan_index->{$i}->{"base mz"};
+  $spectrum_param{'base peak intensity'} = $scan_index->{$i}->{"base intensity"};
+  $spectrum_param{'total ion current'} = $scan_index->{$i}->{"total current"};
+  $spectrum_param{'lowest observed m/z'} = 'have to figure it out';
+  $spectrum_param{'highest observed m/z'} = 'have to figure it out';
+
+  my %scanlist_param;
+  my @scanlist_param_keys = (
+                             'no combination',
+                            );
+  $scanlist_param{'no combination'} = 'what does it mean?';
+
+  my %scan_param;
+  my @scan_param_keys = (
+                         'scan start time',
+                         'filter string',
+                         'preset scan configuration',
+                         'ion injection time',
+                        );
+  $scan_param{'scan start time'} = $scan_index->{$i}->{"start time"};
+  $scan_param{'filter string'} = "$scan_event->{$i}";
+  $scan_param{'preset scan configuration'} = 'what does it mean?';
+  $scan_param{'ion injection time'} = 'have to find it';
+
+  my %scanwindow_param;
+  my @scanwindow_param_keys = (
+                               'no combination',
+                              );
+  $scanwindow_param{'scan window lower limit'} = $scan_index->{$i}->{"low mz"};
+  $scanwindow_param{'scan window upper limit'} = $scan_index->{$i}->{"high mz"};
+
   if ( $ms_power == 2 ) {
+    unshift @spectrum_param_keys, 'MS2 spectrum';
+    $spectrum_param{'MS2 spectrum'} = '';
+
     $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
     my $prec_mz = $scan_event{$i}->reaction->precursor;
     my $intensity = 0;
@@ -875,14 +962,36 @@ sub read_scan {
     if ($parent_scan_data->{type} eq 'profile') {
       $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
     }
-    return (\%scanAttr, {
-                         Mz => $prec_mz,
-                         intensity => $intensity
-                        }
-           );
+    return {
+            attr => \%scanAttr,
+            precursorMz => $prec_mz,
+            precursorIntensity => $intensity,
+            length => $peakCount,
+            spectrum_param => \%spectrum_param,
+            spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
+            scanlist_param => \%scanlist_param,
+            scanlist_param_keys => [grep {exists $scanlist_param{$_}} @scanlist_param_keys],
+            scan_param => \%scan_param,
+            scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
+            scanwindow_param => \%scanwindow_param,
+            scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
+           };
   }
   else {
-    return (\%scanAttr);
+    unshift @spectrum_param_keys, 'MS1 spectrum';
+    $spectrum_param{'MS1 spectrum'} = '';
+    return {
+            attr => \%scanAttr,
+            length => $peakCount,
+            spectrum_param => \%spectrum_param,
+            spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
+            scanlist_param => \%scanlist_param,
+            scanlist_param_keys => [grep {exists $scanlist_param{$_}} @scanlist_param_keys],
+            scan_param => \%scan_param,
+            scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
+            scanwindow_param => \%scanwindow_param,
+            scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
+           };
   }
 }
 
@@ -916,6 +1025,12 @@ sub get_stat_info {  ## this will only work in Linux
 
   return $ref;
 }
+
+
+# Local Variables:
+# indent-tabs-mode: nil
+# tab-width: 2
+# End:
 
 __END__
 =head1 NAME
