@@ -29,6 +29,7 @@ WriteMakefile(
 			  'bin/uf-rfi',
 			  'bin/uf-meth',
 			  'bin/uf-scan',
+			  'bin/uf-scan-light',
 			  'bin/uf-runheader',
 			  'bin/uf-instrument',
 			  'bin/uf-log',

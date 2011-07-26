@@ -41,8 +41,20 @@ sub peak_count { # deprecated
   $_[0]->{"peak count"};
 }
 
+sub print_bins {
+  my ($self, $range, $add_zeroes, $option) = @_;
+  foreach ( @{$self->bins($range, $add_zeroes, $option)} ) {
+    if ($option eq 'm/z' or $option eq 'intensity') {
+      say $_;
+    }
+    else {
+      say join "\t", @$_;
+    }
+  }
+}
+
 sub bins {
-  my ($self, $range, $add_zeroes) = @_;
+  my ($self, $range, $add_zeroes, $option) = @_;
   my @list;
   my $start = $self->{"first value"};
   my $step = $self->{step};
@@ -52,7 +64,20 @@ sub bins {
     }
   }
 
-  push @list, [$range->[0], 0] if $add_zeroes;
+  if ($add_zeroes) {
+    if (not defined $option or $option eq 'm/z, intensity') {
+      push @list, [$range->[0], 0];
+    }
+    elsif ($option eq 'm/z') {
+      push @list, $range->[0]
+    }
+    elsif ($option eq 'intensity') {
+      push @list, 0
+    }
+    else {
+      die "unknown option: $option";
+    }
+  }
   my $last_bin_written = 0;
 
   my $shift = 0; # this is declared outside the chunk loop to allow
@@ -70,7 +95,18 @@ sub bins {
       # between this and the previous chunk
       my $x0 = $x - $step;
       my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x0) + $shift : $x0;
-      push @list, [$x_conv, 0];
+      if (not defined $option or $option eq 'm/z, intensity') {
+        push @list, [$x_conv, 0];
+      }
+      elsif ($option eq 'm/z') {
+        push @list, $x_conv;
+      }
+      elsif ($option eq 'intensity') {
+        push @list, 0
+      }
+      else {
+        die "unknown option: $option";
+      }
     }
 
     foreach my $j ( 0 .. $chunk->{nbins} - 1) {
@@ -86,7 +122,18 @@ sub bins {
         }
       }
       my $bin = $first_bin + $j;
-      push @list, [$x_conv, $chunk->{signal}->[$j]];
+      if (not defined $option or $option eq 'm/z, intensity') {
+        push @list, [$x_conv, $chunk->{signal}->[$j]];
+      }
+      elsif ($option eq 'm/z') {
+        push @list, $x_conv;
+      }
+      elsif ($option eq 'intensity') {
+        push @list, $chunk->{signal}->[$j];
+      }
+      else {
+        die "unknown option: $option";
+      }
       $last_bin_written = $first_bin + $j;
     }
 
@@ -101,7 +148,18 @@ sub bins {
       my $bin = $last_bin_written + 1;
       # $x has been incremented inside the chunk loop
       my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
-      push @list, [$x_conv, 0];
+      if (not defined $option or $option eq 'm/z, intensity') {
+        push @list, [$x_conv, 0];
+      }
+      elsif ($option eq 'm/z') {
+        push @list, $x_conv;
+      }
+      elsif ($option eq 'intensity') {
+        push @list, 0
+      }
+      else {
+        die "unknown option: $option";
+      }
       $last_bin_written++;
     }
   }
@@ -111,8 +169,21 @@ sub bins {
     # left between it and the end of the range ($self->nbins - 1)
     my $x = $start + ($last_bin_written + 1) * $step;
     my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
-    push @list, [$x_conv, 0];
-    push @list, [$range->[1], 0] if $add_zeroes;
+    if (not defined $option or $option eq 'm/z, intensity') {
+      push @list, [$x_conv, 0];
+      push @list, [$range->[1], 0] if $add_zeroes;
+    }
+    elsif ($option eq 'm/z') {
+      push @list, $x_conv;
+      push @list, $range->[1] if $add_zeroes;
+    }
+    elsif ($option eq 'intensity') {
+      push @list, 0;
+      push @list, 0 if $add_zeroes;
+    }
+    else {
+      die "unknown option: $option";
+    }
   }
   return \@list;
 }
@@ -405,7 +476,7 @@ sub find_peak {
         $high_ix = $mid_ix - 1;
       }
     }
-    return (undef, $dist);    
+    return (undef, $dist);
   }
 }
 
