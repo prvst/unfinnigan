@@ -11,6 +11,10 @@ sub charge_state {
   shift->{data}->{"Charge State:"}->{value}
 }
 
+sub injection_time {
+  shift->{data}->{"Ion Injection Time (ms):"}->{value}
+}
+
 1;
 __END__
 
@@ -52,6 +56,10 @@ The constructor method. It needs a previously decoded header to work.
 =item charge_state
 
 Get the charge state of the base ion
+
+=item injection_time
+
+Get ion injection time in milliseconds
 
 =back
 

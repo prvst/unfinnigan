@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 233;
+use Test::More tests => 234;
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -353,6 +353,7 @@ is( tell INPUT, $params_addr, "should have arrived at the start of ScanParameter
 # Finally reach ScanParameters. Test these, then return to scan data.
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
+ok( num_equal($p->injection_time, 200.0), "ScanParameters->injection_time (type 10)" );
 for my $i (2 .. $nrecords) { # skip to the end of file
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 }
