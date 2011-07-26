@@ -423,8 +423,12 @@ is( $scan->header->profile_size, 5624, "Scan->header->profile_size" );
 $profile = $scan->profile;
 $profile->set_converter( $converter ); # from ScanEvent 1 above
 $bins = $profile->bins;
-ok( num_equal($bins->[0]->[0], 400.209152455266), "Scan->profile->bins (Mz)" );
-ok( num_equal($bins->[0]->[1], 447.530578613281), "Scan->profile->bins (signal)" );
+ok( num_equal($bins->[0]->[0], 400.209152455266), "Scan->profile->bins; Mz" );
+ok( num_equal($bins->[0]->[1], 447.530578613281), "Scan->profile->bins; signal" );
+# $bins = $profile->bins(undef, 'add zeroes');
+# use Data::Dumper;
+# diag(Dumper($bins));
+# ok( num_equal($bins->[0]->[0], 400.209152455266), "Scan->profile->bins; Mz" );
 
 $c = $scan->centroids;
 $c->{'scan number'} = 1; # to support scan number reporting inside Scan::find_peak_intensity()

@@ -5,6 +5,7 @@ use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
+use Data::Dumper;
 use Data::UUID; 
 use Devel::Size qw(size total_size);
 use Digest::SHA1;
@@ -129,6 +130,7 @@ my %accession = (
   'electron multiplier' => 'MS:1000253',
 
   'MS1 spectrum' => 'MS:1000579',
+  'MSn spectrum' => 'MS:1000580',
   'ms level' => 'MS:1000511',
   'positive scan' => 'MS:1000130',
   'profile spectrum' => 'MS:1000128',
@@ -142,6 +144,27 @@ my %accession = (
   'filter string' => 'MS:1000512',
   'preset scan configuration' => 'MS:1000616',
   'ion injection time' => 'MS:1000927',
+  'scan window lower limit' => 'MS:1000501',
+  'scan window upper limit' => 'MS:1000500',
+
+  'm/z' => 'MS:1000040',
+  'minute' => 'UO:0000031',
+  'millisecond' => 'UO:0000028',
+  'number of counts' => 'MS:1000131',
+);
+
+my %ms_unit = (
+  'base peak m/z' => 'm/z',
+  'base peak intensity' => 'number of counts',
+  'lowest observed m/z' => 'm/z',
+  'highest observed m/z' => 'm/z',
+  'scan window lower limit' => 'm/z',
+  'scan window upper limit' => 'm/z',
+);
+
+my %uo_unit = (
+  'scan start time' => 'minute',
+  'ion injection time' => 'millisecond',
 );
 
 my %components = (
@@ -318,12 +341,14 @@ my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 seek INPUT, $params_addr, 0;
 
 my %charge_state;
+my %injection_time;
 foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   my $n = $i + 1;
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
   next if $n < $from;
   my $charge = $p->charge_state;
   $charge_state{$i} = $charge if $charge;
+  $injection_time{$i} = $p->injection_time;
   last if $n == $to;
 }
 
@@ -341,7 +366,7 @@ my %scan_data;
 my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.dat' );
 binmode $scandata_fh;
 
-my $xmlgen = XML::Generator->new(
+my $x = XML::Generator->new(
                                  pretty => 1,
                                  # conformance => 'strict',
                                  namespace => ['http://psi.hupo.org/ms/mzml'],
@@ -574,79 +599,79 @@ tie my %xmlDecl, 'Tie::IxHash';
            );
 
 my $spectrumIndex = 0;
-my $xml = $xmlgen->indexedmzML(
+my $xml = $x->indexedmzML(
   ['http://psi.hupo.org/ms/mzml'],
   \%indexedXmlDecl,
-  $xmlgen->mzML(
+  $x->mzML(
     ['http://psi.hupo.org/ms/mzml'],
     \%xmlDecl,
-    $xmlgen->cvList({count => 2},
-      $xmlgen->cv(\%cvAttr1),
-      $xmlgen->cv(\%cvAttr2)
+    $x->cvList({count => 2},
+      $x->cv(\%cvAttr1),
+      $x->cv(\%cvAttr2)
     ),
-    $xmlgen->fileDescription(
-      $xmlgen->fileContent(
-        map {$xmlgen->cvParam($_->[0])} grep {$_->[1]} (
+    $x->fileDescription(
+      $x->fileContent(
+        map {$x->cvParam($_->[0])} grep {$_->[1]} (
          [\%fileContentAttr1, $ms_power{'1'}],
          [\%fileContentAttr2, (grep {$_ ne '1'} %ms_power)[0]] # there are other powers besides 1
         )
       ),
-      $xmlgen->sourceFileList({count => 1},
-        $xmlgen->sourceFile(\%sourceFileAttr,
-          $xmlgen->cvParam(\%sourceFileAttr1),
-          $xmlgen->cvParam(\%sourceFileAttr2),
-          $xmlgen->cvParam(\%sourceFileAttr3)
+      $x->sourceFileList({count => 1},
+        $x->sourceFile(\%sourceFileAttr,
+          $x->cvParam(\%sourceFileAttr1),
+          $x->cvParam(\%sourceFileAttr2),
+          $x->cvParam(\%sourceFileAttr3)
         )
       )
     ),
-    $xmlgen->referenceableParamGroupList({count => 1},
-      $xmlgen->referenceableParamGroup({
+    $x->referenceableParamGroupList({count => 1},
+      $x->referenceableParamGroup({
         id => 'CommonInstrumentParams'},
-        $xmlgen->cvParam(\%instModelCvAttr),
-        $xmlgen->cvParam(\%instSerialNoCvAttr),
+        $x->cvParam(\%instModelCvAttr),
+        $x->cvParam(\%instSerialNoCvAttr),
       )
     ),
-    $xmlgen->softwareList({count => 2},
-      $xmlgen->software(\%softwareAttr1,
-        $xmlgen->cvParam(\%softwareCvAttr1)
+    $x->softwareList({count => 2},
+      $x->software(\%softwareAttr1,
+        $x->cvParam(\%softwareCvAttr1)
       ),
-      $xmlgen->software(\%softwareAttr2,
-        $xmlgen->cvParam(\%softwareCvAttr2)
+      $x->software(\%softwareAttr2,
+        $x->cvParam(\%softwareCvAttr2)
       )
     ),
-    $xmlgen->instrumentConfigurationList({count => scalar keys %translatedComponent},
+    $x->instrumentConfigurationList({count => scalar keys %translatedComponent},
       map {
         my $n = $_;
         my $ordinal = 1;
-        $xmlgen->instrumentConfiguration({id => "IC$n"},
-          $xmlgen->referenceableParamGroupRef({ref => 'CommonInstrumentParams'}),
-          $xmlgen->componentList({count => scalar keys %{$translatedComponent{$n}}},
+        $x->instrumentConfiguration({id => "IC$n"},
+          $x->referenceableParamGroupRef({ref => 'CommonInstrumentParams'}),
+          $x->componentList({count => scalar keys %{$translatedComponent{$n}}},
             map {
               my $subcomponent = $_;
               my $type = $subcomponent->[0];
-              $xmlgen->$type({order => $ordinal++},
+              $x->$type({order => $ordinal++},
                 map {
-                  $xmlgen->cvParam($translatedComponent{$n}->{$type}->{$_})
+                  $x->cvParam($translatedComponent{$n}->{$type}->{$_})
                 } @{$subcomponent->[1]} # features
               );
             } @{$components{$model}->[$n-1]}
           ),
-          $xmlgen->softwareRef({ref => 'Xcalibur'})
+          $x->softwareRef({ref => 'Xcalibur'})
         );
       } sort {$a <=> $b} keys %translatedComponent
     ),
 
-    $xmlgen->dataProcessingList({count => 1},
-      $xmlgen->dataProcessing({id => 'mzml-conversion'},
-        $xmlgen->processingMethod(
+    $x->dataProcessingList({count => 1},
+      $x->dataProcessing({id => 'mzml-conversion'},
+        $x->processingMethod(
           \%processingMethodAttr,
-          $xmlgen->cvParam(\%processingMethodCvAttr)
+          $x->cvParam(\%processingMethodCvAttr)
         )
       )
     ),
 
-    $xmlgen->run(\%runAttr,
-      $xmlgen->spectrumList(
+    $x->run(\%runAttr,
+      $x->spectrumList(
         \%spectrumListAttr,
         map {
           my $n = $_;
@@ -661,73 +686,100 @@ my $xml = $xmlgen->indexedmzML(
                            defaultArrayLength => $scanData->{length}
           );
 
-          tie my %peakAttr, 'Tie::IxHash';
-          %peakAttr = (
-                           index => $spectrumIndex++,
-          );
+          tie my %binaryDataArrayCvAttr1, 'Tie::IxHash';
+          %binaryDataArrayCvAttr1 = (
+                                     cvRef => 'MS',
+                                     accession => 'MS:1000523',
+                                     name => '64-bit float',
+                                     value => ''
+                                    );
 
-	  $xmlgen->spectrum(
+          tie my %binaryDataArrayCvAttr2, 'Tie::IxHash';
+          %binaryDataArrayCvAttr2 = (
+                                     cvRef => 'MS',
+                                     accession => 'MS:1000576',
+                                     name => 'no compression',
+                                     value => ''
+                                    );
+
+          tie my %binaryDataArrayCvAttr3, 'Tie::IxHash';
+          %binaryDataArrayCvAttr3 = (
+                                     cvRef => 'MS',
+                                     accession => 'MS:1000514',
+                                     name => 'm/z array',
+                                     value => '',
+                                     unitCvRef => 'MS',
+                                     unitAccession => 'MS:1000040',
+                                     unitName => 'm/z'
+                                    );
+
+          tie my %binaryDataArrayCvAttr4, 'Tie::IxHash';
+          %binaryDataArrayCvAttr4 = (
+                                     cvRef => 'MS',
+                                     accession => 'MS:1000521',
+                                     name => '32-bit float',
+                                     value => ''
+                                    );
+
+          tie my %binaryDataArrayCvAttr5, 'Tie::IxHash';
+          %binaryDataArrayCvAttr5 = (
+                                     cvRef => 'MS',
+                                     accession => 'MS:1000515',
+                                     name => 'intensity array',
+                                     value => '',
+                                     unitCvRef => 'MS',
+                                     unitAccession => 'MS:1000131',
+                                     unitName => 'number of counts'
+                                    );
+
+          $x->spectrum(
             \%spectrumAttr,
+            (map {
+              $x->cvParam(cvAttributesFor($_, $scanData, 'spectrum_param')),
+            } @{$scanData->{spectrum_param_keys}}), # this paren is needed to prevent map from eating up the list that follows
 
-            (
-             map {
-               tie my %attr, 'Tie::IxHash';
-               %attr = (
-                       cvRef => 'MS',
-                       accession => $accession{$_} || 'unknown',
-                       name => $_,
-                       value => $scanData->{spectrum_param}->{$_}
-                      );
-               $xmlgen->cvParam(\%attr)
-             } @{$scanData->{spectrum_param_keys}}
-            ), # this paren is needed to prevent map from eating up the list that follows
+            $x->scanList(
+              {count => 1},
+              (map {
+                $x->cvParam(cvAttributesFor($_, $scanData, 'scanlist_param')),
+              } @{$scanData->{scanlist_param_keys}}),
 
-            $xmlgen->peaks(\%peakAttr, "=== cut ==="),
-            map {
-              my $n = $_;
-              my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
+              $x->scan(
+                (map {
+                  $x->cvParam(cvAttributesFor($_, $scanData, 'scan_param')),
+                } @{$scanData->{scan_param_keys}}),
 
-              # say STDERR "  in inner map ($n)";
-              my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+                $x->scanWindowList(
+                  {count => 1},
+                  $x->scanWindow(
+                    (map {
+                      $x->cvParam(cvAttributesFor($_, $scanData, 'scanwindow_param')),
+                    } @{$scanData->{scanwindow_param_keys}}),
+                  ) # $x->scanWindow
+                ) # $x->scanWindowList
+              ) # $x->scan
+            ), # $x->scanList
 
-              tie my %precursorAttr, 'Tie::IxHash';
-              if ( $isMS2 ) {
-                %precursorAttr = (
-                  precursorIntensity  => sprintf("%.2f", $scanData->{precursorIntensity}),
-                  precursorCharge     => $charge_state{$n-1},
-                  activationMethod    => uc $Finnigan::activationMethod,
-                );
-                delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
-              }
-
-              tie my %peaksAttr, 'Tie::IxHash';
-              %peaksAttr = (
-                precision       => 32,
-                byteOrder       => "network",
-                contentType     => "m/z-int",
-                compressionType => "none",
-                compressedLen   => 0,
-              );
-              if ( $isMS2 ) {
-                $xmlgen->scan(
-                  $scanData->{attr},
-                  $xmlgen->precursorMz(\%precursorAttr, $scanData->{precursorMz}),
-                  $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-                )
-              }
-              else { # for MS1 scans like SIM or zoom scans
-                $xmlgen->scan(
-                  $scanData->{attr},
-                  $xmlgen->peaks(\%peaksAttr, "=== cut ===")
-                )
-              }
-            } dependent_scans(\%scan_event, $n)
-          ); # $xmlgen->scan (parent)
-        } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
-      ) # $xmlgen->spectrumList
-    ) # $xmlgen->run
-  ) # $xmlgen->mzXML
-); # $xmlgen->indexedmzXML
+            $x->binaryDataArrayList({count => 2},
+              $x->binaryDataArray({encodedLength => $scanData->{encoded_length}},
+                $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
+                $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
+                $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
+                $x->binary()
+              ), # $x->binaryDataArray
+              $x->binaryDataArray({encodedLength => $scanData->{encoded_length}},
+                $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
+                $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
+                $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
+                $x->binary()
+              ) # $x->binaryDataArray
+            ) # $x->binaryDataArrayList
+          ); # $x->scan (parent)
+        } $from .. $to
+      ) # $x->spectrumList
+    ) # $x->run
+  ) # $x->mzXML
+); # $x->indexedmzXML
 
 say STDERR "xml object size: " . total_size($xml);
 
@@ -941,19 +993,20 @@ sub read_scan {
                         );
   $scan_param{'scan start time'} = $scan_index->{$i}->{"start time"};
   $scan_param{'filter string'} = "$scan_event->{$i}";
-  $scan_param{'preset scan configuration'} = 'what does it mean?';
-  $scan_param{'ion injection time'} = 'have to find it';
+  $scan_param{'preset scan configuration'} = $scan_index->{$i}->{'scan event'} + 1;
+  $scan_param{'ion injection time'} = $injection_time{$i};
 
   my %scanwindow_param;
   my @scanwindow_param_keys = (
-                               'no combination',
+                               'scan window lower limit',
+                               'scan window upper limit',
                               );
   $scanwindow_param{'scan window lower limit'} = $scan_index->{$i}->{"low mz"};
   $scanwindow_param{'scan window upper limit'} = $scan_index->{$i}->{"high mz"};
 
   if ( $ms_power == 2 ) {
-    unshift @spectrum_param_keys, 'MS2 spectrum';
-    $spectrum_param{'MS2 spectrum'} = '';
+    unshift @spectrum_param_keys, 'MSn spectrum';
+    $spectrum_param{'MSn spectrum'} = '';
 
     $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
     my $prec_mz = $scan_event{$i}->reaction->precursor;
@@ -975,6 +1028,7 @@ sub read_scan {
             scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
             scanwindow_param => \%scanwindow_param,
             scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
+            encoded_length => 'x'
            };
   }
   else {
@@ -991,10 +1045,47 @@ sub read_scan {
             scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
             scanwindow_param => \%scanwindow_param,
             scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
+            encoded_length => 'x'
            };
   }
 }
 
+sub cvAttributesFor {
+  my ($name, $scanData, $param_group) = @_;
+
+  tie my %attr, 'Tie::IxHash';
+  if ( $ms_unit{$name} ) {
+    %attr = (
+             cvRef => 'MS',
+             accession => $accession{$name} || 'unknown',
+             name => $name,
+             value => $scanData->{$param_group}->{$name},
+             unitCvRef => 'MS',
+             unitAccession => $accession{$ms_unit{$name}},
+             unitName => $ms_unit{$name}
+            );
+  }
+  elsif ( $uo_unit{$name} ) {
+    %attr = (
+             cvRef => 'MS',
+             accession => $accession{$name} || 'unknown',
+             name => $name,
+             value => $scanData->{$param_group}->{$name},
+             unitCvRef => 'UO',
+             unitAccession => $accession{$uo_unit{$name}},
+             unitName => $uo_unit{$name}
+            );
+  }
+  else {
+    %attr = (
+             cvRef => 'MS',
+             accession => $accession{$name} || 'unknown',
+             name => $name,
+             value => $scanData->{$param_group}->{$name}
+            );
+  }
+  return \%attr;
+}
 
 sub get_stat_info {  ## this will only work in Linux
   my $ref = {};
