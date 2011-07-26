@@ -3,9 +3,8 @@
 
 #########################
 
-# change 'tests => 1' to 'tests => last_test_to_print';
-
 use Test::More tests => 234;
+
 BEGIN { use_ok('Finnigan') };
 
 #########################
@@ -18,7 +17,7 @@ BEGIN { use_ok('Finnigan') };
 sub num_equal {
   my( $float1, $float2, $diff ) = @_;
   abs( $float1 - $float2 ) < ($diff or 0.00001);
-} 
+}
 
 my $file = "t/100225.raw";
 open INPUT, "<$file" or die "can't open '$file': $!";
