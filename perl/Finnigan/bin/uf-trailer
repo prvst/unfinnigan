@@ -23,6 +23,7 @@ my $args = new Getopt::Declare q{
   -h[tml]			dump as html [requires: -d]
   -w[iki]			dump in wiki table format [requires: -d]
   -r[elative]			show relative addersess in dump [requires: -d]
+  -p[reamble]			include the full listing of ScanEventPreamble
   <file>			input file [required]
 }
   or exit(-1);
@@ -145,7 +146,9 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
   my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION);
   next if $i < $from;
-  # say join " ", $e->preamble->list('decode');
+  if (exists $args->{-p}) {
+    say "$i\tpreamble: " . join " ", $e->preamble->list('decode');
+  }
   if ( exists $args->{-d} ) {
     say "\n$n:" if ( $to > $from ); # not a single record
     if ( exists $args->{-h} ) {
@@ -214,6 +217,7 @@ uf-trailer [options] file
   -h[tml]                        dump as html
   -w[iki]                        dump in wiki table format
   -r[elative]                    show relative addersess in dump
+  -p[reamble]                    include the full listing of ScanEventPreamble
   <file>                         input file
 
 =head1 OPTIONS
@@ -262,6 +266,10 @@ absence of the -all option, the entries will be enumerated according
 to ScanIndex, which will be treated as a linked list -- starting with
 the entry whose index matches the first scan number.
 
+=item B<-p[reamble]>
+
+Show the translated scan event preamble for each scan on one line (useful for comparison and for spotting changes).
+
 =back
 
 =head1 DESCRIPTION
@@ -290,7 +298,7 @@ Finnigan::Reaction
 
 =item List all scan events in the file using Thermo's short-hand notation known as "filter line":
 
-  uf-trailer sample.raw 
+  uf-trailer sample.raw
 
 =item List the first five records:
 
