@@ -44,7 +44,7 @@ sub peak_count { # deprecated
 sub print_bins {
   my ($self, $range, $add_zeroes, $option) = @_;
   foreach ( @{$self->bins($range, $add_zeroes, $option)} ) {
-    if ($option eq 'm/z' or $option eq 'intensity') {
+    if (defined $option and ($option eq 'm/z' or $option eq 'intensity')) {
       say $_;
     }
     else {
