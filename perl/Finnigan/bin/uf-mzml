@@ -975,8 +975,14 @@ sub read_scan {
   $spectrum_param{'base peak m/z'} = $scan_index->{$i}->{"base mz"};
   $spectrum_param{'base peak intensity'} = $scan_index->{$i}->{"base intensity"};
   $spectrum_param{'total ion current'} = $scan_index->{$i}->{"total current"};
-  $spectrum_param{'lowest observed m/z'} = 'have to figure it out';
-  $spectrum_param{'highest observed m/z'} = 'have to figure it out';
+
+  $spectrum_param{'lowest observed m/z'} = &{$profile->{converter}}(
+    $profile->{'first value'} + $profile->{step}
+  ) + ($profile->{chunks}->[0]->{'fudge'} || 0); # according to msconvert
+
+  $spectrum_param{'highest observed m/z'} = &{$profile->{converter}}(
+    $profile->{'first value'} + $profile->{step} * $profile->{nbins}
+  ); # according to msconvert
 
   my %scanlist_param;
   my @scanlist_param_keys = (
