@@ -14,7 +14,7 @@ my $args = new Getopt::Declare q{
   [mutex: -mz -intensity]
   -l[ist]				print or extract the peak list [required]
   -p[rofile]				print or extract the scan profile as a 2-column table [required]
-  -b[ookends] <n:+i>			add <n> empty bins on either side of each profile chunk [requires: -p]
+  -b[ookends] <n:+i>			add <n> empty bins on both sides of each profile chunk [requires: -p]
   -n[umber] <n:+i>			select scan number <n> [required]
   -mz					list just the M/z values [requires: -p || -l]
   -intensity				list just the intensity values [requires: -p || -l]
@@ -141,17 +141,17 @@ if ( exists $args->{-p}) {
 __END__
 =head1 NAME
 
-uf-scan - examine peak data in a single MS scan
+uf-scan-light - list the profile or centroids in a single MS scan
 
 =head1 SYNOPSIS
 
-uf-scan [options] file
+uf-scan-light [options] file
 
  Options:
 
   -l[ist]                            list the called peaks [required]
   -p[rofile]                         print the scan profile as a 2-column table [required]
-  -b[ookends] <n:+i>		     add <n> empty bins on either side of each profile chunk [requires: -p]
+  -b[ookends] <n:+i>		     add <n> empty bins on both sides of each profile chunk [requires: -p]
   -n[umber] <n:+i>                   select scan number <n> [required]
   -mz                                list just the M/z values
   <file>                             input file [required]
@@ -178,7 +178,7 @@ Gives the number of a single scan to process
 
 =item B<-b[ookends]>
 
-Sets the number of empty bins to add to either side of each profile chunk. Doing so can enhance the appearance of peak shapes rendered on simple plots when the profiles are filtered. Threshold filtering removes the bases of detected peaks as well, so this is a primitive way of reconstructing them.
+Sets the number of empty bins to add prepend and append to each profile chunk. Doing so can enhance the appearance of peak shapes rendered on simple plots when the profiles are filtered. Threshold filtering removes the bases of detected peaks as well, so this is a primitive way of reconstructing them.
 
 =back
 
