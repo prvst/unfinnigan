@@ -1,7 +1,7 @@
-use warnings FATAL => qw( all );
-our $VERSION = 0.0206;
-use feature qw/say/;
+use feature qw/state say/;
 use 5.010;
+use strict;
+use warnings FATAL => qw( all );
 
 # ----------------------------------------------------------------------------------------
 package Finnigan::Scan::Profile;
@@ -42,150 +42,116 @@ sub peak_count { # deprecated
 }
 
 sub print_bins {
-  my ($self, $range, $add_zeroes, $option) = @_;
-  foreach ( @{$self->bins($range, $add_zeroes, $option)} ) {
-    if (defined $option and ($option eq 'm/z' or $option eq 'intensity')) {
-      say $_;
-    }
-    else {
-      say join "\t", @$_;
-    }
+  my ($self, $bookends, $option) = @_;
+
+  my $list = $self->bins($bookends);
+  foreach my $i ( 0 .. $list->{length} - 1 ) {
+    say $list->{mz}->[$i] . "\t" . $list->{intensity}->[$i];
   }
 }
 
 sub bins {
-  my ($self, $range, $add_zeroes, $option) = @_;
-  my @list;
+  my ($self, $bookends) = @_;
+  my @mzList;
+  my @intensityList;
   my $start = $self->{"first value"};
   my $step = $self->{step};
-  unless ( $range ) {
-    unless ( exists $self->{converter} ) {
-      $range = [$start, $start + $self->{nbins} * $step];
-    }
-  }
 
-  if ($add_zeroes) {
-    if (not defined $option or $option eq 'm/z, intensity') {
-      push @list, [$range->[0], 0];
-    }
-    elsif ($option eq 'm/z') {
-      push @list, $range->[0]
-    }
-    elsif ($option eq 'intensity') {
-      push @list, 0
+  # Write something at the start of the range
+  my $front_bookend_needed;
+  if ($bookends) {
+    my $fudge = $self->{chunks}->[0]->{'fudge'} || 0;
+    my $startMz = &{$self->{converter}}( $start + $step ) + $fudge;
+    my $next_chunk_start = $self->{chunks}->[0]->{'first bin'};
+    my $gap_size = $next_chunk_start - 0; # will see if it's 0 or 1
+    my $fill_size;
+    if ( $gap_size < 2 * $bookends ) {
+      $fill_size = $gap_size;
+      $front_bookend_needed = 0;
     }
     else {
-      die "unknown option: $option";
+      $fill_size = $bookends;
+      $front_bookend_needed = 1;
+    }
+
+    foreach my $j ( 1 .. $fill_size ) {
+      push @mzList, &{$self->{converter}}( $start + $j * $step ) + $fudge;
+      push @intensityList, 0;
     }
   }
-  my $last_bin_written = 0;
 
-  my $shift = 0; # this is declared outside the chunk loop to allow
-                 # writing the empty bin following the last chunk with
-                 # the same amount of shift as in the last chunk
+  my $fudge = 0; # this is declared outside the chunk loop to allow
+                 # writing the empty bins at the end of the range with
+                 # the same amount of fudge as in the last chunk
 
   foreach my $i ( 0 .. $self->{"peak count"} - 1 ) { # each chunk
     my $chunk = $self->{chunks}->[$i];
-    my $first_bin = $chunk->{"first bin"};
-    $shift = $chunk->{fudge} || 0;
+    my $first_bin = $chunk->{'first bin'};
+    $fudge = $chunk->{fudge} || 0;
     my $x = $start + $first_bin * $step;
 
-    if ( $add_zeroes and $last_bin_written < $first_bin - 1) {
-      # add an empty bin ahead of the chunk, unless there is no gap
-      # between this and the previous chunk
-      my $x0 = $x - $step;
-      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x0) + $shift : $x0;
-      if (not defined $option or $option eq 'm/z, intensity') {
-        push @list, [$x_conv, 0];
-      }
-      elsif ($option eq 'm/z') {
-        push @list, $x_conv;
-      }
-      elsif ($option eq 'intensity') {
-        push @list, 0
-      }
-      else {
-        die "unknown option: $option";
+    # front bookend
+    if ( $bookends and $front_bookend_needed ) {
+      # add empty bins ahead of the chunk
+      foreach my $j ( $first_bin - $bookends .. $first_bin - 1) {
+	push @mzList, &{$self->{converter}}( $start + $j * $step ) + $fudge;
+	push @intensityList, 0;
       }
     }
 
+    # chunk data
     foreach my $j ( 0 .. $chunk->{nbins} - 1) {
-      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift : $x;
-      $x += $step;
-      if ( $range ) {
-        if ( exists $self->{converter} ) {
-          next unless $x_conv >= $range->[0] and $x_conv <= $range->[1];
-        }
-        else {
-          # frequencies have the reverse order
-          next unless $x_conv <= $range->[0] and $x_conv >= $range->[1];
-        }
-      }
-      my $bin = $first_bin + $j;
-      if (not defined $option or $option eq 'm/z, intensity') {
-        push @list, [$x_conv, $chunk->{signal}->[$j]];
-      }
-      elsif ($option eq 'm/z') {
-        push @list, $x_conv;
-      }
-      elsif ($option eq 'intensity') {
-        push @list, $chunk->{signal}->[$j];
-      }
-      else {
-        die "unknown option: $option";
-      }
-      $last_bin_written = $first_bin + $j;
+      push @mzList, &{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $fudge;
+      push @intensityList, $chunk->{signal}->[$j];
     }
 
-    if ( $add_zeroes
-         and
-         $i < $self->{"peak count"} - 1
-         and
-         $last_bin_written < $self->{chunks}->[$i+1]->{"first bin"} - 1
-       ) {
-      # add an empty bin following the chunk, unless there is no gap
-      # between this and the next chunk
-      my $bin = $last_bin_written + 1;
-      # $x has been incremented inside the chunk loop
-      my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
-      if (not defined $option or $option eq 'm/z, intensity') {
-        push @list, [$x_conv, 0];
-      }
-      elsif ($option eq 'm/z') {
-        push @list, $x_conv;
-      }
-      elsif ($option eq 'intensity') {
-        push @list, 0
+    # tail bookeend
+    if ( $bookends ) {
+
+      # determine the number of gap bins
+      my $next_chunk_start;
+      my $next_chunks_fudge;
+      if ($i == $self->{'peak count'} - 1 ) {
+	$next_chunk_start = $self->{nbins};
+	$next_chunks_fudge = $fudge;
       }
       else {
-        die "unknown option: $option";
+	$next_chunk_start = $self->{chunks}->[$i + 1]->{'first bin'};
+	$next_chunks_fudge = $self->{chunks}->[$i + 1]->{fudge};
       }
-      $last_bin_written++;
+      my $gap_size = $next_chunk_start - $first_bin - $chunk->{nbins}; # will see if it's 0 or 1
+      my $fill_size = $bookends;
+      if ( $gap_size < 2 * $bookends ) {
+	$fill_size = $gap_size;
+	$front_bookend_needed = 0;
+      }
+      else {
+	$front_bookend_needed = 1;
+      }
+
+      # write the tail bookend
+      foreach my $j ( $chunk->{nbins} .. $chunk->{nbins} + $fill_size - 1 ) {
+	# Using the next chunk's fudge to add zeroes to this chunk is unreasonable, but whatever they please...
+	push @mzList, &{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $next_chunks_fudge;
+	push @intensityList, 0;
+      }
     }
   }
 
-  if ( $add_zeroes and $last_bin_written < $self->{nbins} - 1 ) {
-    # add an empty bin following the last chunk, unless there is no gap
-    # left between it and the end of the range ($self->nbins - 1)
-    my $x = $start + ($last_bin_written + 1) * $step;
-    my $x_conv = exists $self->{converter} ? &{$self->{converter}}($x) + $shift: $x;
-    if (not defined $option or $option eq 'm/z, intensity') {
-      push @list, [$x_conv, 0];
-      push @list, [$range->[1], 0] if $add_zeroes;
-    }
-    elsif ($option eq 'm/z') {
-      push @list, $x_conv;
-      push @list, $range->[1] if $add_zeroes;
-    }
-    elsif ($option eq 'intensity') {
-      push @list, 0;
-      push @list, 0 if $add_zeroes;
-    }
-    else {
-      die "unknown option: $option";
+  # filling the bookend at the end of the range
+  if ( $bookends and $front_bookend_needed ) {
+    my $last_bin = $self->{nbins};
+    foreach my $j ( $last_bin - $bookends + 1 .. $last_bin) {
+      push @mzList, &{$self->{converter}}( $start + $j * $step ) + $fudge;
+      push @intensityList, 0;
     }
   }
-  return \@list;
+
+  return {
+	  mz => \@mzList,
+	  intensity => \@intensityList,
+	  length => scalar @mzList,
+	 };
 }
 
 sub find_peak_intensity {
@@ -204,7 +170,7 @@ sub find_peak_intensity {
   }
 
   my @chunk_ix = ($nearest_chunk);
-  $i = $nearest_chunk;
+  my $i = $nearest_chunk;
   while ( $i < $self->{"peak count"} - 1 and $self->chunk_dist($i, $i++) <= $MAX_DIST ) { # kHz
     push @chunk_ix, $i;
   }
