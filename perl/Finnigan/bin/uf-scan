@@ -250,7 +250,7 @@ Used with either B<-l> or B<-p>, this option option clips the binary data chunk 
 
 =head1 DESCRIPTION
 
-B<uf-scan> can be used to list or plot the scan data for a single scan. The B<-profile> option instructs B<uf-scan> to print the profile data, the B<-list> options lists the peaks, and the B<-plot> option writes an R script to plot the profile and peak centroids, if both kinds of data are present in the raw file, or just the profile if the centroids are not present.
+B<uf-scan> can be used to list or plot the scan data for a single scan. The B<-profile> option instructs B<uf-scan> to print the profile data, the B<-list> option lists the peaks, and the B<-plot> option writes an R script to plot the profile and peak centroids, if both kinds of data are present in the raw file, or just the profile if the centroids are not present.
 
 Options B<-profile>, B<-list> and B<-plot> are mutually exclusive.
 
