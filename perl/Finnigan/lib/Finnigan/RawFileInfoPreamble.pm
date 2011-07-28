@@ -153,7 +153,11 @@ The constructor method
 
 =item timestamp
 
-Get the timestamp in the text form: Wkd Mmm DD YYYY hh:mm:ss.ms
+Get the timestamp in text form: Wkd Mmm DD YYYY hh:mm:ss.ms
+
+=item xmlTimestamp
+
+Get the timestamp in text form, in the format adopted in mzML: YYYY-MM-DDThh:mm:ssZ
 
 =item data_addr
 

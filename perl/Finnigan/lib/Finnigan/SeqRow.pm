@@ -124,7 +124,11 @@ Get the Finnigan::InjectionData object
 
 =item file_name
 
-Get the original file name
+Get the original raw file name
+
+=item path
+
+Get the directory path to the raw file in the source file system
 
 =back
 
