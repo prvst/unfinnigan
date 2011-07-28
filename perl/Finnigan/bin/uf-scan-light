@@ -166,11 +166,11 @@ Print a brief help message and exits.
 
 =item B<-l[ist]>
 
-Get the peak list from the scan number B<-n>, if they are available. If the called peaks are not present, uf-scan will print a message to that effect and exit.
+Get the peak list from the scan number B<-n>, if they are available. If the called peaks are not present, B<uf-scan-light> will print a message to that effect and exit.
 
 =item B<-p[rofile]>
 
-Prints the scan profile for scan number B<-n>, if it is available. If the profile is not present, uf-scan will print a message to that effect and exit.
+Prints the scan profile for scan number B<-n>, if it is available. If the profile is not present, B<uf-scan-light> will print a message to that effect and exit.
 
 =item B<-n[umber]>
 
@@ -222,7 +222,7 @@ L<uf-mzml>
 
 =item Print the list of centroids in the 1st scan:
 
- uf-scan -l -n 1 sample.raw
+ uf-scan-light -l -n 1 sample.raw
 
 Note that B<uf-scan-lightq> does not calculate the peak centroids from the
 profile; it only lists the existing centroids if they are present.
