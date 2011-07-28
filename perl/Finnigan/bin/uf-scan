@@ -18,7 +18,7 @@ my $args = new Getopt::Declare q{
   -plot				plot the profile (and the called peaks, if available) [required]
   -v				convert f -> M/z [requires: -p]
   -z				add empty bins [requires: -p || -plot]
-  -n[unmber] <n:+i>		select scan number <n> [required]
+  -n[umber] <n:+i>		select scan number <n> [required]
   -mz <low:+n> .. <high:+n>	limit the plot to the range of M/z values between <low> and <high> [requires: (-p && -v) || -plot]
   <file>			input file [required]
 }
@@ -214,7 +214,7 @@ uf-scan [options] file
   -plot                         plot the profile (along with the called peaks, if available) [required]
   -v                            convert f -> M/z [requires: -p]
   -z                            add empty bins [requires: -p]
-  -n[unmber] <n:+i>             select scan number <n> [required]
+  -n[umber] <n:+i>              select scan number <n> [required]
   -mz <low:+n> .. <high:+n>     limit the plot to the range of M/z values between <low> and <high> [requires: -plot]
   <file>                        input file [required]
 
