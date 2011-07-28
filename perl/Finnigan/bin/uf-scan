@@ -199,7 +199,7 @@ END
 __END__
 =head1 NAME
 
-uf-scan - examine peak data in a single MS scan
+uf-scan - examine scan data in a single MS scan
 
 =head1 SYNOPSIS
 
