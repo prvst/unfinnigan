@@ -8,11 +8,15 @@ use Finnigan;
 our @ISA = ('Finnigan::GenericRecord');
 
 sub charge_state {
-  shift->{data}->{"Charge State:"}->{value}
+  shift->{data}->{'Charge State:'}->{value}
 }
 
 sub injection_time {
-  shift->{data}->{"Ion Injection Time (ms):"}->{value}
+  shift->{data}->{'Ion Injection Time (ms):'}->{value}
+}
+
+sub monoisotopicMz {
+  shift->{data}->{'Monoisotopic M/Z:'}->{value}
 }
 
 1;
@@ -60,6 +64,10 @@ Get the charge state of the base ion
 =item injection_time
 
 Get ion injection time in milliseconds
+
+=item monoisotopicMz
+
+Get the monoisotopic mass of precursor ion
 
 =back
 

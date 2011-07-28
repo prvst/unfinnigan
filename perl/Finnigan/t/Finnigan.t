@@ -3,7 +3,7 @@
 
 #########################
 
-use Test::More tests => 234;
+use Test::More tests => 235;
 
 BEGIN { use_ok('Finnigan') };
 
@@ -353,7 +353,10 @@ is( tell INPUT, $params_addr, "should have arrived at the start of ScanParameter
 my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
 ok( num_equal($p->injection_time, 200.0), "ScanParameters->injection_time (type 10)" );
-for my $i (2 .. $nrecords) { # skip to the end of file
+# skip to the MS2 scan
+my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
+ok( num_equal($p->monoisotopicMz, 445.121063232), "ScanParameters->monoisotopicMz (type 11)" );
+for my $i (3 .. $nrecords) { # skip to the end of file
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 }
 is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
