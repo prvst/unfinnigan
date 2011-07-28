@@ -342,6 +342,7 @@ seek INPUT, $params_addr, 0;
 
 my %charge_state;
 my %injection_time;
+my %monoisotopicMz;
 foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   my $n = $i + 1;
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
@@ -349,6 +350,7 @@ foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   my $charge = $p->charge_state;
   $charge_state{$i} = $charge if $charge;
   $injection_time{$i} = $p->injection_time;
+  $monoisotopicMz{$i} = $p->monoisotopicMz;
   last if $n == $to;
 }
 
@@ -363,7 +365,7 @@ my $parent_scan_data; # for looking up the precursor ion for each of
                       # the dependent MS2 scans
 
 my %scan_data;
-my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.dat' );
+my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.tmp' );
 binmode $scandata_fh;
 
 my $x = XML::Generator->new(
@@ -479,7 +481,7 @@ tie my %softwareCvAttr1, 'Tie::IxHash';
 # Conversion Software -------------------------------------------
 tie my %softwareAttr2, 'Tie::IxHash';
 %softwareAttr2 = (
-                    id => $0,
+                    id => basename $0,
                     version => $Finnigan::VERSION
                    );
 
@@ -744,11 +746,14 @@ my $xml = $x->indexedmzML(
                 $x->cvParam(cvAttributesFor($_, $scanData, 'scanlist_param')),
               } @{$scanData->{scanlist_param_keys}}),
 
-              $x->scan(
+              $x->scan({ instrumentConfigurationRef => $scanData->{ms_level} == 1 ? undef : "IC$scanData->{ms_level}" },
                 (map {
                   $x->cvParam(cvAttributesFor($_, $scanData, 'scan_param')),
                 } @{$scanData->{scan_param_keys}}),
-
+                (map {
+                  say STDERR $_;
+                  $x->userParam($scanData->{user_param_attr}->{$_})
+                } @{$scanData->{user_param_keys}}),
                 $x->scanWindowList(
                   {count => 1},
                   $x->scanWindow(
@@ -761,17 +766,17 @@ my $xml = $x->indexedmzML(
             ), # $x->scanList
 
             $x->binaryDataArrayList({count => 2},
-              $x->binaryDataArray({encodedLength => $scanData->{encoded_length}},
+              $x->binaryDataArray({encodedLength => $scanData->{mz_encoded_length}},
                 $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
                 $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
                 $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
-                $x->binary()
+                $x->binary('mz data placeholder')
               ), # $x->binaryDataArray
-              $x->binaryDataArray({encodedLength => $scanData->{encoded_length}},
+              $x->binaryDataArray({encodedLength => $scanData->{signal_encoded_length}},
                 $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
                 $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
                 $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
-                $x->binary()
+                $x->binary('intensity data placeholder')
               ) # $x->binaryDataArray
             ) # $x->binaryDataArrayList
           ); # $x->scan (parent)
@@ -793,26 +798,26 @@ foreach my $n ( $from .. $to ) {
   my $i = $n - 1;
   my $chunk_no = $n - $from;
 
-  my $rec;
-  my ($pos, $bytes_to_read) = @{$scan_data{$i}};
-  seek $scandata_fh, $pos, 0;
-  my $nbytes = read $scandata_fh, $rec, $bytes_to_read;
-  $nbytes == $bytes_to_read
-    or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
-  my $peaks = thaw $rec;
+  # my $rec;
+  # my ($pos, $bytes_to_read) = @{$scan_data{$i}};
+  # seek $scandata_fh, $pos, 0;
+  # my $nbytes = read $scandata_fh, $rec, $bytes_to_read;
+  # $nbytes == $bytes_to_read
+  #   or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
+  # my $peaks = thaw $rec;
 
-  my $buf;
-  foreach my $peak ( @$peaks ) {
-    $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
-  }
+  # my $buf;
+  # foreach my $peak ( @$peaks ) {
+  #   $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
+  # }
   print $xml_chunk[$chunk_no];
-  $xml_scan_offset{$i} = tell STDOUT;
-  if ( $buf ) {
-    print encode_base64($buf, "");
-  }
-  else {
-    say STDERR "no data in scan $n";
-  }
+  # $xml_scan_offset{$i} = tell STDOUT;
+  # if ( $buf ) {
+  #   print encode_base64($buf, "");
+  # }
+  # else {
+  #   say STDERR "no data in scan $n";
+  # }
 }
 substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
 say $xml_chunk[-1];
@@ -879,27 +884,19 @@ sub read_scan {
   # the M/z range; use the full range for now; consider adding a command-line argument;
   my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
 
-  my $peakCount;
+  my $length;
   if ( exists $args->{-c} ) {
-    $peakCount = $peaks->count;
+    $length = $peaks->count;
     my $pos = tell $scandata_fh;
-    if ( $peakCount ) {
+    if ( $length ) {
       # say STDERR "freezing peak list $scan_event->{$i} at $i";
       print $scandata_fh freeze $peaks->list;
     }
     elsif ( $profile ) {
       # if there are no called peaks, treat the profile as a set of peaks
-      my $bins;
-      if ( $profile->nchunks > 1) {
-        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
-      }
-      else { # the profile is stored as one huge set of bins
-        $bins = $profile->bins($range); # this call implicitly uses the forward converter
-        require Data::Dumper;
-        print Dumper($bins);
-      }
-      $peakCount = scalar @$bins;
-      say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
+      my $bins = $profile->bins(4); # add four-bin bookends
+      $length = scalar @$bins;
+      say STDERR "freezing profile ($length) $scan_event->{$i} at $i";
       my $pos = tell $scandata_fh;
       print $scandata_fh freeze $bins;
     }
@@ -913,17 +910,17 @@ sub read_scan {
     say STDERR "reading the profile...";
     # simply read the profile and ignore the centroids
     if ( $profile ) {
-      my $bins;
+      my $scan;
       if ( $profile->nchunks > 1) {
-        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+        $scan = $profile->binsAndValues(4); # add four-bin bookends
       }
       else {
-        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+        $scan = $profile->binsAndValues;
       }
-      $peakCount = scalar @$bins;      
-      say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
+      $length = $scan->{length};
+      say STDERR "freezing profile ($length) $scan_event->{$i} at $i";
       my $pos = tell $scandata_fh;
-      print $scandata_fh freeze $bins;
+      print $scandata_fh freeze $scan;
       $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
     }
     else {
@@ -931,26 +928,13 @@ sub read_scan {
       exit -1;
     }
   }
-  my %polarity_symbol = (
-                         0 => "-",
-                         1 => "+",
-                         2 => "any",
-                        );
 
   tie my %scanAttr, 'Tie::IxHash';
   %scanAttr = (
                num           => $n,
-               msLevel       => $ms_power,
-               peaksCount    => $peakCount,
-               polarity      => $polarity_symbol{$scan_event->{$i}->preamble->polarity},
                scanType      => $scan_event->{$i}->preamble->scan_type(decode => 1),
                filterLine    => "$scan_event->{$i}",
                retentionTime => sprintf("PT%.4fS", 60 * $scan_index->{$i}->{"start time"}),
-               lowMz         => $scan_index->{$i}->{"low mz"},
-               highMz        => $scan_index->{$i}->{"high mz"},
-               basePeakMz    => $scan_index->{$i}->{"base mz"},
-               basePeakIntensity => $scan_index->{$i}->{"base intensity"},
-               totIonCurrent => $scan_index->{$i}->{"total current"},
               );
 
   my %spectrum_param;
@@ -1010,6 +994,9 @@ sub read_scan {
   $scanwindow_param{'scan window lower limit'} = $scan_index->{$i}->{"low mz"};
   $scanwindow_param{'scan window upper limit'} = $scan_index->{$i}->{"high mz"};
 
+  my $mz_encoded_length = int(($length * 8 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
+  my $signal_encoded_length = int(($length * 4 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
+
   if ( $ms_power == 2 ) {
     unshift @spectrum_param_keys, 'MSn spectrum';
     $spectrum_param{'MSn spectrum'} = '';
@@ -1021,11 +1008,19 @@ sub read_scan {
     if ($parent_scan_data->{type} eq 'profile') {
       $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
     }
+
+    tie my %monoMzAttr, 'Tie::IxHash';
+    %monoMzAttr = (
+                  name => '[Thermo Trailer Extra]Monoisotopic M/Z:',
+                  value => $monoisotopicMz{$i},
+                  type => 'xsd:float'
+                 );
+
     return {
-            attr => \%scanAttr,
+            ms_level => $ms_power,
             precursorMz => $prec_mz,
             precursorIntensity => $intensity,
-            length => $peakCount,
+            length => $length,
             spectrum_param => \%spectrum_param,
             spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
             scanlist_param => \%scanlist_param,
@@ -1034,15 +1029,18 @@ sub read_scan {
             scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
             scanwindow_param => \%scanwindow_param,
             scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
-            encoded_length => 'x'
+            user_param_keys => ['monoMz'],
+            user_param_attr => {monoMz => \%monoMzAttr},
+            mz_encoded_length => $mz_encoded_length,
+            signal_encoded_length => $signal_encoded_length
            };
   }
   else {
     unshift @spectrum_param_keys, 'MS1 spectrum';
     $spectrum_param{'MS1 spectrum'} = '';
     return {
-            attr => \%scanAttr,
-            length => $peakCount,
+            ms_level => $ms_power,
+            length => $length,
             spectrum_param => \%spectrum_param,
             spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
             scanlist_param => \%scanlist_param,
@@ -1051,7 +1049,8 @@ sub read_scan {
             scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
             scanwindow_param => \%scanwindow_param,
             scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
-            encoded_length => 'x'
+            mz_encoded_length => $mz_encoded_length,
+            signal_encoded_length => $signal_encoded_length
            };
   }
 }
