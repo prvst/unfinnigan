@@ -6,6 +6,7 @@ use feature qw/state say/;
 use 5.010;
 
 use Getopt::Declare;
+use Encode qw//;
 use Data::Hexdumper qw/hexdump/;
 use Finnigan;
 
@@ -149,7 +150,13 @@ elsif ( exists $args->{-p} ) {
     say "$args->{-p} has no data";
     exit -1;
   }
-  print $data;
+  if ($args->{-p} =~ /Text/) {
+    # windows encoding is not readable on a text terminal
+    print Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $data));
+  }
+  else {
+    print $data;
+  }
   #      $mf->header->dump(relative => exists $args->{-r});
 }
 
@@ -270,7 +277,7 @@ Example output:
     Data (228 bytes)
     Text (1176 bytes)
     Comments (4 bytes)
-  Surveyor Sample Pump 
+  Surveyor Sample Pump
     Data (228 bytes)
     Text (1176 bytes)
     Comments (4 bytes)
