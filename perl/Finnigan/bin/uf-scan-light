@@ -188,7 +188,7 @@ B<uf-scan-light> can be used to list the scan data for a single scan. Unlike L<u
 
 Also, B<uf-scan-light> does not output the raw profiles. It automatically converts frequency values to M/z.
 
-The B<-profile> option instructs B<uf-scan> to print the profile data. The B<-list> option lists the peaks
+The B<-profile> option instructs B<uf-scan-light> to print the profile data. The B<-list> option lists the peaks.
 
 Options B<-profile> and B<-list> are mutually exclusive.
 
