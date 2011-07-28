@@ -184,7 +184,7 @@ Sets the number of empty bins to add prepend and append to each profile chunk. D
 
 =head1 DESCRIPTION
 
-B<uf-scan-light> can be used to list the scan data for a single scan. Unlike L<uf-scan>, it is based on a lightweight version of scan data decoder, L<Finnigan::Scan>, which does not preserve the location and type data of decoded elements and therefore cannot generate detailed data dumps. But there is one thing B<uf-scan-light> does that L<uf-scan> does not: it mimics the manner in which Thermo-derived tools assign bin values in profile mode and it can insert stretches of empty bins on both sides of each profile peaks, in the same way as they do it. Setting the value of the B<-bookends> option to B<4> results in the same output as that of readw or msconvert.
+B<uf-scan-light> can be used to list the scan data for a single scan. Unlike L<uf-scan>, it is based on a lightweight version of scan data decoder, L<Finnigan::Scan>, which does not preserve the location and type data of decoded elements and therefore cannot generate detailed data dumps. But there is one thing B<uf-scan-light> does that L<uf-scan> does not: it mimics the manner in which Thermo-derived tools assign bin values in profile mode and it can insert stretches of empty bins on both sides of each profile peak, in the same way as they do it. Setting the value of the B<-bookends> option to B<4> results in the same output as that of readw or msconvert.
 
 Also, B<uf-scan-light> does not output the raw profiles. It automatically converts frequency values to M/z.
 
