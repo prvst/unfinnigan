@@ -212,11 +212,11 @@ L<uf-mzml>
 
 =over 4
 
-=item Print all raw profile bins in the 1st scan:
+=item Print converted profile bins (M/z values) in the 1st scan:
 
  uf-scan-light -p -n 1 sample.raw
 
-=item Print all raw profile bins in the 1st scan and add four-bin 'bookends' to make the output look like Thermo's:
+=item Print converted  profile bins in the 1st scan and add four-bin 'bookends' to make the output look like Thermo's:
 
  uf-scan-light -p -n 1 -b 4 sample.raw
 
