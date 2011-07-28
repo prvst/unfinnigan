@@ -42,18 +42,31 @@ sub peak_count { # deprecated
 }
 
 sub print_bins {
-  my ($self, $bookends, $option) = @_;
+  my ($self, $bookends) = @_;
 
-  my $list = $self->bins($bookends);
-  foreach my $i ( 0 .. $list->{length} - 1 ) {
-    say $list->{mz}->[$i] . "\t" . $list->{intensity}->[$i];
+  foreach ( @{$self->bins($bookends)} ) {
+    say join "\t", @$_;
   }
+}
+
+sub binsAndValues {
+  my ($self, $bookends) = @_;
+  my @mzList;
+  my @intensityList;
+  foreach ( @{$self->bins($bookends)} ) {
+    push @mzList, $_->[0];
+    push @intensityList, $_->[1];
+  }
+  return {
+	  mz => \@mzList,
+	  intensity => \@intensityList,
+	  length => scalar @mzList
+	 };
 }
 
 sub bins {
   my ($self, $bookends) = @_;
-  my @mzList;
-  my @intensityList;
+  my @list;
   my $start = $self->{"first value"};
   my $step = $self->{step};
 
@@ -75,8 +88,7 @@ sub bins {
     }
 
     foreach my $j ( 1 .. $fill_size ) {
-      push @mzList, &{$self->{converter}}( $start + $j * $step ) + $fudge;
-      push @intensityList, 0;
+      push @list, [&{$self->{converter}}( $start + $j * $step ) + $fudge, 0]
     }
   }
 
@@ -94,15 +106,13 @@ sub bins {
     if ( $bookends and $front_bookend_needed ) {
       # add empty bins ahead of the chunk
       foreach my $j ( $first_bin - $bookends .. $first_bin - 1) {
-	push @mzList, &{$self->{converter}}( $start + $j * $step ) + $fudge;
-	push @intensityList, 0;
+	push @list, [&{$self->{converter}}( $start + $j * $step ) + $fudge, 0];
       }
     }
 
     # chunk data
     foreach my $j ( 0 .. $chunk->{nbins} - 1) {
-      push @mzList, &{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $fudge;
-      push @intensityList, $chunk->{signal}->[$j];
+      push @list, [&{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $fudge, $chunk->{signal}->[$j]];
     }
 
     # tail bookeend
@@ -132,8 +142,7 @@ sub bins {
       # write the tail bookend
       foreach my $j ( $chunk->{nbins} .. $chunk->{nbins} + $fill_size - 1 ) {
 	# Using the next chunk's fudge to add zeroes to this chunk is unreasonable, but whatever they please...
-	push @mzList, &{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $next_chunks_fudge;
-	push @intensityList, 0;
+	push @list, [&{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $next_chunks_fudge, 0]
       }
     }
   }
@@ -142,16 +151,11 @@ sub bins {
   if ( $bookends and $front_bookend_needed ) {
     my $last_bin = $self->{nbins};
     foreach my $j ( $last_bin - $bookends + 1 .. $last_bin) {
-      push @mzList, &{$self->{converter}}( $start + $j * $step ) + $fudge;
-      push @intensityList, 0;
+      push @list, [&{$self->{converter}}( $start + $j * $step ) + $fudge, 0];
     }
   }
 
-  return {
-	  mz => \@mzList,
-	  intensity => \@intensityList,
-	  length => scalar @mzList,
-	 };
+  return \@list;
 }
 
 sub find_peak_intensity {
