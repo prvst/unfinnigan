@@ -765,6 +765,10 @@ my $xml = $x->indexedmzML(
               ) # $x->scan
             ), # $x->scanList
 
+            (map {
+              $x->precursorList({count => scalar @{$scanData->{precursor_list}}})
+            } grep {exists $scanData->{$_}} qw/precursor_list/),
+
             $x->binaryDataArrayList({count => 2},
               $x->binaryDataArray({encodedLength => $scanData->{mz_encoded_length}},
                 $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
@@ -1018,8 +1022,12 @@ sub read_scan {
 
     return {
             ms_level => $ms_power,
-            precursorMz => $prec_mz,
-            precursorIntensity => $intensity,
+            precursor_list => [
+                               [
+                                precursorMz => $prec_mz,
+                                precursorIntensity => $intensity,
+                               ]
+                              ],
             length => $length,
             spectrum_param => \%spectrum_param,
             spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
