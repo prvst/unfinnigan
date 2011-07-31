@@ -146,6 +146,9 @@ my %accession = (
   'ion injection time' => 'MS:1000927',
   'scan window lower limit' => 'MS:1000501',
   'scan window upper limit' => 'MS:1000500',
+  'isolation window target m/z' => 'MS:1000827',
+  'isolation window lower offset' => 'MS:1000828',
+  'isolation window upper offset' => 'MS:1000829',
 
   'm/z' => 'MS:1000040',
   'minute' => 'UO:0000031',
@@ -160,6 +163,9 @@ my %ms_unit = (
   'highest observed m/z' => 'm/z',
   'scan window lower limit' => 'm/z',
   'scan window upper limit' => 'm/z',
+  'isolation window target m/z' => 'm/z',
+  'isolation window lower offset' => 'm/z',
+  'isolation window upper offset' => 'm/z',
 );
 
 my %uo_unit = (
@@ -324,12 +330,13 @@ foreach my $i ( 0 .. $error_log_length - 1) {
   }
 }
 
-# read the scan even hierarchy, even though it is not used -- just to reach the next object
+# read the scan even hierarchy
+my $scanEventTemplate;
 my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
 foreach my $i ( 0 .. $nsegs - 1) {
   my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
   foreach my $j ( 0 .. $n - 1) {
-    Finnigan::ScanEventTemplate->decode(\*INPUT, $VERSION);
+    $scanEventTemplate->{$i}->{$j} = Finnigan::ScanEventTemplate->decode(\*INPUT, $VERSION);
   }
 }
 
@@ -684,7 +691,7 @@ my $xml = $x->indexedmzML(
           tie my %spectrumAttr, 'Tie::IxHash';
           %spectrumAttr = (
                            index => $spectrumIndex++,
-                           id => "controllerType=x controllerNumber=x scan=$n",
+                           id => "controllerType=" . $scanData->{controllerType} . " controllerNumber=" . $scanData->{controllerNumber} . " scan=$n",
                            defaultArrayLength => $scanData->{length}
           );
 
@@ -766,7 +773,25 @@ my $xml = $x->indexedmzML(
             ), # $x->scanList
 
             (map {
-              $x->precursorList({count => scalar @{$scanData->{precursor_list}}})
+              $x->precursorList({count => scalar @{$scanData->{precursor_list}}},
+                (map {
+                  my $precursor = $_;
+                  $x->precursor({
+                                 spectrumRef => "controllerType="
+                                                . $parent_scan_data->{'controller type'}
+                                                . " controllerNumber="
+                                                . $parent_scan_data->{'controller number'}
+                                                . " scan="
+                                                . $parent_scan_data->{'scan number'}
+                                },
+                    $x->isolationWindow(
+                      (map {
+                        $x->cvParam(cvAttributesFor($_, $precursor, 'isolation_window_param')),
+                      } @{$scanData->{isolation_window_param_keys}}),
+                    )
+                  )
+                } @{$scanData->{precursor_list}})
+              )
             } grep {exists $scanData->{$_}} qw/precursor_list/),
 
             $x->binaryDataArrayList({count => 2},
@@ -865,6 +890,8 @@ sub read_scan {
   my ($n, $args, $scan_index, $scan_event, $scan_data) = @_;
   my $i = $n-1;
 
+  my $et = $scanEventTemplate->{$scan_index->{$i}->{'scan segment'}}->{$scan_index->{$i}->{'scan event'}};
+
   seek INPUT, $data_addr + $scan_index->{$i}->{offset}, 0;
 
   my $scan = Finnigan::Scan->decode( \*INPUT );
@@ -882,7 +909,9 @@ sub read_scan {
   if ( not $dependent ) {
     $parent_scan_data = $profile ? $profile : $peaks;
     $parent_scan_data->{type} = $profile ? 'profile' : 'centroid';
-    $parent_scan_data->{"scan number"} = $n;
+    $parent_scan_data->{'scan number'} = $n;
+    $parent_scan_data->{'controller type'} = $et->controllerType;
+    $parent_scan_data->{'controller number'} = $et->controllerNumber;
   }
 
   # the M/z range; use the full range for now; consider adding a command-line argument;
@@ -1001,16 +1030,29 @@ sub read_scan {
   my $mz_encoded_length = int(($length * 8 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
   my $signal_encoded_length = int(($length * 4 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
 
-  if ( $ms_power == 2 ) {
+  if ( $ms_power > 1 ) {
     unshift @spectrum_param_keys, 'MSn spectrum';
     $spectrum_param{'MSn spectrum'} = '';
 
-    $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
-    my $prec_mz = $scan_event{$i}->reaction->precursor;
-    my $intensity = 0;
     $parent_scan_data->{"dependent scan number"} = $n;
-    if ($parent_scan_data->{type} eq 'profile') {
-      $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
+
+    my @precursors;
+    my @isolation_window_param_keys = (
+                                       'isolation window target m/z',
+                                       'isolation window lower offset',
+                                       'isolation window upper offset',
+                                      );
+    foreach my $reaction ( @{$scan_event{$i}->precursors}) {
+      push @precursors, {
+                         precursorMz => $reaction->precursor,
+                         precursorIntensity => $parent_scan_data->find_peak_intensity($reaction->precursor) || 0,
+                         reactionEnergy => $reaction->energy,
+                         isolation_window_param => {
+                           'isolation window target m/z' => sprintf("%.2f", $reaction->precursor), # this is a fudge
+                           'isolation window lower offset' => 'unknown',
+                           'isolation window upper offset' => 'unknown'
+                         }
+                        };
     }
 
     tie my %monoMzAttr, 'Tie::IxHash';
@@ -1022,12 +1064,9 @@ sub read_scan {
 
     return {
             ms_level => $ms_power,
-            precursor_list => [
-                               [
-                                precursorMz => $prec_mz,
-                                precursorIntensity => $intensity,
-                               ]
-                              ],
+            controllerType => $et->controllerType,
+            controllerNumber => $et->controllerNumber,
+            precursor_list => \@precursors,
             length => $length,
             spectrum_param => \%spectrum_param,
             spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
@@ -1037,6 +1076,7 @@ sub read_scan {
             scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
             scanwindow_param => \%scanwindow_param,
             scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
+            isolation_window_param_keys => \@isolation_window_param_keys,
             user_param_keys => ['monoMz'],
             user_param_attr => {monoMz => \%monoMzAttr},
             mz_encoded_length => $mz_encoded_length,
@@ -1048,6 +1088,8 @@ sub read_scan {
     $spectrum_param{'MS1 spectrum'} = '';
     return {
             ms_level => $ms_power,
+            controllerType => $et->controllerType,
+            controllerNumber => $et->controllerNumber,
             length => $length,
             spectrum_param => \%spectrum_param,
             spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
