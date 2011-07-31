@@ -3,7 +3,7 @@
 
 #########################
 
-use Test::More tests => 235;
+use Test::More tests => 237;
 
 BEGIN { use_ok('Finnigan') };
 
@@ -221,6 +221,8 @@ is( $et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPre
 is( $et->preamble->ionization('decode'), "ESI", "ScanEventTemplate->ScanEventPreamble->ionization(decode) (1)" );
 is( $et->preamble->analyzer('decode'), "FTMS", "ScanEventTemplate->ScanEventPreamble->analyzer(decode) (1)" );
 is( $et->preamble->stringify, "FTMS + p ESI Full ms", "ScanEventTemplate->ScanEventPreamble->stringify (1)" );
+is( $et->controllerType, 0, "ScanEventTemplate->controllerType; Assumption - not verified!");
+is( $et->controllerNumber, 1, "ScanEventTemplate->controllerNumber; Assumption - not verified!");
 ok( num_equal($et->fraction_collector->low, 400), "ScanEventTemplate->FractionCollector->low (1)" );
 ok( num_equal($et->fraction_collector->high, 2000), "ScanEventTemplate->FractionCollector->high (1)" );
 is( $et->fraction_collector->stringify, "[400.00-2000.00]", "ScanEventTemplate->FractionCollector->stringify (1)" );
