@@ -152,11 +152,14 @@ my %accession = (
   'selected ion m/z' => 'MS:1000744',
   'charge state' => 'MS:1000041',
   'peak intensity' => 'MS:1000042',
+  'collision-induced dissociation' => 'MS:1000133',
+  'collision energy' => 'MS:1000045',
 
   'm/z' => 'MS:1000040',
   'minute' => 'UO:0000031',
   'millisecond' => 'UO:0000028',
   'number of counts' => 'MS:1000131',
+  'electronvolt' => 'UO:0000266',
 );
 
 my %ms_unit = (
@@ -176,6 +179,7 @@ my %ms_unit = (
 my %uo_unit = (
   'scan start time' => 'minute',
   'ion injection time' => 'millisecond',
+  'collision energy' => 'electronvolt',
 );
 
 my %components = (
@@ -803,7 +807,12 @@ my $xml = $x->indexedmzML(
                           } @{$scanData->{selected_ion_param_keys}})
                         )
                       } @{$precursor->{selected_ion_list}})
-                    )
+                    ),
+                    $x->activation(
+                      (map {
+                        $x->cvParam(cvAttributesFor($_, $precursor, 'activation_param')),
+                      } @{$precursor->{activation_param_keys}})
+                    ),
                   )
                 } @{$scanData->{precursor_list}})
               )
@@ -977,14 +986,6 @@ sub read_scan {
     }
   }
 
-  tie my %scanAttr, 'Tie::IxHash';
-  %scanAttr = (
-               num           => $n,
-               scanType      => $scan_event->{$i}->preamble->scan_type(decode => 1),
-               filterLine    => "$scan_event->{$i}",
-               retentionTime => sprintf("PT%.4fS", 60 * $scan_index->{$i}->{"start time"}),
-              );
-
   my %spectrum_param;
   my @spectrum_param_keys = (
                     'ms level',
@@ -1029,7 +1030,7 @@ sub read_scan {
                          'preset scan configuration',
                          'ion injection time',
                         );
-  $scan_param{'scan start time'} = $scan_index->{$i}->{"start time"};
+  $scan_param{'scan start time'} = $scan_index->{$i}->{'start time'};
   $scan_param{'filter string'} = "$scan_event->{$i}";
   $scan_param{'preset scan configuration'} = $scan_index->{$i}->{'scan event'} + 1;
   $scan_param{'ion injection time'} = $injection_time{$i};
@@ -1042,8 +1043,12 @@ sub read_scan {
   $scanwindow_param{'scan window lower limit'} = $scan_index->{$i}->{"low mz"};
   $scanwindow_param{'scan window upper limit'} = $scan_index->{$i}->{"high mz"};
 
-  my $mz_encoded_length = int(($length * 8 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
-  my $signal_encoded_length = int(($length * 4 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
+  # Base64 = (Bytes + 2 - ((Bytes + 2) MOD 3)) / 3 * 4
+
+  # my $mz_encoded_length = int(($length * 8 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
+  # my $signal_encoded_length = int(($length * 4 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
+  my $mz_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
+  my $signal_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
 
   if ( $ms_power > 1 ) {
     unshift @spectrum_param_keys, 'MSn spectrum';
@@ -1063,9 +1068,20 @@ sub read_scan {
                                    'peak intensity'
                                   );
 
+    my @activation_param_keys = (
+                                'collision-induced dissociation',
+                                'surface-induced dissociation',
+                                'electron capture dissociation',
+                                'electron-transfer dissociation',
+                                'electron photodetachment dissociation',
+                                'heated capillary dissociation',
+                                'multiphoton dissociation',
+                                'infrared multiphoton dissociation',
+                                'collision energy',
+                               );
+
     foreach my $reaction ( @{$scan_event{$i}->precursors}) {
       push @precursors, {
-                         reactionEnergy => $reaction->energy,
                          isolation_window_param => {
                            'isolation window target m/z' => sprintf("%.2f", $reaction->precursor), # this is a fudge
                            'isolation window lower offset' => 'unknown',
@@ -1080,8 +1096,13 @@ sub read_scan {
                                'peak intensity' => $parent_scan_data->find_peak_intensity($reaction->precursor) || 0,
                              }
                            }
-                         ]
+                         ],
+                         activation_param => {
+                           ($Finnigan::activationMethod eq 'cid' ? 'collision-induced dissociation' : 'unknown') => '',
+                           'collision energy' => $reaction->energy,
+                         }
                         };
+      $precursors[-1]->{activation_param_keys} = [grep {exists $precursors[-1]->{activation_param}->{$_}} @activation_param_keys];
     }
 
     tie my %monoMzAttr, 'Tie::IxHash';
