@@ -13,13 +13,13 @@ sub decode {
   my ($class, $stream, $version) = @_;
 
   my @fields = (
-                "preamble"           => ['object',  'Finnigan::ScanEventPreamble'],
-                "unknown long[1]"    => ['V',       'UInt32'],
-                "unknown long[2]"    => ['V',       'UInt32'],
-                "fraction collector" => ['object', 'Finnigan::FractionCollector'],
-                "unknown long[3]"    => ['V',       'UInt32'],
-                "unknown long[4]"    => ['V',       'UInt32'],
-                "unknown long[5]"    => ['V',       'UInt32'],
+                "preamble"                      => ['object',  'Finnigan::ScanEventPreamble'],
+                "presumed controller type"      => ['V',       'UInt32'],
+                "presumed controller number"    => ['V',       'UInt32'],
+                "fraction collector"            => ['object', 'Finnigan::FractionCollector'],
+                "unknown long[3]"               => ['V',       'UInt32'],
+                "unknown long[4]"               => ['V',       'UInt32'],
+                "unknown long[5]"               => ['V',       'UInt32'],
                );
 
   my $self = Finnigan::Decoder->read($stream, \@fields, $version);
@@ -31,9 +31,18 @@ sub preamble {
   shift->{data}->{"preamble"}->{value};
 }
 
+sub controllerType {
+  shift->{data}->{"presumed controller type"}->{value};
+}
+
+sub controllerNumber {
+  shift->{data}->{"presumed controller number"}->{value};
+}
+
 sub fraction_collector {
   shift->{data}->{"fraction collector"}->{value};
 }
+
 
 sub stringify {
   my $self = shift;
@@ -80,6 +89,14 @@ The constructor method
 =item preamble
 
 Get the Finnigan::ScanEventPreamble object
+
+=item controllerType
+
+Get the virtual controller type for this event (a guess; data not verified)
+
+=item controllerNumber
+
+Get the virtual controller number for this event (a guess; data not verified)
 
 =item fraction_collector
 
