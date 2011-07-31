@@ -120,7 +120,7 @@ def dump(src, length=8):
     return ''.join(result)
 
 class ThermoMethod(Parser):
-    MAGIC = "\x13\x00\x00\x00"
+    MAGIC = "\x0d\x00\x00\x00"
 
     PARSER_TAGS = {
         "magic": ((MAGIC, 0),),
@@ -139,46 +139,138 @@ class ThermoMethod(Parser):
         Parser.__init__(self, stream, **args)
 
     def validate(self):
-        # if self.stream.readBytes(0, len(self.MAGIC)) != self.MAGIC:
-        #     return "Unknon magic number"
+        if self.stream.readBytes(0, len(self.MAGIC)) != self.MAGIC:
+             return "Unknon magic number"
         return True
 
     def createFields(self):
-        for index in range(1, 20+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+        yield UInt32(self, "magic number")
+        yield UInt32(self, "unknown long[%s]" % 2)
+        yield UInt32(self, "suspected version")
 
-        for index in range(1, 10+1):
-            yield Float64(self, "unknown double[%s]" % index)
+        if self["suspected version"].value == 60:
+            for index in range(4, 20+1):
+                yield UInt32(self, "unknown long[%s]" % index)
 
-        for index in range(21, 23+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+            for index in range(1, 7+1):
+                yield Float64(self, "unknown double[%s]" % index)
+            yield Float64(self, "run time")
+            for index in range(9, 10+1):
+                yield Float64(self, "unknown double[%s]" % index)
 
-        yield Float64(self, "unknown double[%s]" % 11)
+            for index in range(21, 23+1):
+                yield UInt32(self, "unknown long[%s]" % index)
 
-        for index in range(24, 25+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+            yield Float64(self, "segment duration")
 
-        yield UInt32(self, "structOneCount")
-        for n in range(1, self["structOneCount"].value + 1):
-            yield StructOne(self, "StructOne[%s]" % n)
+            for index in range(24, 25+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            yield UInt32(self, "structOneCount")
+            for n in range(1, self["structOneCount"].value + 1):
+                yield StructOne(self, "StructOne[%s]" % n)
 
 
-        yield UInt32(self, "n_events")
-        for n in range(1, self["n_events"].value + 1):
-            yield ScanEvent(self, "ScanEvent[%s]" % n)
+            yield UInt32(self, "n_events")
+            for n in range(1, self["n_events"].value + 1):
+                yield ScanEvent(self, "ScanEvent[%s]" % n)
 
         
-        yield PascalStringWin32(self, "orig file name", "The original file name as seen on the instrument controller")
-        yield PascalStringWin32(self, "unknown string")
+            yield PascalStringWin32(self, "orig file name", "The original file name as seen on the instrument controller")
+            yield PascalStringWin32(self, "unknown string")
 
-        yield UInt32(self, "unknown long[%s]" % 26)
+            yield UInt32(self, "unknown long[%s]" % 26)
 
         
-        for n in range(1, 3 + 1):
-            yield StructFour(self, "StructFour[%s]" % n)
+            for n in range(1, 3 + 1):
+                yield StructFour(self, "StructFour[%s]" % n)
 
-        for n in range(1, 3 + 1):
-            yield StructFive(self,  "StructFive[%s]" % n)
+            for n in range(1, 3 + 1):
+                yield StructFive(self,  "StructFive[%s]" % n)
+
+        #####################################################################
+        elif self["suspected version"].value == 52:
+            for index in range(4, 18+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(1, 7+1):
+                yield Float64(self, "unknown double[%s]" % index)
+            yield Float64(self, "run time")
+            yield Float64(self, "segment duration")
+            yield Float64(self, "unknown double[%s]" % 11)
+
+            yield UInt32(self, "structOneCount")
+            for n in range(1, self["structOneCount"].value + 1):
+                yield StructOne(self, "StructOne[%s]" % n)
+
+            for index in range(12, 13+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(19, 24+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(14, 41+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(25, 26+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(42, 43+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(27, 28+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(44, 49+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(29, 36+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+
+            yield Float64(self, "unknown double[%s]" % 50)
+
+            for index in range(37, 56+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(51, 54+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(57, 63+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+
+            yield Float64(self, "unknown double[%s]" % 55)
+
+            for index in range(64, 74+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            yield Float64(self, "unknown double[%s]" % 56)
+            yield Float64(self, "unknown double[%s]" % 57)
+
+            yield UInt32(self, "unknown long[%s]" % 75)
+
+            for index in range(58, 66+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(76, 78+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(67, 69+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+            for index in range(79, 90+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            yield Float64(self, "unknown double[%s]" % 70)
+
+            for index in range(91, 96+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            for index in range(71, 80+1):
+                yield Float64(self, "unknown double[%s]" % index)
+
+
 
 # ------------------------------------------------------------
 
@@ -187,22 +279,45 @@ class StructOne(FieldSet):
 
     def createFields(self):
 
+        if self["/suspected version"].value == 60:
+            for index in range(1, 3+1):
+                yield Float64(self, "unknown double[%s]" % index)
 
-        for index in range(12, 14+1):
-            yield Float64(self, "unknown double[%s]" % index)
-
-        for index in range(27, 40+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+            for index in range(1, 14+1):
+                yield UInt32(self, "unknown long[%s]" % index)
 
 
-        yield UInt32(self, "structTwoCount")
-        for n in range(1, self["structTwoCount"].value + 1):
-            yield StructTwo(self, "StructTwo[%s]" % n)
+            yield UInt32(self, "structTwoCount")
+            for n in range(1, self["structTwoCount"].value + 1):
+                yield StructTwo(self, "StructTwo[%s]" % n)
      
-        yield StructThree(self, "StructThree[%s]" % 1)
+            yield StructThree(self, "StructThree[%s]" % 1)
 
+        elif self["/suspected version"].value == 52:
+            yield Float64(self, "unknown double[%s]" % 1)
+            yield UInt32(self, "unknown long[%s]" % 1)
+            yield UInt32(self, "unknown long[%s]" % 2)
+            yield Float64(self, "unknown double[%s]" % 2)
 
+            for index in range(3, 4+1):
+                yield UInt32(self, "unknown long[%s]" % index)
 
+            yield Float64(self, "unknown double[%s]" % 3)
+
+            for index in range(5, 13+1):
+                yield UInt32(self, "unknown long[%s]" % index)
+
+            yield UInt32(self, "structTwoCount")
+            #for n in range(1, self["structTwoCount"].value + 1):
+            for n in range(1, 9 + 1):
+                yield StructTwo52(self, "StructTwo52[%s]" % n)
+
+            yield StructThree52(self, "StructThree52[%s]" % 1)
+
+            yield PascalStringWin32(self, "file name")
+
+            for index in range(14, 17+1):
+                yield UInt32(self, "unknown long[%s]" % index)
 
 class StructTwo(FieldSet):
     endian = LITTLE_ENDIAN
@@ -229,6 +344,25 @@ class StructTwo(FieldSet):
             yield Float64(self, "unknown double[%s]" % index)
 
 
+class StructTwo52(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+
+        for index in range(1, 2+1):
+            yield UInt32(self, "unknown long[%s]" % index)
+
+        for index in range(1, 3+1):
+            yield Float64(self, "unknown double[%s]" % index)
+
+        yield Float32(self, "unknown float[%s]" % 1)
+
+        yield UInt32(self, "unknown long[%s]" % 3)
+
+        yield Float64(self, "unknown double[%s]" % 4)
+        yield Float64(self, "unknown double[%s]" % 5)
+
+
 class StructThree(FieldSet):
     endian = LITTLE_ENDIAN
 
@@ -248,6 +382,19 @@ class StructThree(FieldSet):
         for index in range(14, 18+1):
             yield Float64(self, "unknown double[%s]" % index)
 
+
+class StructThree52(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+
+        for index in range(1, 9+1):
+            yield Float32(self, "unknown float[%s]" % index)
+
+        yield UInt32(self, "unknown long[%s]" % 1)
+        yield UInt32(self, "n_events")
+        for n in range(1, self["n_events"].value + 1):
+            yield ScanEvent52(self, "ScanEvent[%s]" % n)
 
 
 class ScanEvent(FieldSet):
@@ -300,6 +447,33 @@ class ScanEvent(FieldSet):
 
         for index in range(25, 25+1):
             yield UInt32(self, "unknown long[%s]" % index)
+
+
+class ScanEvent52(FieldSet):
+    static_size = 116 * 8
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+
+        for index in range(2, 5+1):
+            yield UInt32(self, "unknown long[%s]" % index)
+
+        yield Float64(self, "unknown double[%s]" % 1)
+        yield Float32(self, "unknown float[%s]" % 10)
+
+        for index in range(46, 55+1):
+            yield UInt32(self, "unknown long[%s]" % index)
+
+        for index in range(2, 4+1):
+            yield Float64(self, "unknown double[%s]" % index)
+
+        for index in range(11, 16+1):
+            yield Float32(self, "unknown float[%s]" % index)
+
+        # Undecoded tail
+        if self.current_size < self._size:
+            yield self.seekBit(self._size, "trailer")
+
 
 
 class ActivationParam(FieldSet):
