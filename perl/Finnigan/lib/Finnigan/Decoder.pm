@@ -147,7 +147,7 @@ sub decode {
             type => 'spacer',
             value => '',
            };
-      
+
       $self->{current_element_number} = $i;
       next;
     }
