@@ -135,6 +135,7 @@ my %accession = (
   'MSn spectrum' => 'MS:1000580',
   'ms level' => 'MS:1000511',
   'positive scan' => 'MS:1000130',
+  'centroid spectrum' => 'MS:1000127',
   'profile spectrum' => 'MS:1000128',
   'base peak m/z' => 'MS:1000504',
   'base peak intensity' => 'MS:1000505',
@@ -185,6 +186,13 @@ my %uo_unit = (
 );
 
 my %components = (
+  'LTQ' => [
+    [
+      ['source', ['nanoelectrospray', 'nanospray inlet']],
+      ['analyzer', ['radial ejection linear ion trap']],
+      ['detector', ['electron multiplier']]
+    ],
+  ],
   'LTQ Orbitrap' => [
     [
       ['source', ['nanoelectrospray', 'nanospray inlet']],
@@ -218,10 +226,10 @@ my %components = (
 my $args = new Getopt::Declare q{
   [strict]
   -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
-  -c[entroids]				write peak centroids instead of scan profiles
+  -c[entroids]										prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
-  -q[uiet]				suppress the instrument error messages
-  <file>				input file [required]
+  -q[uiet]												suppress the instrument error messages
+  <file>													input file [required]
 }
   or exit(-1);
 
@@ -708,7 +716,7 @@ my $xml = $x->indexedmzML(
         map {
           my $n = $_;
           # say STDERR "in outer map ($n)";
-          my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data);
+          my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data, exists $args->{-c});
           # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
           tie my %spectrumAttr, 'Tie::IxHash';
@@ -768,7 +776,9 @@ my $xml = $x->indexedmzML(
             \%spectrumAttr,
             (map {
               $x->cvParam(cvAttributesFor($_, $scanData, 'spectrum_param')),
-            } @{$scanData->{spectrum_param_keys}}), # this paren is needed to prevent map from eating up the list that follows
+            } @{$scanData->{spectrum_param_keys}}), # the enclosing parens are
+                  # needed to prevent map from concatenating its target list with
+                  # the list that follows
 
             $x->scanList(
               {count => 1},
@@ -781,7 +791,6 @@ my $xml = $x->indexedmzML(
                   $x->cvParam(cvAttributesFor($_, $scanData, 'scan_param')),
                 } @{$scanData->{scan_param_keys}}),
                 (map {
-                  say STDERR $_;
                   $x->userParam($scanData->{user_param_attr}->{$_})
                 } @{$scanData->{user_param_keys}}),
                 $x->scanWindowList(
@@ -925,8 +934,9 @@ sub dependent_scans {
 }
 
 sub read_scan {
-  my ($n, $args, $scan_index, $scan_event, $scan_data) = @_;
+  my ($n, $args, $scan_index, $scan_event, $scan_data, $centroids_requested) = @_;
   my $i = $n-1;
+  say STDERR "read_scan($n)";
 
   my $et = $scanEventTemplate->{$scan_index->{$i}->{'scan segment'}}->{$scan_index->{$i}->{'scan event'}};
 
@@ -956,31 +966,30 @@ sub read_scan {
   my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
 
   my $length;
-  if ( exists $args->{-c} ) {
-    $length = $peaks->count;
-    my $pos = tell $scandata_fh;
-    if ( $length ) {
-      # say STDERR "freezing peak list $scan_event->{$i} at $i";
-      print $scandata_fh freeze $peaks->list;
-    }
-    elsif ( $profile ) {
-      # if there are no called peaks, treat the profile as a set of peaks
-      my $bins = $profile->bins(4); # add four-bin bookends
-      $length = scalar @$bins;
-      say STDERR "freezing profile ($length) $scan_event->{$i} at $i";
-      my $pos = tell $scandata_fh;
-      print $scandata_fh freeze $bins;
+  my $data_type;
+  my $pos = tell $scandata_fh;
+  if ( $profile ) {
+    print STDERR "profile exists ... ";
+    if ($peaks and $centroids_requested ) {
+      say STDERR "but there are also peaks and centroids are requested";
+      # prefer centroids to the profile
+      $length = $peaks->count;
+      if ( $length ) {
+        # say STDERR "freezing peak list $scan_event->{$i} at $i";
+        print $scandata_fh freeze $peaks->list;
+        $data_type = 'centroids';
+      }
+      else {
+        say STDERR "no centroids; freezing an empty list at $i";
+        print $scandata_fh freeze [];
+        $data_type = 'none';
+      }
     }
     else {
-      my $scan_no = $i + 1;
-      print $scandata_fh freeze [];
-    }
-    $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
-  }
-  else {
-    say STDERR "reading the profile...";
-    # simply read the profile and ignore the centroids
-    if ( $profile ) {
+      say STDERR "so read it";
+      # just write the profile, regardless of what was requested, because
+      # there are no called peaks
+      say STDERR "reading the profile...";
       my $scan;
       if ( $profile->nchunks > 1) {
         $scan = $profile->binsAndValues(4); # add four-bin bookends
@@ -990,15 +999,27 @@ sub read_scan {
       }
       $length = $scan->{length};
       say STDERR "freezing profile ($length) $scan_event->{$i} at $i";
-      my $pos = tell $scandata_fh;
       print $scandata_fh freeze $scan;
-      $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
-    }
-    else {
-      say STDERR "No profile in scan $n? Try to extract centroids by adding the -c option";
-      exit -1;
+      $data_type = 'profile';
     }
   }
+  elsif ( $peaks ) {
+    say STDERR "centroids exist";
+    # this scan only has centroids
+    $length = $peaks->count;
+    say STDERR "freezing centroid list $scan_event->{$i} at $i";
+    print $scandata_fh freeze $peaks->list;
+    $data_type = 'centroids';
+  }
+  else {
+    say STDERR "no data in scan; freezing an empty list at $i";
+    print $scandata_fh freeze [];
+    $data_type = 'none';
+  }
+  $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
+  say STDERR "finished freezing scan data";
+
+  say STDERR "data type: $data_type";
 
   my %spectrum_param;
   my @spectrum_param_keys = (
@@ -1006,6 +1027,7 @@ sub read_scan {
                     'positive scan',
                     'negative scan',
                     'unknown (any) polarity scan',
+                    'centroid spectrum',
                     'profile spectrum',
                     'base peak m/z',
                     'base peak intensity',
@@ -1018,18 +1040,28 @@ sub read_scan {
   $spectrum_param{'negative scan'} = '' if $scan_event->{$i}->preamble->polarity == 0;
   $spectrum_param{'positive scan'} = '' if $scan_event->{$i}->preamble->polarity == 1;
   $spectrum_param{'unknown (any) polarity'} = '' if $scan_event->{$i}->preamble->polarity == 2;
-  $spectrum_param{'profile spectrum'} = '' if $ph->profile_size;
+  $spectrum_param{'profile spectrum'} = '' if $data_type eq 'profile';
+  $spectrum_param{'centroid spectrum'} = '' if $data_type eq 'centroids';
   $spectrum_param{'base peak m/z'} = $scan_index->{$i}->{"base mz"};
   $spectrum_param{'base peak intensity'} = $scan_index->{$i}->{"base intensity"};
   $spectrum_param{'total ion current'} = $scan_index->{$i}->{"total current"};
 
-  $spectrum_param{'lowest observed m/z'} = &{$profile->{converter}}(
-    $profile->{'first value'} + $profile->{step}
-  ) + ($profile->{chunks}->[0]->{'fudge'} || 0); # according to msconvert
-
-  $spectrum_param{'highest observed m/z'} = &{$profile->{converter}}(
-    $profile->{'first value'} + $profile->{step} * $profile->{nbins}
-  ); # according to msconvert
+  if ($data_type eq 'profile' ) {
+    $spectrum_param{'lowest observed m/z'} = &{$profile->{converter}}(
+      $profile->{'first value'} + $profile->{step}
+    ) + ($profile->{chunks}->[0]->{'fudge'} || 0); # according to msconvert
+    $spectrum_param{'highest observed m/z'} = &{$profile->{converter}}(
+      $profile->{'first value'} + $profile->{step} * $profile->{nbins}
+    ); # according to msconvert
+  }
+  elsif ($data_type eq 'peaks' ) {
+    $spectrum_param{'lowest observed m/z'} = $peaks->list->[0]->[0];
+    $spectrum_param{'highest observed m/z'} = $peaks->list->[-1]->[0];
+  }
+  else {
+    $spectrum_param{'lowest observed m/z'} = 0;
+    $spectrum_param{'highest observed m/z'} = 0;
+  }
 
   my %scanlist_param;
   my @scanlist_param_keys = (
