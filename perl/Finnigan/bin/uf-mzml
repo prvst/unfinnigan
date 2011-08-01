@@ -124,6 +124,8 @@ my %thermoInstDef = (
 my %accession = (
   'electrospray ionization' => 'MS:1000073',
   'electrospray inlet' => 'MS:1000057',
+  'nanoelectrospray' => 'MS:1000398',
+  'nanospray inlet' => 'MS:1000485',
   'orbitrap' => 'MS:1000484',
   'inductive detector' => 'MS:1000624',
   'radial ejection linear ion trap' => 'MS:1000083',
@@ -183,6 +185,18 @@ my %uo_unit = (
 );
 
 my %components = (
+  'LTQ Orbitrap' => [
+    [
+      ['source', ['nanoelectrospray', 'nanospray inlet']],
+      ['analyzer', ['orbitrap']],
+      ['detector', ['inductive detector']]
+    ],
+    [
+      ['source', ['nanoelectrospray', 'nanospray inlet']],
+      ['analyzer', ['radial ejection linear ion trap']],
+      ['detector', ['electron multiplier']]
+    ],
+  ],
   'LTQ Orbitrap XL' => [
     [
       ['source', ['electrospray ionization', 'electrospray inlet']],
@@ -385,7 +399,7 @@ my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.tmp' );
 binmode $scandata_fh;
 
 my $x = XML::Generator->new(
-                                 pretty => 1,
+                                 pretty => 2,
                                  # conformance => 'strict',
                                  namespace => ['http://psi.hupo.org/ms/mzml'],
                                 );
