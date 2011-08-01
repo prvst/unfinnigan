@@ -14,6 +14,7 @@ use File::Temp;
 use Finnigan;
 use Getopt::Declare;
 use MIME::Base64;
+use Scalar::Util qw(looks_like_number);
 use Storable qw(freeze thaw);
 use Tie::IxHash;
 use XML::Generator;
@@ -855,7 +856,8 @@ my $xml = $x->indexedmzML(
                 $x->binary('intensity data placeholder')
               ) # $x->binaryDataArray
             ) # $x->binaryDataArrayList
-          ); # $x->scan (parent)
+          ), # $x->scan (parent)
+          $x->cut('------------');
         } $from .. $to
       ) # $x->spectrumList
     ) # $x->run
@@ -864,7 +866,7 @@ my $xml = $x->indexedmzML(
 
 say STDERR "xml object size: " . total_size($xml);
 
-my @xml_chunk = split "=== cut ===", "$xml";
+my @xml_chunk = split '<cut>------------</cut>', "$xml";
 
 #say '<?xml version="1.0" encoding="UTF-8"?>';
 say '<?xml version="1.0" encoding="ISO-8859-1"?>';
@@ -886,7 +888,12 @@ foreach my $n ( $from .. $to ) {
   # foreach my $peak ( @$peaks ) {
   #   $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
   # }
+
+  # put each element on its own line
+  $xml_chunk[$chunk_no] =~ s/\"\n\s+/" /sg;
+  $xml_chunk[$chunk_no] =~ s/\n\s+$//s;
   print $xml_chunk[$chunk_no];
+
   # $xml_scan_offset{$i} = tell STDOUT;
   # if ( $buf ) {
   #   print encode_base64($buf, "");
@@ -1054,7 +1061,7 @@ sub read_scan {
       $profile->{'first value'} + $profile->{step} * $profile->{nbins}
     ); # according to msconvert
   }
-  elsif ($data_type eq 'peaks' ) {
+  elsif ($data_type eq 'centroids' ) {
     $spectrum_param{'lowest observed m/z'} = $peaks->list->[0]->[0];
     $spectrum_param{'highest observed m/z'} = $peaks->list->[-1]->[0];
   }
@@ -1090,9 +1097,6 @@ sub read_scan {
   $scanwindow_param{'scan window upper limit'} = $scan_index->{$i}->{"high mz"};
 
   # Base64 = (Bytes + 2 - ((Bytes + 2) MOD 3)) / 3 * 4
-
-  # my $mz_encoded_length = int(($length * 8 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
-  # my $signal_encoded_length = int(($length * 4 * 4) / 3) + ( ($length % 3) ? (3 - ($length % 3)) : 0); # encoded size + padding
   my $mz_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
   my $signal_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
 
@@ -1108,12 +1112,17 @@ sub read_scan {
                                        'isolation window lower offset',
                                        'isolation window upper offset'
                                       );
-    my @selected_ion_param_keys = (
-                                   'selected ion m/z',
-                                   'charge state',
-                                   'peak intensity'
-                                  );
-
+    my @selected_ion_param_keys = $charge_state{$i} ? (
+                                                       'selected ion m/z',
+                                                       'charge state',
+                                                       'peak intensity'
+                                                      )
+                                                    :
+                                                      (
+                                                       'selected ion m/z',
+                                                       'peak intensity'
+                                                      );
+    
     my @activation_param_keys = (
                                 'collision-induced dissociation',
                                 'surface-induced dissociation',
@@ -1148,6 +1157,7 @@ sub read_scan {
                            'collision energy' => $reaction->energy,
                          }
                         };
+
       $precursors[-1]->{activation_param_keys} = [grep {exists $precursors[-1]->{activation_param}->{$_}} @activation_param_keys];
     }
 
@@ -1204,14 +1214,15 @@ sub read_scan {
 
 sub cvAttributesFor {
   my ($name, $scanData, $param_group) = @_;
-
+  my $value = $scanData->{$param_group}->{$name};
+  $value = sprintf("%f", $value) if looks_like_number($value) and $name =~ m{observed m/z};
   tie my %attr, 'Tie::IxHash';
   if ( $ms_unit{$name} ) {
     %attr = (
              cvRef => 'MS',
              accession => $accession{$name} || 'unknown',
              name => $name,
-             value => $scanData->{$param_group}->{$name},
+             value => $value,
              unitCvRef => 'MS',
              unitAccession => $accession{$ms_unit{$name}},
              unitName => $ms_unit{$name}
