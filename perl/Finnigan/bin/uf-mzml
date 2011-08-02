@@ -15,7 +15,6 @@ use Finnigan;
 use Getopt::Declare;
 use MIME::Base64;
 use Scalar::Util qw(looks_like_number);
-use Storable qw(freeze thaw);
 use Tie::IxHash;
 use XML::Generator;
 
@@ -230,6 +229,8 @@ my $args = new Getopt::Declare q{
   -c[entroids]										prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
   -q[uiet]												suppress the instrument error messages
+  -u[nencoded]										render the data unencoded (in decimal encoding)
+  -s[tructure]										output just the XML structure of the file (without the data)
   <file>													input file [required]
 }
   or exit(-1);
@@ -260,9 +261,8 @@ my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
-my $method_file = Finnigan::MethodFile->decode(\*INPUT, $VERSION);
-my %translate = @{$method_file->translation_table};
-my $shortInstId = $method_file->translation_table->[1]; # This may be wrong, but generally they seem to write the analyzer as the first item
+# my $method_file = Finnigan::MethodFile->decode(\*INPUT, $VERSION);
+# my %translate = @{$method_file->translation_table};
 
 my $data_addr = $rfi->preamble->data_addr;
 my $run_header_addr = $rfi->preamble->run_header_addr;
@@ -307,7 +307,7 @@ foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
 }
 
-# say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
+say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
 
 # ---------------------------------------------------------------------
 # Now go read the trailer. Because the trailer records are of variable
@@ -404,8 +404,6 @@ my $parent_scan_data; # for looking up the precursor ion for each of
                       # the dependent MS2 scans
 
 my %scan_data;
-my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.tmp' );
-binmode $scandata_fh;
 
 my $x = XML::Generator->new(
                                  pretty => 2,
@@ -714,209 +712,196 @@ my $xml = $x->indexedmzML(
     $x->run(\%runAttr,
       $x->spectrumList(
         \%spectrumListAttr,
-        map {
-          my $n = $_;
-          # say STDERR "in outer map ($n)";
-          my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, \%scan_data, exists $args->{-c});
-          # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
-
-          tie my %spectrumAttr, 'Tie::IxHash';
-          %spectrumAttr = (
-                           index => $spectrumIndex++,
-                           id => "controllerType=" . $scanData->{controllerType} . " controllerNumber=" . $scanData->{controllerNumber} . " scan=$n",
-                           defaultArrayLength => $scanData->{length}
-          );
-
-          tie my %binaryDataArrayCvAttr1, 'Tie::IxHash';
-          %binaryDataArrayCvAttr1 = (
-                                     cvRef => 'MS',
-                                     accession => 'MS:1000523',
-                                     name => '64-bit float',
-                                     value => ''
-                                    );
-
-          tie my %binaryDataArrayCvAttr2, 'Tie::IxHash';
-          %binaryDataArrayCvAttr2 = (
-                                     cvRef => 'MS',
-                                     accession => 'MS:1000576',
-                                     name => 'no compression',
-                                     value => ''
-                                    );
-
-          tie my %binaryDataArrayCvAttr3, 'Tie::IxHash';
-          %binaryDataArrayCvAttr3 = (
-                                     cvRef => 'MS',
-                                     accession => 'MS:1000514',
-                                     name => 'm/z array',
-                                     value => '',
-                                     unitCvRef => 'MS',
-                                     unitAccession => 'MS:1000040',
-                                     unitName => 'm/z'
-                                    );
-
-          tie my %binaryDataArrayCvAttr4, 'Tie::IxHash';
-          %binaryDataArrayCvAttr4 = (
-                                     cvRef => 'MS',
-                                     accession => 'MS:1000521',
-                                     name => '32-bit float',
-                                     value => ''
-                                    );
-
-          tie my %binaryDataArrayCvAttr5, 'Tie::IxHash';
-          %binaryDataArrayCvAttr5 = (
-                                     cvRef => 'MS',
-                                     accession => 'MS:1000515',
-                                     name => 'intensity array',
-                                     value => '',
-                                     unitCvRef => 'MS',
-                                     unitAccession => 'MS:1000131',
-                                     unitName => 'number of counts'
-                                    );
-
-          $x->spectrum(
-            \%spectrumAttr,
-            (map {
-              $x->cvParam(cvAttributesFor($_, $scanData, 'spectrum_param')),
-            } @{$scanData->{spectrum_param_keys}}), # the enclosing parens are
-                  # needed to prevent map from concatenating its target list with
-                  # the list that follows
-
-            $x->scanList(
-              {count => 1},
-              (map {
-                $x->cvParam(cvAttributesFor($_, $scanData, 'scanlist_param')),
-              } @{$scanData->{scanlist_param_keys}}),
-
-              $x->scan({ instrumentConfigurationRef => $scanData->{ms_level} == 1 ? undef : "IC$scanData->{ms_level}" },
-                (map {
-                  $x->cvParam(cvAttributesFor($_, $scanData, 'scan_param')),
-                } @{$scanData->{scan_param_keys}}),
-                (map {
-                  $x->userParam($scanData->{user_param_attr}->{$_})
-                } @{$scanData->{user_param_keys}}),
-                $x->scanWindowList(
-                  {count => 1},
-                  $x->scanWindow(
-                    (map {
-                      $x->cvParam(cvAttributesFor($_, $scanData, 'scanwindow_param')),
-                    } @{$scanData->{scanwindow_param_keys}}),
-                  ) # $x->scanWindow
-                ) # $x->scanWindowList
-              ) # $x->scan
-            ), # $x->scanList
-
-            (map {
-              $x->precursorList({count => scalar @{$scanData->{precursor_list}}},
-                (map {
-                  my $precursor = $_;
-                  $x->precursor({
-                                 spectrumRef => "controllerType="
-                                                . $parent_scan_data->{'controller type'}
-                                                . " controllerNumber="
-                                                . $parent_scan_data->{'controller number'}
-                                                . " scan="
-                                                . $parent_scan_data->{'scan number'}
-                                },
-                    $x->isolationWindow(
-                      (map {
-                        $x->cvParam(cvAttributesFor($_, $precursor, 'isolation_window_param')),
-                      } @{$scanData->{isolation_window_param_keys}})
-                    ),
-                    $x->selectedIonList({count => scalar @{$precursor->{selected_ion_list}}},
-                      (map {
-                        my $list_item = $_;
-                        $x->selectedIon(
-                          (map {
-                            $x->cvParam(cvAttributesFor($_, $list_item, 'selected_ion_param')),
-                          } @{$scanData->{selected_ion_param_keys}})
-                        )
-                      } @{$precursor->{selected_ion_list}})
-                    ),
-                    $x->activation(
-                      (map {
-                        $x->cvParam(cvAttributesFor($_, $precursor, 'activation_param')),
-                      } @{$precursor->{activation_param_keys}})
-                    ),
-                  )
-                } @{$scanData->{precursor_list}})
-              )
-            } grep {exists $scanData->{$_}} qw/precursor_list/),
-
-            $x->binaryDataArrayList({count => 2},
-              $x->binaryDataArray({encodedLength => $scanData->{mz_encoded_length}},
-                $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
-                $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
-                $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
-                $x->binary('mz data placeholder')
-              ), # $x->binaryDataArray
-              $x->binaryDataArray({encodedLength => $scanData->{signal_encoded_length}},
-                $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
-                $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
-                $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
-                $x->binary('intensity data placeholder')
-              ) # $x->binaryDataArray
-            ) # $x->binaryDataArrayList
-          ), # $x->scan (parent)
-          $x->cut('------------');
-        } $from .. $to
+        $x->cut('------------')
       ) # $x->spectrumList
     ) # $x->run
   ) # $x->mzXML
 ); # $x->indexedmzXML
 
-say STDERR "xml object size: " . total_size($xml);
-
-my @xml_chunk = split '<cut>------------</cut>', "$xml";
+my ($head, $tail) = split '<cut>------------</cut>', "$xml";
 
 #say '<?xml version="1.0" encoding="UTF-8"?>';
 say '<?xml version="1.0" encoding="ISO-8859-1"?>';
 
-my %xml_scan_offset;
+  # put each element on its own line
+$head =~ s/\"\n\s+/" /sg;
+$head =~ s/\n\s+$//s;
+say $head;
+
 foreach my $n ( $from .. $to ) {
   my $i = $n - 1;
   my $chunk_no = $n - $from;
 
-  # my $rec;
-  # my ($pos, $bytes_to_read) = @{$scan_data{$i}};
-  # seek $scandata_fh, $pos, 0;
-  # my $nbytes = read $scandata_fh, $rec, $bytes_to_read;
-  # $nbytes == $bytes_to_read
-  #   or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
-  # my $peaks = thaw $rec;
+  # say STDERR "in outer map ($n)";
+  my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, exists $args->{-c});
+  # say STDERR "memory at scan $n: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
-  # my $buf;
-  # foreach my $peak ( @$peaks ) {
-  #   $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
-  # }
+  tie my %spectrumAttr, 'Tie::IxHash';
+  %spectrumAttr = (
+                   index => $spectrumIndex++,
+                   id => "controllerType=" . $scanData->{controllerType} . " controllerNumber=" . $scanData->{controllerNumber} . " scan=$n",
+                   defaultArrayLength => $scanData->{length}
+                  );
+
+  tie my %binaryDataArrayCvAttr1, 'Tie::IxHash';
+  %binaryDataArrayCvAttr1 = (
+                             cvRef => 'MS',
+                             accession => 'MS:1000523',
+                             name => '64-bit float',
+                             value => ''
+                            );
+
+  tie my %binaryDataArrayCvAttr2, 'Tie::IxHash';
+  %binaryDataArrayCvAttr2 = (
+                             cvRef => 'MS',
+                             accession => 'MS:1000576',
+                             name => 'no compression',
+                             value => ''
+                            );
+
+  tie my %binaryDataArrayCvAttr3, 'Tie::IxHash';
+  %binaryDataArrayCvAttr3 = (
+                             cvRef => 'MS',
+                             accession => 'MS:1000514',
+                             name => 'm/z array',
+                             value => '',
+                             unitCvRef => 'MS',
+                             unitAccession => 'MS:1000040',
+                             unitName => 'm/z'
+                            );
+
+  tie my %binaryDataArrayCvAttr4, 'Tie::IxHash';
+  %binaryDataArrayCvAttr4 = (
+                             cvRef => 'MS',
+                             accession => 'MS:1000521',
+                             name => '32-bit float',
+                             value => ''
+                            );
+
+  tie my %binaryDataArrayCvAttr5, 'Tie::IxHash';
+  %binaryDataArrayCvAttr5 = (
+                             cvRef => 'MS',
+                             accession => 'MS:1000515',
+                             name => 'intensity array',
+                             value => '',
+                             unitCvRef => 'MS',
+                             unitAccession => 'MS:1000131',
+                             unitName => 'number of counts'
+                            );
+  
+  $x = XML::Generator->new(pretty => 2);
+  $xml = $x->spectrum(
+    \%spectrumAttr,
+    (map {
+      $x->cvParam(cvAttributesFor($_, $scanData, 'spectrum_param')),
+    } @{$scanData->{spectrum_param_keys}}), # the enclosing parens are
+          # needed to prevent map from concatenating its target list with
+          # the list that follows
+
+    $x->scanList(
+      {count => 1},
+      (map {
+        $x->cvParam(cvAttributesFor($_, $scanData, 'scanlist_param')),
+      } @{$scanData->{scanlist_param_keys}}),
+
+      $x->scan({ instrumentConfigurationRef => 
+                 $scanData->{ms_level} == 1 ? undef # the first component is implied by default
+                 : (scalar keys %translatedComponent > 1 ? "IC$scanData->{ms_level}" : undef) },
+        (map {
+          $x->cvParam(cvAttributesFor($_, $scanData, 'scan_param')),
+        } @{$scanData->{scan_param_keys}}),
+        (map {
+          $x->userParam($scanData->{user_param_attr}->{$_})
+        } @{$scanData->{user_param_keys}}),
+        $x->scanWindowList(
+          {count => 1},
+          $x->scanWindow(
+            (map {
+              $x->cvParam(cvAttributesFor($_, $scanData, 'scanwindow_param')),
+            } @{$scanData->{scanwindow_param_keys}}),
+          ) # $x->scanWindow
+        ) # $x->scanWindowList
+      ) # $x->scan
+    ), # $x->scanList
+
+    (map {
+      $x->precursorList({count => scalar @{$scanData->{precursor_list}}},
+        (map {
+          my $precursor = $_;
+          $x->precursor({
+                         spectrumRef => "controllerType="
+                                        . $parent_scan_data->{'controller type'}
+                                        . " controllerNumber="
+                                        . $parent_scan_data->{'controller number'}
+                                        . " scan="
+                                        . $parent_scan_data->{'scan number'}
+                        },
+            $x->isolationWindow(
+              (map {
+                $x->cvParam(cvAttributesFor($_, $precursor, 'isolation_window_param')),
+              } @{$scanData->{isolation_window_param_keys}})
+            ),
+            $x->selectedIonList({count => scalar @{$precursor->{selected_ion_list}}},
+              (map {
+                my $list_item = $_;
+                $x->selectedIon(
+                  (map {
+                    $x->cvParam(cvAttributesFor($_, $list_item, 'selected_ion_param')),
+                  } @{$scanData->{selected_ion_param_keys}})
+                )
+              } @{$precursor->{selected_ion_list}})
+            ),
+            $x->activation(
+              (map {
+                $x->cvParam(cvAttributesFor($_, $precursor, 'activation_param')),
+              } @{$precursor->{activation_param_keys}})
+            ),
+          )
+        } @{$scanData->{precursor_list}})
+      )
+    } grep {exists $scanData->{$_}} qw/precursor_list/),
+
+    $x->binaryDataArrayList({count => 2},
+      $x->binaryDataArray({encodedLength => $scanData->{mz_encoded_length}},
+        $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
+        $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
+        $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
+        $x->binary($scanData->{encoded_mz})
+      ), # $x->binaryDataArray
+      $x->binaryDataArray({encodedLength => $scanData->{signal_encoded_length}},
+        $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
+        $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
+        $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
+        $x->binary($scanData->{encoded_intensity})
+      ) # $x->binaryDataArray
+    ) # $x->binaryDataArrayList
+  ), # $x->scan (parent)
 
   # put each element on its own line
-  $xml_chunk[$chunk_no] =~ s/\"\n\s+/" /sg;
-  $xml_chunk[$chunk_no] =~ s/\n\s+$//s;
-  print $xml_chunk[$chunk_no];
+  $xml =~ s/\"\n\s+/" /sg;
+  $xml =~ s/\n\s+$//s;
 
-  # $xml_scan_offset{$i} = tell STDOUT;
-  # if ( $buf ) {
-  #   print encode_base64($buf, "");
-  # }
-  # else {
-  #   say STDERR "no data in scan $n";
-  # }
+  # indent to match the parent element
+  $xml =~ s/\n/\n        /gs;
+  print "        $xml";
+
 }
-substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
-say $xml_chunk[-1];
+# substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
+# say $xml_chunk[-1];
 
-my $index_offset = tell STDOUT;
-say qq( <index name="scan" >);
-foreach my $i (sort { $a <=> $b } keys %xml_scan_offset ) {
-  my $n = $i + 1;
-  say qq(   <offset id="$n">$xml_scan_offset{$i}</offset>);
-}
-say " </index>";
-say " <indexOffset>$index_offset</indexOffset>";
-say " <sha1></sha1>";
-say "</mzXML>";
+# my $index_offset = tell STDOUT;
+# say qq( <index name="scan" >);
+# foreach my $i (sort { $a <=> $b } keys %xml_scan_offset ) {
+#   my $n = $i + 1;
+#   say qq(   <offset id="$n">$xml_scan_offset{$i}</offset>);
+# }
+# say " </index>";
+# say " <indexOffset>$index_offset</indexOffset>";
+# say " <sha1></sha1>";
+# say "</mzXML>";
 
-close $scandata_fh;
+say $tail;
+
 
 sub min($$) { $_[$_[0] > $_[1]] }
 
@@ -941,7 +926,7 @@ sub dependent_scans {
 }
 
 sub read_scan {
-  my ($n, $args, $scan_index, $scan_event, $scan_data, $centroids_requested) = @_;
+  my ($n, $args, $scan_index, $scan_event, $centroids_requested) = @_;
   my $i = $n-1;
   say STDERR "read_scan($n)";
 
@@ -969,12 +954,9 @@ sub read_scan {
     $parent_scan_data->{'controller number'} = $et->controllerNumber;
   }
 
-  # the M/z range; use the full range for now; consider adding a command-line argument;
-  my $range = [$scan_index->{$i}->{"low mz"}, $scan_index->{$i}->{"high mz"}];
-
   my $length;
   my $data_type;
-  my $pos = tell $scandata_fh;
+  my $data;
   if ( $profile ) {
     print STDERR "profile exists ... ";
     if ($peaks and $centroids_requested ) {
@@ -982,19 +964,16 @@ sub read_scan {
       # prefer centroids to the profile
       $length = $peaks->count;
       if ( $length ) {
-        # say STDERR "freezing peak list $scan_event->{$i} at $i";
-        print $scandata_fh freeze $peaks->list;
+        $data = $peaks->list;
         $data_type = 'centroids';
       }
       else {
-        say STDERR "no centroids; freezing an empty list at $i";
-        print $scandata_fh freeze [];
         $data_type = 'none';
       }
     }
     else {
       say STDERR "so read it";
-      # just write the profile, regardless of what was requested, because
+      # just get the profile, regardless of what was requested, because
       # there are no called peaks
       say STDERR "reading the profile...";
       my $scan;
@@ -1005,8 +984,7 @@ sub read_scan {
         $scan = $profile->binsAndValues;
       }
       $length = $scan->{length};
-      say STDERR "freezing profile ($length) $scan_event->{$i} at $i";
-      print $scandata_fh freeze $scan;
+      $data = $scan;
       $data_type = 'profile';
     }
   }
@@ -1014,19 +992,43 @@ sub read_scan {
     say STDERR "centroids exist";
     # this scan only has centroids
     $length = $peaks->count;
-    say STDERR "freezing centroid list $scan_event->{$i} at $i";
-    print $scandata_fh freeze $peaks->list;
+    $data = $peaks->list;
     $data_type = 'centroids';
   }
   else {
-    say STDERR "no data in scan; freezing an empty list at $i";
-    print $scandata_fh freeze [];
     $data_type = 'none';
   }
-  $scan_data->{$i} = [$pos, tell($scandata_fh) - $pos];
-  say STDERR "finished freezing scan data";
 
-  say STDERR "data type: $data_type";
+  # Base64 = (Bytes + 2 - ((Bytes + 2) MOD 3)) / 3 * 4
+  my $mz_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
+  my $signal_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
+
+  my $encoded_mz = '';
+  my $encoded_intensity = '';
+  unless ( $data_type eq 'none' or exists $args->{-s}) {
+    my @mz;
+    my @intensity;
+    foreach ( @$data ) {
+      push @mz, $_->[0];
+      push @intensity, $_->[1];
+    }
+    if (exists $args->{-u}) {
+      $encoded_mz = join("\n  ", '', @mz) . "\n";
+      $encoded_intensity = join("\n  ", '', @intensity) . "\n";
+    }
+    else { # encode
+      my $buf = '';
+      foreach ( @mz ) {
+        $buf .= pack("d<", $_);
+      }
+      $encoded_mz = encode_base64($buf, '');
+      $buf = '';
+      foreach ( @intensity ) {
+        $buf .= pack("f<", $_);
+      }
+      $encoded_intensity = encode_base64($buf, '');
+    }
+  }
 
   my %spectrum_param;
   my @spectrum_param_keys = (
@@ -1095,10 +1097,6 @@ sub read_scan {
                               );
   $scanwindow_param{'scan window lower limit'} = $scan_index->{$i}->{"low mz"};
   $scanwindow_param{'scan window upper limit'} = $scan_index->{$i}->{"high mz"};
-
-  # Base64 = (Bytes + 2 - ((Bytes + 2) MOD 3)) / 3 * 4
-  my $mz_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
-  my $signal_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
 
   if ( $ms_power > 1 ) {
     unshift @spectrum_param_keys, 'MSn spectrum';
@@ -1186,8 +1184,12 @@ sub read_scan {
             selected_ion_param_keys => \@selected_ion_param_keys,
             user_param_keys => ['monoMz'],
             user_param_attr => {monoMz => \%monoMzAttr},
+            data_type => $data_type,
             mz_encoded_length => $mz_encoded_length,
-            signal_encoded_length => $signal_encoded_length
+            signal_encoded_length => $signal_encoded_length,
+            data => $data,
+            encoded_mz => $encoded_mz,
+            encoded_intensity => $encoded_intensity,
            };
   }
   else {
@@ -1206,8 +1208,12 @@ sub read_scan {
             scan_param_keys => [grep {exists $scan_param{$_}} @scan_param_keys],
             scanwindow_param => \%scanwindow_param,
             scanwindow_param_keys => [grep {exists $scanwindow_param{$_}} @scanwindow_param_keys],
+            data_type => $data_type,
             mz_encoded_length => $mz_encoded_length,
-            signal_encoded_length => $signal_encoded_length
+            signal_encoded_length => $signal_encoded_length,
+            data => $data,
+            encoded_mz => $encoded_mz,
+            encoded_intensity => $encoded_intensity,
            };
   }
 }

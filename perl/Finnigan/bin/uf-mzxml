@@ -14,8 +14,6 @@ use MIME::Base64;
 use File::Temp;
 use Devel::Size qw(size total_size);
 
-# test case:
-#  uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
 
 my $args = new Getopt::Declare q{
   [strict]
