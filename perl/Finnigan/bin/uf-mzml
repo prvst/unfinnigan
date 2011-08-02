@@ -651,7 +651,7 @@ my $xml = $x->indexedmzML(
       $x->fileContent(
         map {$x->cvParam($_->[0])} grep {$_->[1]} (
          [\%fileContentAttr1, $ms_power{'1'}],
-         [\%fileContentAttr2, (grep {$_ ne '1'} %ms_power)[0]] # there are other powers besides 1
+         [\%fileContentAttr2, (grep {$_ ne '1'} keys %ms_power)[0]] # there are other powers besides 1
         )
       ),
       $x->sourceFileList({count => 1},
