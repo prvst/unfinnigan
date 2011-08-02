@@ -388,7 +388,7 @@ foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   $param->{charge_state}->{$i} = $charge if $charge;
   $param->{injection_time}->{$i} = $p->injection_time;
   $param->{monoisotopic_mz}->{$i} = $p->monoisotopic_mz;
-  $param->{scan_event}->{$i} = $p->scan_event;
+  $param->{scan_event_number}->{$i} = $p->scan_event;
   last if $n == $to;
 }
 
@@ -1086,7 +1086,7 @@ sub read_scan {
                         );
   $scan_param{'scan start time'} = $scan_index->{$i}->{'start time'};
   $scan_param{'filter string'} = "$scan_event->{$i}";
-  $scan_param{'preset scan configuration'} = $scan_index->{$i}->{'scan event'} + 1;
+  $scan_param{'preset scan configuration'} = $param->{scan_event_number}->{$i}; # using the param version because it starts at 1
   $scan_param{'ion injection time'} = $param->{injection_time}->{$i};
 
   my %scanwindow_param;
