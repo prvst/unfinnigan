@@ -3,7 +3,7 @@
 
 #########################
 
-use Test::More tests => 237;
+use Test::More tests => 239;
 
 BEGIN { use_ok('Finnigan') };
 
@@ -356,12 +356,14 @@ my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field
 is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
 ok( num_equal($p->injection_time, 200.0), "ScanParameters->injection_time (type 10)" );
 # skip to the MS2 scan
-my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
-ok( num_equal($p->monoisotopicMz, 445.121063232), "ScanParameters->monoisotopicMz (type 11)" );
+$p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
+ok( num_equal($p->monoisotopic_mz, 445.121063232), "ScanParameters->monoisotopic_mz (type 11)" );
 for my $i (3 .. $nrecords) { # skip to the end of file
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $scan_parameters_header->field_templates);
 }
 is( $p->charge_state, 1, "ScanParameters->charge_state (type 6)" );
+is( $p->scan_segment, 1, "ScanParameters->scan_segment (type 6)" );
+is( $p->scan_event, 2, "ScanParameters->scan_event (type 6)" );
 is( tell INPUT, 848001, "should have arrived at the null stream near the end of the file" );
 
 # Read the null stream

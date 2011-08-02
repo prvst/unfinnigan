@@ -15,8 +15,16 @@ sub injection_time {
   shift->{data}->{'Ion Injection Time (ms):'}->{value}
 }
 
-sub monoisotopicMz {
+sub monoisotopic_mz {
   shift->{data}->{'Monoisotopic M/Z:'}->{value}
+}
+
+sub scan_segment {
+  shift->{data}->{'Scan Segment:'}->{value}
+}
+
+sub scan_event {
+  shift->{data}->{'Scan Event:'}->{value}
 }
 
 1;
@@ -65,9 +73,17 @@ Get the charge state of the base ion
 
 Get ion injection time in milliseconds
 
-=item monoisotopicMz
+=item monoisotopic_mz
 
 Get the monoisotopic mass of precursor ion
+
+=item scan_segment
+
+Get the current ScanSegment number (1 .. )
+
+=item scan_event
+
+Get the cunnent ScanEvent number (1 .. )
 
 =back
 

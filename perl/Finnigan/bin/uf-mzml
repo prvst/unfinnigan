@@ -376,20 +376,19 @@ foreach my $i ( 0 .. $nsegs - 1) {
 my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 
 # with the header on hand, skip to the ScanParameters stream and grab
-# the precurser charge for all scans.
+# a few values for each scan (just the required ones, to reduce memory use)
 seek INPUT, $params_addr, 0;
 
-my %charge_state;
-my %injection_time;
-my %monoisotopicMz;
+my $param;
 foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   my $n = $i + 1;
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
   next if $n < $from;
   my $charge = $p->charge_state;
-  $charge_state{$i} = $charge if $charge;
-  $injection_time{$i} = $p->injection_time;
-  $monoisotopicMz{$i} = $p->monoisotopicMz;
+  $param->{charge_state}->{$i} = $charge if $charge;
+  $param->{injection_time}->{$i} = $p->injection_time;
+  $param->{monoisotopic_mz}->{$i} = $p->monoisotopic_mz;
+  $param->{scan_event}->{$i} = $p->scan_event;
   last if $n == $to;
 }
 
@@ -1088,7 +1087,7 @@ sub read_scan {
   $scan_param{'scan start time'} = $scan_index->{$i}->{'start time'};
   $scan_param{'filter string'} = "$scan_event->{$i}";
   $scan_param{'preset scan configuration'} = $scan_index->{$i}->{'scan event'} + 1;
-  $scan_param{'ion injection time'} = $injection_time{$i};
+  $scan_param{'ion injection time'} = $param->{injection_time}->{$i};
 
   my %scanwindow_param;
   my @scanwindow_param_keys = (
@@ -1110,7 +1109,7 @@ sub read_scan {
                                        'isolation window lower offset',
                                        'isolation window upper offset'
                                       );
-    my @selected_ion_param_keys = $charge_state{$i} ? (
+    my @selected_ion_param_keys = $param->{charge_state}->{$i} ? (
                                                        'selected ion m/z',
                                                        'charge state',
                                                        'peak intensity'
@@ -1145,7 +1144,7 @@ sub read_scan {
                            {
                              selected_ion_param => {
                                'selected ion m/z' => $reaction->precursor,
-                               'charge state' => $charge_state{$i},
+                               'charge state' => $param->{charge_state}->{$i},
                                'peak intensity' => $parent_scan_data->find_peak_intensity($reaction->precursor) || 0,
                              }
                            }
@@ -1162,7 +1161,7 @@ sub read_scan {
     tie my %monoMzAttr, 'Tie::IxHash';
     %monoMzAttr = (
                   name => '[Thermo Trailer Extra]Monoisotopic M/Z:',
-                  value => $monoisotopicMz{$i},
+                  value => $param->{monoisotopic_mz}{$i},
                   type => 'xsd:float'
                  );
 
