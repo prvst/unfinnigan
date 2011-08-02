@@ -49,21 +49,6 @@ sub print_bins {
   }
 }
 
-sub binsAndValues {
-  my ($self, $bookends) = @_;
-  my @mzList;
-  my @intensityList;
-  foreach ( @{$self->bins($bookends)} ) {
-    push @mzList, $_->[0];
-    push @intensityList, $_->[1];
-  }
-  return {
-	  mz => \@mzList,
-	  intensity => \@intensityList,
-	  length => scalar @mzList
-	 };
-}
-
 sub bins {
   my ($self, $bookends) = @_;
   my @list;

@@ -882,7 +882,7 @@ foreach my $n ( $from .. $to ) {
 
   # indent to match the parent element
   $xml =~ s/\n/\n        /gs;
-  print "        $xml";
+  say "        $xml";
 
 }
 # substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
@@ -949,8 +949,8 @@ sub read_scan {
     $parent_scan_data = $profile ? $profile : $peaks;
     $parent_scan_data->{type} = $profile ? 'profile' : 'centroid';
     $parent_scan_data->{'scan number'} = $n;
-    $parent_scan_data->{'controller type'} = $et->controllerType;
-    $parent_scan_data->{'controller number'} = $et->controllerNumber;
+    $parent_scan_data->{'controller type'} = 0; # (fudge!) $et->controllerType;
+    $parent_scan_data->{'controller number'} = 1; # (fudge!) $et->controllerNumber;
   }
 
   my $length;
@@ -975,15 +975,13 @@ sub read_scan {
       # just get the profile, regardless of what was requested, because
       # there are no called peaks
       say STDERR "reading the profile...";
-      my $scan;
       if ( $profile->nchunks > 1) {
-        $scan = $profile->binsAndValues(4); # add four-bin bookends
+        $data = $profile->bins(4); # add four-bin bookends
       }
       else {
-        $scan = $profile->binsAndValues;
+        $data = $profile->bins;
       }
-      $length = $scan->{length};
-      $data = $scan;
+      $length = scalar @$data;
       $data_type = 'profile';
     }
   }
@@ -1167,8 +1165,8 @@ sub read_scan {
 
     return {
             ms_level => $ms_power,
-            controllerType => $et->controllerType,
-            controllerNumber => $et->controllerNumber,
+            controllerType => 0, # (fudge!) $et->controllerType,
+            controllerNumber => 1, # (fudge!) $et->controllerNumber,
             precursor_list => \@precursors,
             length => $length,
             spectrum_param => \%spectrum_param,
@@ -1196,8 +1194,8 @@ sub read_scan {
     $spectrum_param{'MS1 spectrum'} = '';
     return {
             ms_level => $ms_power,
-            controllerType => $et->controllerType,
-            controllerNumber => $et->controllerNumber,
+            controllerType => 0, # (fudge!) $et->controllerType,
+            controllerNumber => 1, # (fudge!) $et->controllerNumber,
             length => $length,
             spectrum_param => \%spectrum_param,
             spectrum_param_keys => [grep {exists $spectrum_param{$_}} @spectrum_param_keys],
