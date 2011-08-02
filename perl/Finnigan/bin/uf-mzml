@@ -307,6 +307,38 @@ foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
 }
 
+# prepare the TIC chromatogram for output using the data in ScanIndex
+my $length = $to - $from + 1;
+my $time_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
+my $tic_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
+
+my $encoded_time = '';
+my $encoded_tic = '';
+my @time;
+my @tic;
+unless ( exists $args->{-s}) {
+  foreach ( sort keys %scan_index ) {
+    push @time, $scan_index{$_}->{'start time'};
+    push @tic, $scan_index{$_}->{'total current'};
+  }
+  if (exists $args->{-u}) {
+    $encoded_time = join("\n  ", '', @time) . "\n";
+    $encoded_tic = join("\n  ", '', @tic) . "\n";
+  }
+  else { # encode
+    my $buf = '';
+    foreach ( @time ) {
+      $buf .= pack("d<", $_);
+    }
+    $encoded_time = encode_base64($buf, '');
+    $buf = '';
+    foreach ( @tic ) {
+      $buf .= pack("f<", $_);
+    }
+    $encoded_tic = encode_base64($buf, '');
+  }
+}
+
 say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
 
 # ---------------------------------------------------------------------
@@ -636,6 +668,84 @@ tie my %xmlDecl, 'Tie::IxHash';
             version => '1.1.0'
            );
 
+tie my %chromatogramListAttr, 'Tie::IxHash';
+%chromatogramListAttr = (
+                         'count' => 1,
+                         defaultDataProcessingRef => 'mzml-conversion',
+                        );
+
+tie my %chromatogramAttr, 'Tie::IxHash';
+%chromatogramAttr = (
+            'index' => 0,
+            'id' => 'TIC',
+            'defaultArrayLength' => $to - $from + 1
+           );
+
+tie my %chromatogramCvAttr, 'Tie::IxHash';
+%chromatogramCvAttr = (
+                     cvRef => 'MS',
+                     accession => 'MS:1000235',
+                     name => 'total ion current chromatogram',
+                     value => ''
+                    );
+
+tie my %binaryDataArrayCvAttr1, 'Tie::IxHash';
+%binaryDataArrayCvAttr1 = (
+                           cvRef => 'MS',
+                           accession => 'MS:1000523',
+                           name => '64-bit float',
+                           value => ''
+                          );
+
+tie my %binaryDataArrayCvAttr2, 'Tie::IxHash';
+%binaryDataArrayCvAttr2 = (
+                           cvRef => 'MS',
+                           accession => 'MS:1000576',
+                           name => 'no compression',
+                           value => ''
+                          );
+
+tie my %binaryDataArrayCvAttr3, 'Tie::IxHash';
+%binaryDataArrayCvAttr3 = (
+                           cvRef => 'MS',
+                           accession => 'MS:1000514',
+                           name => 'm/z array',
+                           value => '',
+                           unitCvRef => 'MS',
+                           unitAccession => 'MS:1000040',
+                           unitName => 'm/z'
+                          );
+
+tie my %binaryDataArrayCvAttr4, 'Tie::IxHash';
+%binaryDataArrayCvAttr4 = (
+                           cvRef => 'MS',
+                           accession => 'MS:1000521',
+                           name => '32-bit float',
+                           value => ''
+                          );
+
+tie my %binaryDataArrayCvAttr5, 'Tie::IxHash';
+%binaryDataArrayCvAttr5 = (
+                           cvRef => 'MS',
+                           accession => 'MS:1000515',
+                           name => 'intensity array',
+                           value => '',
+                           unitCvRef => 'MS',
+                           unitAccession => 'MS:1000131',
+                           unitName => 'number of counts'
+                          );
+
+tie my %binaryDataArrayCvAttr6, 'Tie::IxHash';
+%binaryDataArrayCvAttr6 = (
+                           cvRef => 'MS',
+                           accession => 'MS:1000595',
+                           name => 'time array',
+                           value => '',
+                           unitCvRef => 'UO',
+                           unitAccession => 'UO:0000031',
+                           unitName => 'minute'
+                          );
+
 my $spectrumIndex = 0;
 my $xml = $x->indexedmzML(
   ['http://psi.hupo.org/ms/mzml'],
@@ -712,8 +822,29 @@ my $xml = $x->indexedmzML(
       $x->spectrumList(
         \%spectrumListAttr,
         $x->cut('------------')
-      ) # $x->spectrumList
-    ) # $x->run
+      ),
+      $x->chromatogramList(
+        \%chromatogramListAttr,
+        $x->chromatogram(
+        \%chromatogramAttr,
+          $x->cvParam(\%chromatogramCvAttr),
+          $x->binaryDataArrayList({count => 2},
+            $x->binaryDataArray({encodedLength => $time_encoded_length},
+              $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
+              $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
+              $x->cvParam(\%binaryDataArrayCvAttr6), # time array
+              $x->binary($encoded_time)
+            ), # $x->binaryDataArray
+            $x->binaryDataArray({encodedLength => $tic_encoded_length},
+              $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
+              $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
+              $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
+              $x->binary($encoded_tic)
+            ) # $x->binaryDataArray
+          ) # $x->binaryDataArrayList
+        ) # $x->chromatogramAttr
+      ) # $x->chromatogram
+    ) # $x->chromatogramList
   ) # $x->mzXML
 ); # $x->indexedmzXML
 
@@ -722,10 +853,11 @@ my ($head, $tail) = split '<cut>------------</cut>', "$xml";
 #say '<?xml version="1.0" encoding="UTF-8"?>';
 say '<?xml version="1.0" encoding="ISO-8859-1"?>';
 
-  # put each element on its own line
+# put each element on its own line
 $head =~ s/\"\n\s+/" /sg;
 $head =~ s/\n\s+$//s;
 say $head;
+
 
 foreach my $n ( $from .. $to ) {
   my $i = $n - 1;
@@ -742,51 +874,6 @@ foreach my $n ( $from .. $to ) {
                    defaultArrayLength => $scanData->{length}
                   );
 
-  tie my %binaryDataArrayCvAttr1, 'Tie::IxHash';
-  %binaryDataArrayCvAttr1 = (
-                             cvRef => 'MS',
-                             accession => 'MS:1000523',
-                             name => '64-bit float',
-                             value => ''
-                            );
-
-  tie my %binaryDataArrayCvAttr2, 'Tie::IxHash';
-  %binaryDataArrayCvAttr2 = (
-                             cvRef => 'MS',
-                             accession => 'MS:1000576',
-                             name => 'no compression',
-                             value => ''
-                            );
-
-  tie my %binaryDataArrayCvAttr3, 'Tie::IxHash';
-  %binaryDataArrayCvAttr3 = (
-                             cvRef => 'MS',
-                             accession => 'MS:1000514',
-                             name => 'm/z array',
-                             value => '',
-                             unitCvRef => 'MS',
-                             unitAccession => 'MS:1000040',
-                             unitName => 'm/z'
-                            );
-
-  tie my %binaryDataArrayCvAttr4, 'Tie::IxHash';
-  %binaryDataArrayCvAttr4 = (
-                             cvRef => 'MS',
-                             accession => 'MS:1000521',
-                             name => '32-bit float',
-                             value => ''
-                            );
-
-  tie my %binaryDataArrayCvAttr5, 'Tie::IxHash';
-  %binaryDataArrayCvAttr5 = (
-                             cvRef => 'MS',
-                             accession => 'MS:1000515',
-                             name => 'intensity array',
-                             value => '',
-                             unitCvRef => 'MS',
-                             unitAccession => 'MS:1000131',
-                             unitName => 'number of counts'
-                            );
   
   $x = XML::Generator->new(pretty => 2);
   $xml = $x->spectrum(
@@ -882,9 +969,14 @@ foreach my $n ( $from .. $to ) {
 
   # indent to match the parent element
   $xml =~ s/\n/\n        /gs;
-  say "        $xml";
-
+  if ($n == $to) {
+    print  "        $xml";
+  }
+  else {
+    say "        $xml";
+  }
 }
+
 # substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
 # say $xml_chunk[-1];
 
@@ -899,6 +991,9 @@ foreach my $n ( $from .. $to ) {
 # say " <sha1></sha1>";
 # say "</mzXML>";
 
+# put each element on its own line
+$tail =~ s/\"\n\s+/" /sg;
+$tail =~ s/\n\s+$//s;
 say $tail;
 
 
