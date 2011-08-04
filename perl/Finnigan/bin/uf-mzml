@@ -411,8 +411,8 @@ unless ( exists $args->{-s}) {
     }
   }
   if (exists $args->{-u}) {
-    $encoded_time = join("\n  ", '', @time) . "\n";
-    $encoded_tic = join("\n  ", '', @tic) . "\n";
+    $encoded_time = join("\n", '', @time) . "\n              ";
+    $encoded_tic = join("\n", '', @tic) . "\n              ";
   }
   else { # encode
     my $buf = '';
@@ -835,13 +835,13 @@ my $xml = $x->indexedmzML(
               $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
               $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
               $x->cvParam(\%binaryDataArrayCvAttr6), # time array
-              $x->binary($encoded_time)
+              $x->binary('encoded_time_placeholder')
             ), # $x->binaryDataArray
             $x->binaryDataArray({encodedLength => $tic_encoded_length},
               $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
               $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
               $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
-              $x->binary($encoded_tic)
+              $x->binary('encoded_tic_placeholder')
             ) # $x->binaryDataArray
           ) # $x->binaryDataArrayList
         ) # $x->chromatogramAttr
@@ -972,10 +972,10 @@ foreach my $n ( $from .. $to ) {
   $xml =~ s/\n\s+$//s;
 
   # insert the data
-  $xml =~ s/(encoded_(mz|intensity))_placeholder/$scanData->{$1}/;
+  $xml =~ s/(encoded_(mz|intensity))_placeholder/$scanData->{$1}/g;
 
   # indent to match the parent element
-  $xml =~ s/\n(?!\d)/\n        /gs;
+  $xml =~ s/\n(?!\d)/\n        /sg;
   if ($n == $to) {
     print  "        $xml";
   }
@@ -1001,6 +1001,12 @@ foreach my $n ( $from .. $to ) {
 # put each element on its own line
 $tail =~ s/\"\n\s+/" /sg;
 $tail =~ s/\n\s+$//s;
+
+# insert the data
+$tail =~ s/encoded_time_placeholder/$encoded_time/;
+$tail =~ s/encoded_tic_placeholder/$encoded_tic/;
+
+
 say $tail;
 
 
@@ -1112,8 +1118,8 @@ sub read_scan {
       push @intensity, $_->[1];
     }
     if (exists $args->{-u}) {
-      $encoded_mz = join("\n", '', @mz) . "\n";
-      $encoded_intensity = join("\n", '', @intensity) . "\n";
+      $encoded_mz = join("\n", '', @mz) . "\n      ";
+      $encoded_intensity = join("\n", '', @intensity) . "\n      ";
     }
     else { # encode
       my $buf = '';
@@ -1175,7 +1181,7 @@ sub read_scan {
   my @scanlist_param_keys = (
                              'no combination',
                             );
-  $scanlist_param{'no combination'} = 'what does it mean?';
+  $scanlist_param{'no combination'} = ''; # this means no other spectra were combined to produce this one
 
   my %scan_param;
   my @scan_param_keys = (
