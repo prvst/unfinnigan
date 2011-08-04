@@ -307,38 +307,6 @@ foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
 }
 
-# prepare the TIC chromatogram for output using the data in ScanIndex
-my $length = $to - $from + 1;
-my $time_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
-my $tic_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
-
-my $encoded_time = '';
-my $encoded_tic = '';
-my @time;
-my @tic;
-unless ( exists $args->{-s}) {
-  foreach ( sort keys %scan_index ) {
-    push @time, $scan_index{$_}->{'start time'};
-    push @tic, $scan_index{$_}->{'total current'};
-  }
-  if (exists $args->{-u}) {
-    $encoded_time = join("\n  ", '', @time) . "\n";
-    $encoded_tic = join("\n  ", '', @tic) . "\n";
-  }
-  else { # encode
-    my $buf = '';
-    foreach ( @time ) {
-      $buf .= pack("d<", $_);
-    }
-    $encoded_time = encode_base64($buf, '');
-    $buf = '';
-    foreach ( @tic ) {
-      $buf .= pack("f<", $_);
-    }
-    $encoded_tic = encode_base64($buf, '');
-  }
-}
-
 say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
 
 # ---------------------------------------------------------------------
@@ -426,9 +394,43 @@ foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
 
 # say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
+# prepare the TIC chromatogram for output using the data in ScanIndex
+my $length = $to - $from + 1;
+my $time_encoded_length = ($length * 8 + 2 - ($length * 8 + 2) % 3) / 3 * 4;
+my $tic_encoded_length = ($length * 4 + 2 - ($length * 4 + 2) % 3) / 3 * 4;
+
+my $encoded_time = '';
+my $encoded_tic = '';
+my @time;
+my @tic;
+unless ( exists $args->{-s}) {
+  foreach ( sort {$a <=> $b} keys %scan_index ) {
+    if ( $scan_event{$_}->preamble->ms_power == 1 ) {
+      push @time, $scan_index{$_}->{'start time'};
+      push @tic, $scan_index{$_}->{'total current'};
+    }
+  }
+  if (exists $args->{-u}) {
+    $encoded_time = join("\n  ", '', @time) . "\n";
+    $encoded_tic = join("\n  ", '', @tic) . "\n";
+  }
+  else { # encode
+    my $buf = '';
+    foreach ( @time ) {
+      $buf .= pack("d<", $_);
+    }
+    $encoded_time = encode_base64($buf, '');
+    $buf = '';
+    foreach ( @tic ) {
+      $buf .= pack("f<", $_);
+    }
+    $encoded_tic = encode_base64($buf, '');
+  }
+}
+
 #------------------------------------------------------------------------------------------
 # This is a reasonably good point to start generating the output. We
-# know everything about the data, but haven't started reading the data
+# know everything about the data, but haven't started reading the scan data
 # itself
 
 my $parent_scan_data; # for looking up the precursor ion for each of
