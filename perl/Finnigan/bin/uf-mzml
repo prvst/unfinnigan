@@ -954,13 +954,15 @@ foreach my $n ( $from .. $to ) {
         $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
         $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
         $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
-        $x->binary($scanData->{encoded_mz})
+        # $x->binary($scanData->{encoded_mz}) # not a good idea: XML::Generator chokes on large data
+        $x->binary('encoded_mz_placeholder')
       ), # $x->binaryDataArray
       $x->binaryDataArray({encodedLength => $scanData->{signal_encoded_length}},
         $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
         $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
         $x->cvParam(\%binaryDataArrayCvAttr5), # intensity array
-        $x->binary($scanData->{encoded_intensity})
+        # $x->binary($scanData->{encoded_intensity}) # not a good idea: XML::Generator chokes on large data
+        $x->binary('encoded_intensity_placeholder')
       ) # $x->binaryDataArray
     ) # $x->binaryDataArrayList
   ), # $x->scan (parent)
@@ -969,8 +971,11 @@ foreach my $n ( $from .. $to ) {
   $xml =~ s/\"\n\s+/" /sg;
   $xml =~ s/\n\s+$//s;
 
+  # insert the data
+  $xml =~ s/(encoded_(mz|intensity))_placeholder/$scanData->{$1}/;
+
   # indent to match the parent element
-  $xml =~ s/\n/\n        /gs;
+  $xml =~ s/\n(?!\d)/\n        /gs;
   if ($n == $to) {
     print  "        $xml";
   }
@@ -1107,8 +1112,8 @@ sub read_scan {
       push @intensity, $_->[1];
     }
     if (exists $args->{-u}) {
-      $encoded_mz = join("\n  ", '', @mz) . "\n";
-      $encoded_intensity = join("\n  ", '', @intensity) . "\n";
+      $encoded_mz = join("\n", '', @mz) . "\n";
+      $encoded_intensity = join("\n", '', @intensity) . "\n";
     }
     else { # encode
       my $buf = '';
