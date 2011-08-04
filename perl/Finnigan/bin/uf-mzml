@@ -405,10 +405,11 @@ my @time;
 my @tic;
 unless ( exists $args->{-s}) {
   foreach ( sort {$a <=> $b} keys %scan_index ) {
-    if ( $scan_event{$_}->preamble->ms_power == 1 ) {
-      push @time, $scan_index{$_}->{'start time'};
-      push @tic, $scan_index{$_}->{'total current'};
-    }
+    # don't select; the "chromatogram" they want is a mix
+    # if ( $scan_event{$_}->preamble->ms_power == 1 ) { 
+    push @time, $scan_index{$_}->{'start time'};
+    push @tic, $scan_index{$_}->{'total current'};
+    #}
   }
   if (exists $args->{-u}) {
     $encoded_time = join("\n", '', @time) . "\n              ";
