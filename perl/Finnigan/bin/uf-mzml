@@ -1243,8 +1243,8 @@ sub read_scan {
       push @precursors, {
                          isolation_window_param => {
                            'isolation window target m/z' => sprintf("%.2f", $reaction->precursor), # this is a fudge
-                           'isolation window lower offset' => 'unknown',
-                           'isolation window upper offset' => 'unknown'
+                           'isolation window lower offset' => 1, # fugde!
+                           'isolation window upper offset' => 1  # fudge!
                          },
                          # mzML structure assumes multiple ions per window; does not ever seem to be the case in Thermo data
                          selected_ion_list => [
