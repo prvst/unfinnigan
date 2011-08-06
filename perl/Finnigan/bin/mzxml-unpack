@@ -64,7 +64,8 @@ if ( $type eq 'mzXML' ) {
 
       say "$_$tag";
 
-      my @spec = unpack("f<*", decode_base64($data));
+      # my @spec = unpack("f<*", decode_base64($data)); # this does not work
+      my @spec = map {unpack "f", $_} map {pack "V", $_} unpack("N*", decode_base64($data));
       foreach my $i (0 .. scalar @spec / 2 - 1) {
         say join("\t", @spec[2*$i .. 2*$i+1]);
       }
