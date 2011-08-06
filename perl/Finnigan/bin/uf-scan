@@ -153,6 +153,10 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
         $profile->print_bins($range, $args->{-z});
       }
       else {
+        if ( $scan_event->nparam == 0 ) {
+          # this is a (naive) sign that the profile has already been converted
+          $profile->set_converter(sub{shift});
+        }
         $profile->print_bins(undef, $args->{-z});
       }
     }
