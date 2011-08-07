@@ -112,7 +112,7 @@ sub bins {
       }
       else {
 	$next_chunk_start = $self->{chunks}->[$i + 1]->{'first bin'};
-	$next_chunks_fudge = $self->{chunks}->[$i + 1]->{fudge};
+	$next_chunks_fudge = $self->{chunks}->[$i + 1]->{fudge} || 0; # not all profiles have the fudge value
       }
       my $gap_size = $next_chunk_start - $first_bin - $chunk->{nbins}; # will see if it's 0 or 1
       my $fill_size = $bookends;
