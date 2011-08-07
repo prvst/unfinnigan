@@ -10,8 +10,9 @@ use Finnigan;
 
 my $args = new Getopt::Declare q{
   [strict]
-  [mutex: -d -e -l -p -plot]
-  -d[ump]			dump the header [required]
+  [mutex: -d -e -l -plot]
+  [mutex: -e -l -p -plot]
+  -d[ump]			dump the header (-d); dump the header and the profile (-dp) [required]
   -e[xtract]			extract the entire scan as binary data (will print by default)
   -l[ist]			print or extract the peak list [required]
   -p[rofile]			print or extract the scan profile as a 2-column table [required]
@@ -105,9 +106,12 @@ $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
 my $peaks;
 $peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
 
+# dump the header
 if ( exists $args->{-d} ) {
-  $ph->dump(style => 'wiki', relative => 1);
+  $ph->dump();
 }
+
+# least the centroids
 if ( exists $args->{-l} ) {
   if ( $peaks ) {
     if ( exists $args->{-e} ) {
@@ -128,13 +132,13 @@ if ( exists $args->{-l} ) {
   }
 }
 
+# various ways to look at the profile
 if ( exists $args->{-p} or exists $args->{-plot}) {
   unless ( $profile ) {
     say STDERR "this scan has no profile";
     exit; # done with the task
   }
   if ( exists $args->{-p} ) {
-    # $profile->chunk->[0]->dump(style=>'wiki', relative=>1);
     if ( exists $args->{-e} ) {
       say STDERR sprintf("%d (%x) .. %d (%x)", $profile->addr, $profile->addr, $profile->addr + $profile->size, $profile->addr + $profile->size);
       seek INPUT, $profile->addr, 0;
@@ -144,20 +148,34 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
       print $rec;
     }
     else {
-      my $range = [$ph->low_mz, $ph->high_mz];
-      if ( exists $args->{-mz} ) {
-        $range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
-      }
-      if ( exists $args->{-v} ) {
-        $profile->set_converter($scan_event->converter);
-        $profile->print_bins($range, $args->{-z});
+      if ( exists $args->{-d} ) {
+        say "--------------------------------------";
+        say "Profile:";
+        say "  first value: " . $profile->first_value;
+        say "  step: " . $profile->step;
+        say "  number of chunks: " . $profile->nchunks;
+        say "  number of bins: " . $profile->nbins;
+        foreach my $i ( 0 .. $profile->nchunks - 1 ) {
+          say "  --- Chunk $i ---";
+          say $profile->chunk->[$i]->dump;
+        }
       }
       else {
-        if ( $scan_event->nparam == 0 ) {
-          # this is a (naive) sign that the profile has already been converted
-          $profile->set_converter(sub{shift});
+        my $range = [$ph->low_mz, $ph->high_mz];
+        if ( exists $args->{-mz} ) {
+          $range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
         }
-        $profile->print_bins(undef, $args->{-z});
+        if ( exists $args->{-v} ) {
+          $profile->set_converter($scan_event->converter);
+          $profile->print_bins($range, $args->{-z});
+        }
+        else {
+          if ( $scan_event->nparam == 0 ) {
+            # this is a (naive) sign that the profile has already been converted
+            $profile->set_converter(sub{shift});
+          }
+          $profile->print_bins(undef, $args->{-z});
+        }
       }
     }
   }
@@ -211,7 +229,7 @@ uf-scan [options] file
 
  Options:
 
-  -d[ump]                       dump the packet header
+  -d[ump]                       dump the packet header (-d); dump the header and the profile (-dp)
   -e[xtract]                    extract the entire scan data as a binary chunk
   -l[ist]                       list the called peaks [required]
   -p[rofile]                    print the scan profile as a 2-column table [required]
@@ -306,6 +324,10 @@ profile; it only lists the existing centroids if they are present.
  uf-scan -plot -n 1 -mz 445.0 .. 445.2 sample.raw | R --vanilla --slave > plot.eps
 
 If called peaks are present, they will be shown as dots on the graph.
+
+=item To see the amount of correction applied to each bin in a scan:
+
+ uf-scan -d -p -n 18588 sample.raw | grep fudge | cut -f 5 
 
 =back
 
