@@ -155,8 +155,12 @@ my %accession = (
   'charge state' => 'MS:1000041',
   'peak intensity' => 'MS:1000042',
   'collision-induced dissociation' => 'MS:1000133',
-  'surface-induced dissociation' => 'MS:1000044',
-
+  'surface-induced dissociation' => 'MS:1000439',
+  'electron capture dissociation' => 'MS:1000250',
+  'electron transfer dissociation' => 'MS:1000598',
+  'photodissociation' => 'MS:1000435',
+  'multiphoton dissociation' => 'MS:1000227',
+  'infrared multiphoton dissociation' => 'MS:1000262',
   'collision energy' => 'MS:1000045',
 
   'm/z' => 'MS:1000040',
@@ -1241,9 +1245,8 @@ sub read_scan {
                                 'collision-induced dissociation',
                                 'surface-induced dissociation',
                                 'electron capture dissociation',
-                                'electron-transfer dissociation',
-                                'electron photodetachment dissociation',
-                                'heated capillary dissociation',
+                                'electron transfer dissociation',
+                                'photodissociation',
                                 'multiphoton dissociation',
                                 'infrared multiphoton dissociation',
                                 'collision energy',
@@ -1437,7 +1440,16 @@ Prints a brief help message and exits.
 
 =item B<-a[ctivationMethod] <symbolE<gt>>
 
-Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzML> activation attribute is set to 'collision-induced dissociation'. It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
+Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzML> activation attribute is set to 'collision-induced dissociation'. It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activatio> element, provided it exists in the mzML controlled vocabulary. A small fragment of the vocabulary included in B<uf-mzml> includes:
+
+  'collision-induced dissociation'
+  'surface-induced dissociation'
+  'electron capture dissociation'
+  'electron transfer dissociation'
+  'photodissociation'
+  'multiphoton dissociation'
+  'infrared multiphoton dissociation'
+
 
 =item B<-c[entroids]>
 
@@ -1449,7 +1461,7 @@ B<Note:> presently, B<uf-mzml> does not do its own centroiding. If a scan contai
 
 Selects a range of scans to process.
 
-B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Otherwise, the program will crash with the following message:
+B<Note:> in order to establish valid references within the B<mzXML> file, the first scan in the selected range has be a full MS1 scan. Otherwise, the program will exit with the following message:
 
   C<Range error: cannot form valid mzXML starting with the dependent scan ###>
 
@@ -1458,6 +1470,14 @@ To determine the appropriate range of scans, list all scans in the file using B<
 =item B<-q[uiet]>
 
 Suppress the instrument error messages stored in the input file. Without this option, the error messages will be printed to STDERR.
+
+=item B<-u[nencoded]>
+
+Dump the contents of each C<binary> element in human-readable decimal encoding
+
+=item B<-s[tructure]>
+
+Do not output scan data, preserving the overall structure of the XML document. This option is usefull in troubleshooting the structure of the output file and it metadata.
 
 =back
 
@@ -1470,8 +1490,12 @@ uf-trailer
 
 =head1 EXAMPLE
 
- uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
+ uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > sample.mzML
 
   (extract peak centroids from scans 350 through 352)
+
+ uf-mzml -a "electron transfer dissociation" sample.raw > sample.mzML
+
+  (override the default dissociation method)
 
 =cut
