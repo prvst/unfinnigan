@@ -1477,7 +1477,7 @@ Dump the contents of each C<binary> element in human-readable decimal encoding
 
 =item B<-s[tructure]>
 
-Do not output scan data, preserving the overall structure of the XML document. This option is usefull in troubleshooting the structure of the output file and it metadata.
+Do not output scan data, preserving the overall structure of the XML document. This option is useful in troubleshooting the structure of the output file and it metadata.
 
 =back
 
