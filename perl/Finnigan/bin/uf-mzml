@@ -155,6 +155,8 @@ my %accession = (
   'charge state' => 'MS:1000041',
   'peak intensity' => 'MS:1000042',
   'collision-induced dissociation' => 'MS:1000133',
+  'surface-induced dissociation' => 'MS:1000044',
+
   'collision energy' => 'MS:1000045',
 
   'm/z' => 'MS:1000040',
@@ -243,7 +245,7 @@ my $basename = basename($file, qw/.raw .RAW/);
 
 # -----------------------------------------------------------------------------
 
-$Finnigan::activationMethod = lc $args->{-a}{"<symbol"} if exists $args->{-a};
+$Finnigan::activationMethod = lc $args->{-a}{"<symbol>"} if exists $args->{-a};
 
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
@@ -331,7 +333,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION)->purge_unused_data;
   next if $n < $from;
   if ($n == $from and $e->preamble->dependent) {
-    say STDERR "Range error: cannot form valid mzXML starting with the dependent scan $n";
+    say STDERR "Range error: cannot form valid mzML starting with the dependent scan $n";
     exit -1;
   }
 
@@ -860,7 +862,7 @@ my $xml = $x->indexedmzML(
   ),
   $x->indexListOffset('Index List Offset'),
   $x->fileChecksum('fileChecksumValue')
-); # $x->indexedmzXML
+); # $x->indexedmzML
 
 my ($head, $tail) = split '<cut>------------</cut>', "$xml";
 
@@ -1265,7 +1267,7 @@ sub read_scan {
                            }
                          ],
                          activation_param => {
-                           ($Finnigan::activationMethod eq 'cid' ? 'collision-induced dissociation' : 'unknown') => '',
+                           ($Finnigan::activationMethod eq 'cid' ? 'collision-induced dissociation' : $Finnigan::activationMethod) => '',
                            'collision energy' => $reaction->energy,
                          }
                         };
@@ -1409,17 +1411,20 @@ sub get_stat_info {  ## this will only work in Linux
 __END__
 =head1 NAME
 
-uf-mzxml - convert a Finnigan raw file to mzXML
+uf-mzml - convert a Finnigan raw file to mzML
 
 =head1 SYNOPSIS
 
-uf-mzxml [options] <file>
+uf-mzml [options] <file>
 
  Options:
 
   -a[ctivationMethod] <symbol>     specify ion activation method [CID by default]
-  -c[entroids]                     write peak centroids instead of scan profiles
+  -c[entroids]                     write peak centroids instead of scan profiles where possible
   -r[ange] <from> .. <to>          write only scans with numbers between <from> and <to>
+  -q[uiet]												 suppress the instrument error messages
+  -u[nencoded]										 render the data unencoded (in decimal encoding)
+  -s[tructure]										 output just the XML structure of the file (without the data)
   <file>                           input file
 
 =head1 OPTIONS
@@ -1432,13 +1437,13 @@ Prints a brief help message and exits.
 
 =item B<-a[ctivationMethod] <symbolE<gt>>
 
-Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzXML> attribute is set to 'CID' (Collision-Induced Dissociation). It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
+Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzML> activation attribute is set to 'collision-induced dissociation'. It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
 
 =item B<-c[entroids]>
 
 Prefer centroids to raw profiles.
 
-B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, it is skipped.
+B<Note:> presently, B<uf-mzml> does not do its own centroiding. If a scan contains no centroid data, the profile is written out.
 
 =item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
 
