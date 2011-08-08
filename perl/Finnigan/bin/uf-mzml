@@ -1425,9 +1425,9 @@ uf-mzml [options] <file>
   -a[ctivationMethod] <symbol>     specify ion activation method [CID by default]
   -c[entroids]                     write peak centroids instead of scan profiles where possible
   -r[ange] <from> .. <to>          write only scans with numbers between <from> and <to>
-  -q[uiet]												 suppress the instrument error messages
-  -u[nencoded]										 render the data unencoded (in decimal encoding)
-  -s[tructure]										 output just the XML structure of the file (without the data)
+  -q[uiet]                         suppress the instrument error messages
+  -u[nencoded]                     render the data unencoded (in decimal encoding)
+  -s[tructure]                     output just the XML structure of the file (without the data)
   <file>                           input file
 
 =head1 OPTIONS
@@ -1477,7 +1477,9 @@ Dump the contents of each C<binary> element in human-readable decimal encoding
 
 =item B<-s[tructure]>
 
-Do not output scan data, preserving the overall structure of the XML document. This option is useful in troubleshooting the structure of the output file and its metadata.
+Do not output scan data, preserving the overall structure of the XML
+document.  This option is useful in troubleshooting the structure of
+the output file and its metadata.
 
 =back
 
@@ -1490,9 +1492,17 @@ uf-trailer
 
 =head1 EXAMPLES
 
+ uf-mzml sample.raw > sample.mzML
+
+  (convert the entire file, using profiles from those scans where both
+  profiles and centroids are present and centroids where there are no
+  profiles)
+
  uf-mzml -c sample.raw > sample.mzML
 
-  (convert the entire file, extracting precomputed centroids from every scan)
+  (convert the entire file, extracting precomputed centroids from
+  every scancontaining centroids; where there are no centroids, the
+  profile will be used)
 
  uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > sample.mzML
 
