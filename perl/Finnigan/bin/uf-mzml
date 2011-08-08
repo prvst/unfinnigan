@@ -1488,7 +1488,11 @@ Finnigan::Profile
 Finnigan::ProfileChunk
 uf-trailer
 
-=head1 EXAMPLE
+=head1 EXAMPLES
+
+ uf-mzml -c sample.raw > sample.mzML
+
+  (convert the entire file, extracting precomputed centroids from every scan)
 
  uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > sample.mzML
 
