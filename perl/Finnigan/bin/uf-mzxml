@@ -102,6 +102,7 @@ $nbytes == $bytes_to_read
 my $trailer_length = unpack 'V', $rec;
 
 my %scan_event;
+my %ms_power;
 foreach my $i ( 0 .. $trailer_length - 1) {
   my $n = $i + 1;
   my $e = Finnigan::ScanEvent->decode(\*INPUT, $VERSION)->purge_unused_data;
@@ -112,6 +113,7 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   }
 
   $scan_event{$i} = $e;
+  $ms_power{$e->preamble->ms_power}++;
   last if $n == $to;
 }
 
@@ -138,7 +140,10 @@ foreach my $i ( 0 .. $error_log_length - 1) {
   }
 }
 
-# read the scan even hierarchy, even though it is not used -- just to reach the next object
+# Read the scan even hierarchy, even though it is not used -- just to
+# reach the next object in the stream.  This is unlike uf-mzml, where
+# the event template for each segment is used to write out controller
+# type and number.
 my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{data}->{nsegs}->{value};
 foreach my $i ( 0 .. $nsegs - 1) {
   my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
@@ -150,17 +155,20 @@ foreach my $i ( 0 .. $nsegs - 1) {
 # now the file pointer is at the start of GenericDataHeader for ScanParameters
 my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 
-# with the header on hand, skip to the ScanParameters stream and grab
-# the precurser charge for all scans.
+# With the header on hand, skip to the ScanParameters stream and grab
+# a few values for each scan (just the required ones, to reduce memory
+# use).  MzML needs more per-scan parameters; we only need charge
+# state here, but will still use the same storage as in uf-mzml, for
+# uniformity.
 seek INPUT, $params_addr, 0;
 
-my %charge_state;
+my $param;
 foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   my $n = $i + 1;
   my $p = Finnigan::ScanParameters->decode(\*INPUT, $params_header->field_templates);
   next if $n < $from;
   my $charge = $p->charge_state;
-  $charge_state{$i} = $charge if $charge;
+  $param->{charge_state}->{$i} = $charge if $charge;
   last if $n == $to;
 }
 
@@ -298,10 +306,10 @@ my $xml = $xmlgen->mzXML(
           if ( $isMS2 ) {
             %precursorAttr = (
               precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
-              precursorCharge     => $charge_state{$n-1},
+              precursorCharge     => $param->{charge_state}->{$n-1},
               activationMethod    => uc $Finnigan::activationMethod,
             );
-            delete $precursorAttr{precursorCharge} unless $charge_state{$n-1};
+            delete $precursorAttr{precursorCharge} unless $param->{charge_state}->{$n-1};
           }
 
           tie my %peaksAttr, 'Tie::IxHash';
