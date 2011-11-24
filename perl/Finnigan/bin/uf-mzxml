@@ -5,20 +5,20 @@ use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
-use Getopt::Declare;
-use Finnigan;
-use XML::Generator;
-use Tie::IxHash;
-use Storable qw(freeze thaw);
-use MIME::Base64;
+use Digest::SHA1;
 use File::Temp;
-use Devel::Size qw(size total_size);
+use Finnigan;
+use Getopt::Declare;
+use MIME::Base64;
+use Storable qw(freeze thaw);
+use Tie::IxHash;
+use XML::Generator;
 
 
 my $args = new Getopt::Declare q{
   [strict]
   -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
-  -c[entroids]				write peak centroids instead of scan profiles
+  -c[entroids]				prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
   -q[uiet]				suppress the instrument error messages
   <file>				input file [required]
@@ -32,7 +32,7 @@ my $file = $args->{"<file>"};
 
 # -----------------------------------------------------------------------------
 
-$Finnigan::activationMethod = lc $args->{-a}{"<symbol"} if exists $args->{-a};
+$Finnigan::activationMethod = lc $args->{-a}{"<symbol>"} if exists $args->{-a};
 
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
@@ -86,7 +86,6 @@ foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
 }
 
-# say STDERR "scan index size: " . sprintf("%6.1dMB", total_size(\%scan_index)/1024/1024);
 
 # ---------------------------------------------------------------------
 # Now go read the trailer. Because the trailer records are of variable
@@ -331,8 +330,6 @@ my $xml = $xmlgen->mzXML(
     } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
   )
 );
-
-say STDERR "xml object size: " . total_size($xml);
 
 my @xml_chunk = split "=== cut ===", "$xml";
 
