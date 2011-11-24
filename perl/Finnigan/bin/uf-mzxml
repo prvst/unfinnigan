@@ -176,8 +176,8 @@ foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
 
 #------------------------------------------------------------------------------------------
 # This is a reasonably good point to start generating the output. We
-# know everything about the data, but haven't started reading the data
-# itself
+# know everything about the data, but haven't started reading the scan
+# data itself
 
 my $parent_scan_data; # for looking up the precursor ion for each of
                       # the dependent MS2 scans
@@ -186,11 +186,11 @@ my %scan_data;
 my $scandata_fh = File::Temp->new( UNLINK => 1, SUFFIX => '.dat' );
 binmode $scandata_fh;
 
-my $xmlgen = XML::Generator->new(
-                                 pretty => 1,
-                                 # conformance => 'strict',
-                                 namespace => ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
-                                );
+my $x = XML::Generator->new(
+                            pretty => 1,
+                            # conformance => 'strict',
+                            namespace => ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
+                           );
 
 
 tie my %msRunAttr, 'Tie::IxHash';
@@ -259,25 +259,25 @@ tie my %convSoftwareAttr, 'Tie::IxHash';
                      version => $Finnigan::VERSION,
                     );
 
-my $xml = $xmlgen->mzXML(
+my $xml = $x->mzXML(
   ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
   {
    'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
    'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.1 http://sashimi.sourceforge.net/schema_revision/mzXML_3.1/mzXML_idx_3.1.xsd'
   },
-  $xmlgen->msRun(\%msRunAttr,
-    $xmlgen->parentFile(\%parentFileAttr),
-    $xmlgen->msInstrument(
-      $xmlgen->msManufacturer(\%msManufacturerAttr),
-      $xmlgen->msModel(\%msModelAttr),
-      $xmlgen->msIonisation(\%msIonisationAttr),
-      $xmlgen->msMassAnalyzer(\%msAnalyzerAttr),
-      $xmlgen->msDetector(\%msDetectorAttr),
-      $xmlgen->software(\%acqSoftwareAttr),
+  $x->msRun(\%msRunAttr,
+    $x->parentFile(\%parentFileAttr),
+    $x->msInstrument(
+      $x->msManufacturer(\%msManufacturerAttr),
+      $x->msModel(\%msModelAttr),
+      $x->msIonisation(\%msIonisationAttr),
+      $x->msMassAnalyzer(\%msAnalyzerAttr),
+      $x->msDetector(\%msDetectorAttr),
+      $x->software(\%acqSoftwareAttr),
     ),
-    $xmlgen->dataProcessing(
+    $x->dataProcessing(
       \%dataProcessingAttr,
-      $xmlgen->software(\%convSoftwareAttr),
+      $x->software(\%convSoftwareAttr),
     ),
     map {
       my $n = $_;
@@ -292,9 +292,9 @@ my $xml = $xmlgen->mzXML(
         compressionType => "none",
         compressedLen   => 0,
       );
-      $xmlgen->scan(
+      $x->scan(
         $attr,
-        $xmlgen->peaks(\%peakAttr, "=== cut ==="),
+        $x->peaks(\%peakAttr, "=== cut ==="),
         map {
           my $n = $_;
           my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
@@ -321,16 +321,16 @@ my $xml = $xmlgen->mzXML(
             compressedLen   => 0,
           );
           if ( $isMS2 ) {
-            $xmlgen->scan(
+            $x->scan(
               $attr,
-              $xmlgen->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
-              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+              $x->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
+              $x->peaks(\%peaksAttr, "=== cut ===")
             )
           }
           else { # for MS1 scans like SIM or zoom scans
-            $xmlgen->scan(
+            $x->scan(
               $attr,
-              $xmlgen->peaks(\%peaksAttr, "=== cut ===")
+              $x->peaks(\%peaksAttr, "=== cut ===")
             )
           }
         } dependent_scans(\%scan_event, $n)
@@ -555,6 +555,12 @@ sub get_stat_info {  ## this will only work in Linux
   return $ref;
 }
 
+
+# Local Variables:
+# indent-tabs-mode: nil
+# tab-width: 2
+# End:
+
 __END__
 =head1 NAME
 
@@ -567,7 +573,7 @@ uf-mzxml [options] <file>
  Options:
 
   -a[ctivationMethod] <symbol>     specify ion activation method [CID by default]
-  -c[entroids]                     write peak centroids instead of scan profiles
+  -c[entroids]                     write peak centroids instead of scan profiles where possible
   -r[ange] <from> .. <to>          write only scans with numbers between <from> and <to>
   <file>                           input file
 
@@ -587,13 +593,13 @@ Since the native storage location of the data element corresponding to the activ
 
 Prefer centroids to raw profiles.
 
-B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, it is skipped.
+B<Note:> presently, B<uf-mzxml> does not do its own centroiding. If a scan contains no centroid data, the profile is written out.
 
 =item B<-r[ange] E<lt>from:0+nE<gt> .. E<lt>to:0+nE<gt>>
 
 Selects a range of scans to process.
 
-B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be an MS1 scan. Otherwise, the program will crash with the following message:
+B<Note:> in order to form the nested structure of dependent scans required in B<mzXML>, the first scan in the selected range has be a full MS1 scan. Otherwise, the program will exit with the following message:
 
   C<Range error: cannot form valid mzXML starting with the dependent scan ###>
 

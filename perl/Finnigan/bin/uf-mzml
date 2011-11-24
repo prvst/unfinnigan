@@ -435,8 +435,8 @@ unless ( exists $args->{-s}) {
 
 #------------------------------------------------------------------------------------------
 # This is a reasonably good point to start generating the output. We
-# know everything about the data, but haven't started reading the scan data
-# itself
+# know everything about the data, but haven't started reading the scan
+# data itself
 
 my $parent_scan_data; # for looking up the precursor ion for each of
                       # the dependent MS2 scans
@@ -444,10 +444,10 @@ my $parent_scan_data; # for looking up the precursor ion for each of
 my %scan_data;
 
 my $x = XML::Generator->new(
-                                 pretty => 2,
-                                 # conformance => 'strict',
-                                 namespace => ['http://psi.hupo.org/ms/mzml'],
-                                );
+                            pretty => 2,
+                            # conformance => 'strict',
+                            namespace => ['http://psi.hupo.org/ms/mzml'],
+                           );
 
 
 # XML-related stuff ----------------------------------------------------
@@ -621,11 +621,6 @@ tie my %spectrumListAttr, 'Tie::IxHash';
                      count => $to - $from + 1,
                      defaultDataProcessingRef => 'mzml-conversion',
                     );
-
-
-
-
-
 
 tie my %msIonisationAttr, 'Tie::IxHash';
 %msIonisationAttr = (
@@ -1460,7 +1455,7 @@ Selects a range of scans to process.
 
 B<Note:> in order to establish valid references within the B<mzXML> file, the first scan in the selected range has be a full MS1 scan. Otherwise, the program will exit with the following message:
 
-  C<Range error: cannot form valid mzXML starting with the dependent scan ###>
+  C<Range error: cannot form valid mzML starting with the dependent scan ###>
 
 To determine the appropriate range of scans, list all scans in the file using B<uf-trailer>.
 
