@@ -5,11 +5,9 @@ use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
-use Data::Dumper;
 use Data::UUID; 
 use Digest::SHA1;
 use File::Basename qw(basename);
-use File::Temp;
 use Finnigan;
 use Getopt::Declare;
 use MIME::Base64;
@@ -231,12 +229,12 @@ my %components = (
 my $args = new Getopt::Declare q{
   [strict]
   -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
-  -c[entroids]										prefer peak centroids to scan profiles, if available
+  -c[entroids]				prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
-  -q[uiet]												suppress the instrument error messages
-  -u[nencoded]										render the data unencoded (in decimal encoding)
-  -s[tructure]										output just the XML structure of the file (without the data)
-  <file>													input file [required]
+  -q[uiet]			        suppress the instrument error messages
+  -u[nencoded]				render the data unencoded (in decimal encoding)
+  -s[tructure]				output just the XML structure of the file (without the data)
+  <file>				input file [required]
 }
   or exit(-1);
 
@@ -288,8 +286,6 @@ my $inst = Finnigan::InstID->decode(\*INPUT);
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
 
-say STDERR "reading scan index...";
-
 my %scan_index;
 # this code is not fool-proof and is not finished! It assumes that
 # there are exactly as many entries in ScanIndex as would fit
@@ -315,6 +311,7 @@ if ( $from > $first_scan) {
 foreach my $i ($from - 1 .. $to - 1) {
   $scan_index{$i} = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION)->values;
 }
+
 
 # ---------------------------------------------------------------------
 # Now go read the trailer. Because the trailer records are of variable
@@ -382,7 +379,7 @@ foreach my $i ( 0 .. $nsegs - 1) {
 # now the file pointer is at the start of GenericDataHeader for ScanParameters
 my $params_header = Finnigan::GenericDataHeader->decode(\*INPUT);
 
-# with the header on hand, skip to the ScanParameters stream and grab
+# With the header on hand, skip to the ScanParameters stream and grab
 # a few values for each scan (just the required ones, to reduce memory use)
 seek INPUT, $params_addr, 0;
 
