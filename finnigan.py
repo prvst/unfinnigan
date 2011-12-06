@@ -167,19 +167,18 @@ class Finnigan(Parser):
             for n in range(1, nrecords + 1):
                 yield LogRecord(self, "log[%s]" % n, "LogRecord %s" % n)
 
-        elif VERSION[-1] >= 57:
+        elif VERSION[-1] >= 57 and VERSION[-1] <= 66:
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield CASInfo(self, "CAS info", "Autosampler data?")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
             data_addr = self["raw file info/preamble/data addr"].value
-            if self.absolute_address+self.current_size < data_addr * 8:
+            if self.absolute_address + self.current_size < data_addr * 8:
                 yield MethodFile(self, "method file", "Embedded method file")
 
             run_header_addr = self["raw file info/preamble/run header addr"].value
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
             nscans = last_scan_number - first_scan_number + 1
-
             #for n in range(1, nscans + 1):
             for n in range(1, min(nscans, 15) + 1):
                 yield Packet(self, "packet %s" % n)
@@ -191,10 +190,53 @@ class Finnigan(Parser):
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
             yield ErrorLog(self, "error log", "Error Log File")
-            yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
-            yield StatusLog(self, "status log", "Status log")
-        else:
-            exit("unknown file version: %s" % VERSION[-1])
+
+            if VERSION[-1] == 66:
+                yield ErrorLogRecord(self, "log record[1]", "Apparently an error record; access rule and number unknown")
+                yield ErrorLogRecord(self, "log record[2]", "Apparently an error record; access rule and number unknown")
+                yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
+                yield GenericDataHeader(self, "scan header", "The header for scan parameters stream")
+                yield GenericDataHeader(self, "tune file header", "TuneFile Header")
+                nsegs = self["/run header/nsegs"].value # this is a conjecture
+                for n in range(1, nsegs + 1):
+                    yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
+
+                yield ScanIndex(self, "scan index", "A set of ScanIndexEntry records")
+                
+
+                trailer_scan_event_addr = self["run header/scan trailer addr"].value
+                if trailer_scan_event_addr > self.current_size/8:
+                    yield RawBytes(self, "unknown stream", trailer_scan_event_addr - self.current_size/8, "Looks like human-readable warnings mixed with some data")
+
+                yield UInt32(self, "n_scanevents", "This supposed to be the number of trailer scan events")
+
+                for n in range(1, min(nscans, 10) + 1):
+                    yield ScanEvent(self, "scan event[%s]" % n)
+                    print >> sys.stderr, "\rread %s of %s  ... " % (n, nscans),
+
+                scan_params_addr = self["run header/scan params addr"].value
+                if scan_params_addr > self.current_size/8:
+                    yield RawBytes(self, "unparsed scan events", scan_params_addr - self.current_size/8, "Further ScanEvent structures left unparsed")
+
+                yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
+
+                yield UnknownStreamOfDoubles(self, "unkonwn stream of doubles")
+                yield RawBytes(self, "unknown structure", 7814, "references to tem files and a few doubles")
+                if ABBREVIATE_LISTS and nscans > 100:
+                    yield StrangeIndexRecord(self, "ix[1]", "IndexRecord 1")
+                    yield StrangeIndexRecord(self, "ix[2]", "IndexRecord 2")
+                    yield StrangeIndexRecord(self, "ix[3]", "IndexRecord 2")
+                    yield StrangeIndexRecord(self, "ix[4]", "IndexRecord 2")
+                    record_sz = self["ix[1]"].size/8
+                    yield RawBytes(self, ". . .", (nscans - 5) * record_sz, "records skipped for speed")
+                    yield StrangeIndexRecord(self, "ix[%s]" % nscans, "IndexRecord %s" % nscans)
+
+            if VERSION[-1] < 66:
+                yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
+                yield StatusLog(self, "status log", "Status log")
+            # elif VERSION[-1] == 66:
+            # else:
+            #     exit("unknown file version: %s" % VERSION[-1])
 
         # Read rest of the file
         if self.current_size < self._size:
@@ -220,6 +262,31 @@ class Finnigan(Parser):
         for feature in self:
             visitor.at(feature)
         visitor.up()
+
+class UnknownStreamOfDoubles(FieldSet):
+    def createFields(self):
+        for index in range(1, 52396+1):
+            yield Float64(self, "unknown double[%s]" % index)
+
+class StrangeIndexRecord(FieldSet):
+    def createFields(self):
+        yield UInt32(self, "index")
+        yield UInt32(self, "unknown[1]")
+        yield UInt32(self, "unknown[2]")
+        yield UInt32(self, "unknown[3]")
+        yield UInt32(self, "unknown[4]")
+        yield UInt32(self, "unknown[5]")
+        yield UInt32(self, "unknown[6]")
+        yield Float64(self, "retention time")
+        yield UInt32(self, "unknown[7]")
+        yield UInt32(self, "unknown[8]")
+        yield UInt32(self, "unknown[9]")
+        yield UInt32(self, "unknown[a]")
+        yield UInt32(self, "unknown[b]")
+        yield UInt32(self, "unknown[c]")
+        yield UInt32(self, "offset")
+        yield UInt32(self, "unknown[e]")
+        yield UInt32(self, "unknown[f]")
 
 
 class Packet(FieldSet):
@@ -664,7 +731,7 @@ class RawFileInfoPreamble(FieldSet):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?") # 804 is the fixed size of RawFileInfoPreamble prior to v.64
-        if VERSION[-1] == 64:
+        if VERSION[-1] >= 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "former data addr", "not used in the 64-bit version")
             for index in range(3, 6 + 1):
@@ -675,7 +742,10 @@ class RawFileInfoPreamble(FieldSet):
             for index in range(7, 8 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt64(self, "run header addr", "Absolute address of RunHeader")
-            yield RawBytes(self, "unknown area[2]", 1008, "padding?")
+            if VERSION[-1] == 64:
+                yield RawBytes(self, "unknown area[2]", 1008, "padding?")
+            if VERSION[-1] == 66:
+                yield RawBytes(self, "unknown area[2]", 1008 + 16, "padding?")
 
 class MethodFile(FieldSet):
     endian = LITTLE_ENDIAN
@@ -937,22 +1007,25 @@ class ScanEventTemplate(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
-        if VERSION[-1] >= 63:
-            yield RawBytes(self, "preamble extension", 8)
-        if VERSION[-1] < 57:
-            yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
-            yield UInt32(self, "unknown long[1]", "Unknown long")
-            yield MSReaction(self, "ms reaction", "MS Reaction")
-            yield UInt32(self, "unknown long[2]", "Unknown long")
-            yield FractionCollector(self, "fraction collector", "Fraction Collector")
+        if VERSION[-1] < 66:
+            yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+            if VERSION[-1] >= 63:
+                yield RawBytes(self, "preamble extension", 8)
+            if VERSION[-1] < 57:
+                yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
+                yield UInt32(self, "unknown long[1]", "Unknown long")
+                yield MSReaction(self, "ms reaction", "MS Reaction")
+                yield UInt32(self, "unknown long[2]", "Unknown long")
+                yield FractionCollector(self, "fraction collector", "Fraction Collector")
+            else:
+                yield UInt32(self, "unknown long[1]", "Unknown long (or two shorts)")
+                yield UInt32(self, "unknown long[2]", "Unknown long")
+                yield FractionCollector(self, "fraction collector", "Fraction Collector")
+                yield UInt32(self, "unknown long[3]", "Unknown long")
+                yield UInt32(self, "unknown long[4]", "Unknown long")
+                yield UInt32(self, "unknown long[5]", "Unknown long")
         else:
-            yield UInt32(self, "unknown long[1]", "Unknown long (or two shorts)")
-            yield UInt32(self, "unknown long[2]", "Unknown long")
-            yield FractionCollector(self, "fraction collector", "Fraction Collector")
-            yield UInt32(self, "unknown long[3]", "Unknown long")
-            yield UInt32(self, "unknown long[4]", "Unknown long")
-            yield UInt32(self, "unknown long[5]", "Unknown long")
+            yield RawBytes(self, "uknown scan event-like structure", 160)
 
 class ScanEventPreamble(FieldSet):
     endian = LITTLE_ENDIAN
@@ -1047,47 +1120,71 @@ class ScanEvent(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
-        if VERSION[-1] >= 63:
+        if VERSION[-1] >= 63 and VERSION[-1] < 66:
             yield RawBytes(self, "preamble extension", 8)
+        else:
+            yield RawBytes(self, "preamble extension", 12)
+
         yield UInt32(self, "np", "The number of precursor ions")
         for i in range(1,  self["np"].value + 1):
             yield Reaction(self, "reaction[%s]" % i, "Reaction")
 
         yield UInt32(self, "unknown long[1]", "Unknown long")
         yield FractionCollector(self, "fraction collector", "Fraction Collector")
-        yield UInt32(self, "nparam", "The number of double-precision parameters following this")
-        for index in range(1, self["nparam"].value + 1):
-            key = "unknown double[%s]" % index
-            label = "Unknown double";
-            if (self["nparam"].value == 4): # LTQ-FT
-                if (index == 2):
-                    label = "may be Conversion Parameter A"
-                elif (index == 3):
-                    key = "param b"
-                    label = "Conversion Parameter B"
-                elif(index == 4):
-                    key = "param c"
-                    label = "Conversion Parameter C"
-            else:
-                if (index == 2):
-                    label = "may be Conversion Parameter I"
-                elif (index == 3):
-                    label = "may be Conversion Parameter A"
-                elif (index == 4):
-                    key = "param b"
-                    label = "Conversion Parameter B"
-                elif(index == 5):
-                    key = "param c"
-                    label = "Conversion Parameter C"
-                elif(index == 6):
-                    key = "param d"
-                    label = "Conversion Parameter D"
-                elif(index == 7):
-                    key = "param e"
-                    label = "Conversion Parameter E"
-            yield Float64(self, key, label)
-        for index in "23":
-            yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
+        if VERSION[-1] < 66:
+            yield UInt32(self, "nparam", "The number of double-precision parameters following this")
+            for index in range(1, self["nparam"].value + 1):
+                key = "unknown double[%s]" % index
+                label = "Unknown double";
+                if (self["nparam"].value == 4): # LTQ-FT
+                    if (index == 2):
+                        label = "may be Conversion Parameter A"
+                    elif (index == 3):
+                        key = "param b"
+                        label = "Conversion Parameter B"
+                    elif(index == 4):
+                        key = "param c"
+                        label = "Conversion Parameter C"
+                else:
+                    if (index == 2):
+                        label = "may be Conversion Parameter I"
+                    elif (index == 3):
+                        label = "may be Conversion Parameter A"
+                    elif (index == 4):
+                        key = "param b"
+                        label = "Conversion Parameter B"
+                    elif(index == 5):
+                        key = "param c"
+                        label = "Conversion Parameter C"
+                    elif(index == 6):
+                        key = "param d"
+                        label = "Conversion Parameter D"
+                    elif(index == 7):
+                        key = "param e"
+                        label = "Conversion Parameter E"
+                yield Float64(self, key, label)
+            for index in "23":
+                yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
+        else: # 66
+            yield UInt32(self, "unknown long[3]", "Unknown long")
+            yield UInt32(self, "unknown long[4]", "Unknown long")
+            yield UInt32(self, "unknown long[5]", "Unknown long")
+            yield UInt32(self, "unknown long[6]", "Unknown long")
+            yield FractionCollector(self, "fraction collector[1]", "Fraction Collector")
+            yield UInt32(self, "unknown long[8]", "Unknown long")
+            yield UInt32(self, "unknown long[9]", "Unknown long")
+            yield UInt32(self, "unknown long[a]", "Unknown long")
+            yield FractionCollector(self, "fraction collector[2]", "Fraction Collector")
+            yield UInt32(self, "nparam", "The nuber of double-precision parameters following this")
+            for index in range(1, self["nparam"].value + 1):
+                key = "unknown double[%s]" % index
+                label = "Unknown double";
+                yield Float64(self, key, label)
+            yield UInt32(self, "unknown long[h]", "Unknown long")
+            yield UInt32(self, "unknown long[i]", "Unknown long")
+            yield UInt32(self, "unknown long[j]", "Unknown long")
+            yield UInt32(self, "unknown long[k]", "Unknown long")
+            yield UInt32(self, "unknown long[l]", "Unknown long")
 
 
 class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
@@ -1107,6 +1204,13 @@ class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
 
 
 class TuneFile(GenericRecord):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+         for item in GenericRecord.createFields(self):
+             yield item
+
+class SomeGenericRecord(GenericRecord):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -1566,4 +1670,9 @@ class ScanIndexEntry(FieldSet):
         yield Float64(self, "high mz")
         if VERSION[-1] == 64:
             yield UInt64(self, "offset", "Offset of this scan's data from the start of the scan data stream")
+        if VERSION[-1] == 66:
+            yield UInt32(self, "unknown[1]")
+            yield UInt32(self, "unknown[2]")
+            yield UInt32(self, "unknown[3]")
+            yield UInt32(self, "unknown[4]")
 
