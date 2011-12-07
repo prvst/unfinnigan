@@ -60,6 +60,7 @@ sub decode {
   $specific_fields{62} = $specific_fields{60};
   $specific_fields{63} = $specific_fields{60};
   $specific_fields{64} = $specific_fields{60};
+  $specific_fields{66} = $specific_fields{60};
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
