@@ -65,7 +65,6 @@ sub decode {
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
 
-  $self->dump();
   return bless $self, $class;
 }
 
