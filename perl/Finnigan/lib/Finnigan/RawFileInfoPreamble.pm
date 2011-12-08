@@ -57,6 +57,8 @@ sub decode {
                           "unknown_area[2]"                => ['C1008', 'RawBytes'],
                          ];
 
+  $specific_fields{66} = $specific_fields{64};
+  $specific_fields{66}->[-1]->[0] = 'C1024'; # unknown_area[2] has been extended
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
