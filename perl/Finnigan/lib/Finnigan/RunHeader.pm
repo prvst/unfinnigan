@@ -117,6 +117,7 @@ sub decode {
                           "unknown long[27]"      => ['V',      'UInt32'],
                           "unknown long[28]"      => ['V',      'UInt32'],
                          ];
+  $specific_fields{66} = $specific_fields{64};
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
   my $self = Finnigan::Decoder->read($stream, [@common_fields, @{$specific_fields{$version}}]);
