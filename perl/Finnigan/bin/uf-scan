@@ -12,7 +12,7 @@ my $args = new Getopt::Declare q{
   [strict]
   [mutex: -d -e -l -plot]
   [mutex: -e -l -p -plot]
-  -d[ump]			dump the header (-d); dump the header and the profile (-dp) [required]
+  -d[ump]			dump the header (-d); dump the header and the profile (-dp)
   -e[xtract]			extract the entire scan as binary data (will print by default)
   -l[ist]			print or extract the peak list [required]
   -p[rofile]			print or extract the scan profile as a 2-column table [required]
@@ -87,11 +87,15 @@ my $nbytes = read INPUT, $rec, $bytes_to_read;
 $nbytes == $bytes_to_read
   or die "could not read all $bytes_to_read bytes of the trailer scan events count at $trailer_addr";
 my $trailer_length = unpack 'V', $rec;
+if ($trailer_length == 0) {
+  print STDERR "warning: zero trailer length at file offset " . (tell(INPUT) - $nbytes) . "\n";
+  $trailer_length = $last_scan - $first_scan + 1;
+}
 
 # read all scan events preceding the desired one (they are variable-size structures)
 my $scan_event;
 foreach my $i ( 1 .. $trailer_length) {
-  $scan_event = Finnigan::ScanEvent->decode(\*INPUT, $VERSION);
+  $scan_event = Finnigan::ScanEvent->decode(\*INPUT, $VERSION) or die "could not decode ScanEvent at file offset" . tell(INPUT);
   next if $i < $n;
   last;
 }
@@ -170,6 +174,8 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
           $profile->print_bins($range, $args->{-z});
         }
         else {
+	  use Data::Dumper;
+	  print STDERR Dumper($scan_event);
           if ( $scan_event->nparam == 0 ) {
             # this is a (naive) sign that the profile has already been converted
             $profile->set_converter(sub{shift});
