@@ -210,7 +210,7 @@ class Finnigan(Parser):
 
                 yield UInt32(self, "n_scanevents", "This supposed to be the number of trailer scan events")
 
-                for n in range(1, min(nscans, 10) + 1):
+                for n in range(1, min(nscans, 215) + 1):
                     yield ScanEvent(self, "scan event[%s]" % n)
                     print >> sys.stderr, "\rread %s of %s  ... " % (n, nscans),
 
@@ -1008,7 +1008,7 @@ class ScanEventTemplate(FieldSet):
 
     def createFields(self):
         if VERSION[-1] < 66:
-            yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+            yield ScanEventPreamble(self, "preamble", "MS Scan Event preamble")
             if VERSION[-1] >= 63:
                 yield RawBytes(self, "preamble extension", 8)
             if VERSION[-1] < 57:
@@ -1119,19 +1119,19 @@ class ScanEvent(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield ScanEventPreamble(self, "preabmle", "MS Scan Event preamble")
+        yield ScanEventPreamble(self, "preamble", "MS Scan Event preamble")
         if VERSION[-1] >= 63 and VERSION[-1] < 66:
             yield RawBytes(self, "preamble extension", 8)
         else:
             yield RawBytes(self, "preamble extension", 12)
 
-        yield UInt32(self, "np", "The number of precursor ions")
-        for i in range(1,  self["np"].value + 1):
-            yield Reaction(self, "reaction[%s]" % i, "Reaction")
-
-        yield UInt32(self, "unknown long[1]", "Unknown long")
-        yield FractionCollector(self, "fraction collector", "Fraction Collector")
         if VERSION[-1] < 66:
+            yield UInt32(self, "np", "The number of precursor ions")
+            for i in range(1,  self["np"].value + 1):
+                yield Reaction(self, "reaction[%s]" % i, "Reaction")
+
+            yield UInt32(self, "unknown long[1]", "Unknown long")
+            yield FractionCollector(self, "fraction collector", "Fraction Collector")
             yield UInt32(self, "nparam", "The number of double-precision parameters following this")
             for index in range(1, self["nparam"].value + 1):
                 key = "unknown double[%s]" % index
@@ -1166,25 +1166,55 @@ class ScanEvent(FieldSet):
             for index in "23":
                 yield UInt32(self, "unknown long[%s]" % index, "Unknown long")
         else: # 66
-            yield UInt32(self, "unknown long[3]", "Unknown long")
-            yield UInt32(self, "unknown long[4]", "Unknown long")
-            yield UInt32(self, "unknown long[5]", "Unknown long")
-            yield UInt32(self, "unknown long[6]", "Unknown long")
-            yield FractionCollector(self, "fraction collector[1]", "Fraction Collector")
-            yield UInt32(self, "unknown long[8]", "Unknown long")
-            yield UInt32(self, "unknown long[9]", "Unknown long")
-            yield UInt32(self, "unknown long[a]", "Unknown long")
-            yield FractionCollector(self, "fraction collector[2]", "Fraction Collector")
-            yield UInt32(self, "nparam", "The nuber of double-precision parameters following this")
-            for index in range(1, self["nparam"].value + 1):
-                key = "unknown double[%s]" % index
-                label = "Unknown double";
-                yield Float64(self, key, label)
-            yield UInt32(self, "unknown long[h]", "Unknown long")
-            yield UInt32(self, "unknown long[i]", "Unknown long")
-            yield UInt32(self, "unknown long[j]", "Unknown long")
-            yield UInt32(self, "unknown long[k]", "Unknown long")
-            yield UInt32(self, "unknown long[l]", "Unknown long")
+            if self["preamble/dependent"].value:
+                yield UInt32(self, "unknown long[0]", "Unknown long")
+                yield UInt32(self, "unknown long[1]", "Unknown long")
+                yield Reaction(self, "reaction[%s]" % 1, "Reaction")
+                yield Float64(self, "unknown double[0]")
+                yield Float64(self, "unknown double[1]")
+                yield UInt32(self, "unknown long[8]", "Unknown long")
+                yield UInt32(self, "unknown long[9]", "Unknown long")
+                yield UInt32(self, "unknown long[a]", "Unknown long")
+                yield FractionCollector(self, "fraction collector[2]", "Fraction Collector")
+                yield UInt32(self, "nparam", "The nuber of double-precision parameters following this")
+                for index in range(1, self["nparam"].value + 1 - 2):
+                    key = "unknown double[%s]" % (index + 1)
+                    label = "Unknown double";
+                    yield Float64(self, key, label)
+                yield Float64(self, "param b")
+                yield Float64(self, "param c")
+                yield UInt32(self, "unknown long[h]", "Unknown long")
+                yield UInt32(self, "unknown long[i]", "Unknown long")
+                yield UInt32(self, "unknown long[j]", "Unknown long")
+                yield UInt32(self, "unknown long[k]", "Unknown long")
+                yield UInt32(self, "unknown long[l]", "Unknown long")
+            else:
+                yield UInt32(self, "np", "The number of precursor ions")
+                for i in range(1,  self["np"].value + 1):
+                    yield Reaction(self, "reaction[%s]" % i, "Reaction")
+    
+                yield UInt32(self, "unknown long[1]", "Unknown long")
+                yield FractionCollector(self, "fraction collector", "Fraction Collector")
+    
+                yield UInt32(self, "unknown long[3]", "Unknown long")
+                yield UInt32(self, "unknown long[4]", "Unknown long")
+                yield UInt32(self, "unknown long[5]", "Unknown long")
+                yield UInt32(self, "unknown long[6]", "Unknown long")
+                yield FractionCollector(self, "fraction collector[1]", "Fraction Collector")
+                yield UInt32(self, "unknown long[8]", "Unknown long")
+                yield UInt32(self, "unknown long[9]", "Unknown long")
+                yield UInt32(self, "unknown long[a]", "Unknown long")
+                yield FractionCollector(self, "fraction collector[2]", "Fraction Collector")
+                yield UInt32(self, "nparam", "The nuber of double-precision parameters following this")
+                for index in range(1, self["nparam"].value + 1):
+                    key = "unknown double[%s]" % index
+                    label = "Unknown double";
+                    yield Float64(self, key, label)
+                yield UInt32(self, "unknown long[h]", "Unknown long")
+                yield UInt32(self, "unknown long[i]", "Unknown long")
+                yield UInt32(self, "unknown long[j]", "Unknown long")
+                yield UInt32(self, "unknown long[k]", "Unknown long")
+                yield UInt32(self, "unknown long[l]", "Unknown long")
 
 
 class StatusLog(FieldSet):  # was: StatusLogHeader (why?)
