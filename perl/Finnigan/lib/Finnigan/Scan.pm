@@ -91,7 +91,7 @@ sub bins {
     if ( $bookends and $front_bookend_needed ) {
       # add empty bins ahead of the chunk
       foreach my $j ( $first_bin - $bookends .. $first_bin - 1) {
-	push @list, [&{$self->{converter}}( $start + $j * $step ) + $fudge, 0];
+        push @list, [&{$self->{converter}}( $start + $j * $step ) + $fudge, 0];
       }
     }
 
@@ -107,27 +107,27 @@ sub bins {
       my $next_chunk_start;
       my $next_chunks_fudge;
       if ($i == $self->{'peak count'} - 1 ) {
-	$next_chunk_start = $self->{nbins};
-	$next_chunks_fudge = $fudge;
+        $next_chunk_start = $self->{nbins};
+        $next_chunks_fudge = $fudge;
       }
       else {
-	$next_chunk_start = $self->{chunks}->[$i + 1]->{'first bin'};
-	$next_chunks_fudge = $self->{chunks}->[$i + 1]->{fudge} || 0; # not all profiles have the fudge value
+        $next_chunk_start = $self->{chunks}->[$i + 1]->{'first bin'};
+        $next_chunks_fudge = $self->{chunks}->[$i + 1]->{fudge} || 0; # not all profiles have the fudge value
       }
       my $gap_size = $next_chunk_start - $first_bin - $chunk->{nbins}; # will see if it's 0 or 1
       my $fill_size = $bookends;
       if ( $gap_size < 2 * $bookends ) {
-	$fill_size = $gap_size;
-	$front_bookend_needed = 0;
+        $fill_size = $gap_size;
+        $front_bookend_needed = 0;
       }
       else {
-	$front_bookend_needed = 1;
+        $front_bookend_needed = 1;
       }
 
       # write the tail bookend
       foreach my $j ( $chunk->{nbins} .. $chunk->{nbins} + $fill_size - 1 ) {
-	# Using the next chunk's fudge to add zeroes to this chunk is unreasonable, but whatever they please...
-	push @list, [&{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $next_chunks_fudge, 0]
+        # Using the next chunk's fudge to add zeroes to this chunk is unreasonable, but whatever they please...
+        push @list, [&{$self->{converter}}( $start + ($first_bin + $j) * $step ) + $next_chunks_fudge, 0]
       }
     }
   }
@@ -280,8 +280,8 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $self = {
-	      addr => tell $stream
-	     };
+    addr => tell $stream
+  };
   my $buf;
   my $nbytes;
   my $bytes_to_read;
@@ -609,7 +609,7 @@ supports the search for precursor intensity in uf-mzxml.
 
 =back
 
-=head1 SEE ALSO 
+=head1 SEE ALSO
 
 Profile (structure)
 
