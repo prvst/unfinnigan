@@ -39,8 +39,10 @@ sub all {
 
 sub list {
   my $self = shift;
-  foreach my $peak ( @{$self->peaks} ) {
-    print "$peak\n";
+  if ($self->peaks) {
+    foreach my $peak ( @{$self->peaks} ) {
+      print "$peak\n";
+    }
   }
 }
 
