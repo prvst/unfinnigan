@@ -367,7 +367,7 @@ is( $p->scan_event, 2, "ScanParameters->scan_event (type 6)" );
 is( tell INPUT, 848001, "should have arrived at the null stream near the end of the file" );
 
 # Read the null stream
-$length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+my $length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
 is( $length, 0, "the stream at the end of the file should have zero size" );
 is( eof INPUT, 1, "should get EOF on the stream handle" );
 
