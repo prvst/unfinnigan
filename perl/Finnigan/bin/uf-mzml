@@ -5,7 +5,8 @@ use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
-use Data::UUID; 
+use Data::Dumper qw(Dumper);
+use Data::UUID;
 use Digest::SHA1;
 use File::Basename qw(basename);
 use Finnigan;
@@ -221,7 +222,7 @@ my %components = (
     ],
   ]
 );
-
+$components{'LTQ Orbitrap Velos'} = $components{'LTQ Orbitrap'};
 
 # test case:
 #  uf-mzml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > test.xml
@@ -410,7 +411,7 @@ my @tic;
 unless ( exists $args->{-s}) {
   foreach ( sort {$a <=> $b} keys %scan_index ) {
     # don't select; the "chromatogram" they want is a mix
-    # if ( $scan_event{$_}->preamble->ms_power == 1 ) { 
+    # if ( $scan_event{$_}->preamble->ms_power == 1 ) {
     push @time, $scan_index{$_}->{'start time'};
     push @tic, $scan_index{$_}->{'total current'};
     #}
@@ -881,6 +882,7 @@ foreach my $n ( $from .. $to ) {
   my $chunk_no = $n - $from;
 
   my $scanData = read_scan($n, $args, \%scan_index, \%scan_event, exists $args->{-c});
+  #print Dumper($scanData);
 
   push @xml_spectrum_offset, 8 + tell STDOUT; # each <spectrum> tag is indented by 8
   push @xml_spectrum_id, "controllerType=" . $scanData->{controllerType} . " controllerNumber=" . $scanData->{controllerNumber} . " scan=$n";
@@ -890,7 +892,6 @@ foreach my $n ( $from .. $to ) {
                    defaultArrayLength => $scanData->{length}
                   );
 
-  
   $x = XML::Generator->new(pretty => 2);
   $xml = $x->spectrum(
     \%spectrumAttr,
@@ -906,7 +907,7 @@ foreach my $n ( $from .. $to ) {
         $x->cvParam(cvAttributesFor($_, $scanData, 'scanlist_param')),
       } @{$scanData->{scanlist_param_keys}}),
 
-      $x->scan({ instrumentConfigurationRef => 
+      $x->scan({ instrumentConfigurationRef =>
                  $scanData->{ms_level} == 1 ? undef # the first component is implied by default
                  : (scalar keys %translatedComponent > 1 ? "IC$scanData->{ms_level}" : undef) },
         (map {
@@ -1007,7 +1008,7 @@ my $current_pos = tell STDOUT;
 my $chromatogram_offset = $current_pos + index($tail, '<chromatogram ');
 my $index_list_offset = $current_pos + index($tail, '<indexList ');
 my $offsets = join "\n      ", map {
-  '<offset idRef="' . $xml_spectrum_id[$_ - 1] . '">' . $xml_spectrum_offset[$_ - 1] . '</offset>'
+  '<offset idRef="' . $xml_spectrum_id[$_ - $from] . '">' .  $xml_spectrum_offset[$_ - $from] . '</offset>'
 } $from .. $to;
 
 $tail =~ s{<spectrumOffset />}{$offsets};
@@ -1176,8 +1177,14 @@ sub read_scan {
     ); # according to msconvert
   }
   elsif ($data_type eq 'centroids' ) {
-    $spectrum_param{'lowest observed m/z'} = $peaks->list->[0]->[0];
-    $spectrum_param{'highest observed m/z'} = $peaks->list->[-1]->[0];
+    if ($peaks->{count} > 0) {
+      $spectrum_param{'lowest observed m/z'} = $peaks->list->[0]->[0];
+      $spectrum_param{'highest observed m/z'} = $peaks->list->[-1]->[0];
+    }
+    else {
+      $spectrum_param{'lowest observed m/z'} = undef;
+      $spectrum_param{'highest observed m/z'} = undef;
+    }
   }
   else {
     $spectrum_param{'lowest observed m/z'} = 0;
@@ -1232,7 +1239,7 @@ sub read_scan {
                                                        'selected ion m/z',
                                                        'peak intensity'
                                                       );
-    
+
     my @activation_param_keys = (
                                 'collision-induced dissociation',
                                 'surface-induced dissociation',
