@@ -153,7 +153,8 @@ elsif ( exists $args->{-p} ) {
   if ($args->{-p} =~ /Text/) {
     # windows encoding is not readable on a text terminal
     binmode STDOUT, ":utf8";
-    print Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $data));
+    print $data;
+    #print Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $data));
   }
   else {
     print $data;

@@ -9,7 +9,6 @@ WriteMakefile(
                           Carp => '1.08',
                           Data::Hexdumper => '2.01',
                           Data::UUID => '1.06',
-                          Devel::Size => '0.71',
                           Digest::SHA1 => '2.13',
                           Encode => '2.23',
                           File::Basename => '2.77',
@@ -20,7 +19,7 @@ WriteMakefile(
                           Module::Find => '0.06',
                           Scalar::Util => '1.21',
                           Storable => '2.18',
-                          XML::Generator => '1.01',
+                          XML::Generator => '1.04',
                           Tie::IxHash => '1.21',
                          },
     EXE_FILES         => [

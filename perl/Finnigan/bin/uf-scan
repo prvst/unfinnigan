@@ -174,8 +174,6 @@ if ( exists $args->{-p} or exists $args->{-plot}) {
           $profile->print_bins($range, $args->{-z});
         }
         else {
-	  use Data::Dumper;
-	  print STDERR Dumper($scan_event);
           if ( $scan_event->nparam == 0 ) {
             # this is a (naive) sign that the profile has already been converted
             $profile->set_converter(sub{shift});
@@ -333,7 +331,7 @@ If called peaks are present, they will be shown as dots on the graph.
 
 =item To see the amount of correction applied to each bin in a scan:
 
- uf-scan -d -p -n 18588 sample.raw | grep fudge | cut -f 5 
+ uf-scan -d -p -n 18588 sample.raw | grep fudge | cut -f 5
 
 =back
 
