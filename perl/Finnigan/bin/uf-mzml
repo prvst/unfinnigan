@@ -1183,8 +1183,6 @@ sub read_scan {
     }
     else {
       @spectrum_param_keys = grep {!/st observed/} @spectrum_param_keys;
-      #$spectrum_param{'lowest observed m/z'} = undef;
-      #$spectrum_param{'highest observed m/z'} = undef;
     }
   }
   else {
