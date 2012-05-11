@@ -12,7 +12,6 @@ WriteMakefile(
                           Digest::SHA1 => '2.13',
                           Encode => '2.23',
                           File::Basename => '2.77',
-                          File::Temp => '0.21',
                           Getopt::Declare => '1.13',
                           Getopt::Long => '2.37',
                           MIME::Base64 => '3.07',

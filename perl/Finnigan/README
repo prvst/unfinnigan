@@ -17,9 +17,9 @@ replaces ReAdW in the task of converting the Finnigan data to mzXML.
 
 The module and the tools have been tested in an ongoing SILAC
 proteomics project, where users are writing their own data analysis
-scripts. 
+scripts.
 
-For more details, go to 
+For more details, go to
 
   http://code.google.com/p/unfinnigan/
 
@@ -52,16 +52,13 @@ This module requires these other modules:
 
    Data::Hexdumper
    DateTime::Format::WindowsFileTime
-   Devel::Size (only in uf-mzxml, not essential)
    Encode
-   File::Temp (only in uf-mzxml)
    Getopt::Declare
    Getopt::Long
    MIME::Base64 (in uf-mzxml and mzxml-unpack)
    Module::Find (not essential)
-   Storable (only in uf-mzxml)
-   XML::Generator (only in uf-mzxml)
-   Tie::IxHash (only in uf-mzxml)
+   XML::Generator (in uf-mzml and uf-mzxml)
+   Tie::IxHash (in uf-mzml and uf-mzxml)
 
 The non-essential dependencies can be removed by commenting out
 the corresponding lines in the code. If you are not going to use
