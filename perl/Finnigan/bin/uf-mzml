@@ -966,8 +966,7 @@ foreach my $n ( $from .. $to ) {
 
     $x->binaryDataArrayList({count => 2},
       $x->binaryDataArray({encodedLength => $scanData->{mz_encoded_length}},
-        #$x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
-        $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
+        $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
         $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
         $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
         # $x->binary($scanData->{encoded_mz}) # not a good idea: XML::Generator chokes on large data
