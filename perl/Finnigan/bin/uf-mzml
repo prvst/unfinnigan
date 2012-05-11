@@ -229,13 +229,13 @@ $components{'LTQ Orbitrap Velos'} = $components{'LTQ Orbitrap'};
 
 my $args = new Getopt::Declare q{
   [strict]
-  -a[ctivationMethod] <symbol>      specify ion activation method [CID by default]
-  -c[entroids]                      prefer peak centroids to scan profiles, if available
-  -r[ange] <from:0+n> .. <to:0+n>   write only scans with numbers between <from> and <to>
-  -q[uiet]                          suppress the instrument error messages
-  -u[nencoded]                      render the data unencoded (in decimal encoding)
-  -s[tructure]                      output just the XML structure of the file (without the data)
-  <file>                            input file [required]
+  -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
+  -c[entroids]				prefer peak centroids to scan profiles, if available
+  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
+  -q[uiet]			        suppress the instrument error messages
+  -u[nencoded]				render the data unencoded (in decimal encoding)
+  -s[tructure]				output just the XML structure of the file (without the data)
+  <file>				input file [required]
 }
   or exit(-1);
 
@@ -1182,8 +1182,9 @@ sub read_scan {
       $spectrum_param{'highest observed m/z'} = $peaks->list->[-1]->[0];
     }
     else {
-      $spectrum_param{'lowest observed m/z'} = undef;
-      $spectrum_param{'highest observed m/z'} = undef;
+      @spectrum_param_keys = grep {!/st observed/} @spectrum_param_keys;
+      #$spectrum_param{'lowest observed m/z'} = undef;
+      #$spectrum_param{'highest observed m/z'} = undef;
     }
   }
   else {
