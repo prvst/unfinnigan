@@ -229,13 +229,13 @@ $components{'LTQ Orbitrap Velos'} = $components{'LTQ Orbitrap'};
 
 my $args = new Getopt::Declare q{
   [strict]
-  -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
-  -c[entroids]				prefer peak centroids to scan profiles, if available
-  -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
-  -q[uiet]			        suppress the instrument error messages
-  -u[nencoded]				render the data unencoded (in decimal encoding)
-  -s[tructure]				output just the XML structure of the file (without the data)
-  <file>				input file [required]
+  -a[ctivationMethod] <symbol>      specify ion activation method [CID by default]
+  -c[entroids]                      prefer peak centroids to scan profiles, if available
+  -r[ange] <from:0+n> .. <to:0+n>   write only scans with numbers between <from> and <to>
+  -q[uiet]                          suppress the instrument error messages
+  -u[nencoded]                      render the data unencoded (in decimal encoding)
+  -s[tructure]                      output just the XML structure of the file (without the data)
+  <file>                            input file [required]
 }
   or exit(-1);
 
@@ -966,7 +966,8 @@ foreach my $n ( $from .. $to ) {
 
     $x->binaryDataArrayList({count => 2},
       $x->binaryDataArray({encodedLength => $scanData->{mz_encoded_length}},
-        $x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
+        #$x->cvParam(\%binaryDataArrayCvAttr1), # 64-bit float
+        $x->cvParam(\%binaryDataArrayCvAttr4), # 32-bit float
         $x->cvParam(\%binaryDataArrayCvAttr2), # no compression
         $x->cvParam(\%binaryDataArrayCvAttr3), # m/z array
         # $x->binary($scanData->{encoded_mz}) # not a good idea: XML::Generator chokes on large data
