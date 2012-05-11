@@ -1,3 +1,4 @@
+our $VERSION = 0.0206;
 use feature qw/state say/;
 use 5.010;
 use strict;
