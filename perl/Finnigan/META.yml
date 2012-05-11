@@ -15,7 +15,6 @@ requires:
     Data::Hexdumper:  2.01
     Data::UUID:       2.01
     Digest::SHA1:     2.13
-    Devel::Size:      0.71
     Encode:           2.23
     File::Basename:   2.77
     File::Temp:       0.21
@@ -24,7 +23,6 @@ requires:
     MIME::Base64:     3.07
     Module::Find:     0.06
     Scalar::Util:     1.21
-    Storable:         2.18
     Tie::IxHash:      1.21
     XML::Generator:   1.03
 no_index:
