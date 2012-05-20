@@ -187,7 +187,7 @@ sub ntrailer {
   my $l1 = $self->{data}->{"unknown length[1]"}->{value};
   my $l2 = $self->{data}->{"unknown length[2]"}->{value};
   die "It\'s a happy day! We\'ve run into a case where the two lengths differ: l1 = $l1 and l2 = $l2"
-    unless $l1 = $l2;
+    unless $l1 == $l2;
 
   # I am assuming it is the length of TrailerScanEvent
   return $l1;
@@ -198,7 +198,7 @@ sub nparams {
   my $l1 = $self->{data}->{"unknown length[1]"}->{value};
   my $l2 = $self->{data}->{"unknown length[2]"}->{value};
   die "It\'s a happy day! We\'ve run into a case where the two lengths differ: l1 = $l1 and l2 = $l2"
-    unless $l1 = $l2;
+    unless $l1 == $l2;
 
   # I am assuming it is the length of ScanParams
   return $l2;
