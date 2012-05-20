@@ -145,19 +145,13 @@ class FinniganMatDat(Parser):
         return True
 
     def createFields(self):
-        yield UInt16(self, "magic number")
-        yield CString(self, "finnigan signature", "Finnigan signature (wide ASCIIZ string)", charset="UTF-16-LE") #, strip="\0")
-        yield UInt16(self, "unknown short")
-        yield UInt32(self, "unknown long[1]")
-        yield UInt32(self, "addr", "The address of the next data structure")
-        for index in range(2, 24+1):
-            yield UInt32(self, "unknown long[%s]" % index)
         yield Header(self, "header")
+        yield RunHeader(self, "run header")
 
-
-        #####################################################################
         for index in range(1, 10+1):
-            yield Record(self, "unknown record[%s]" % index)
+            yield Spectrum(self, "scan[%s]" % index)
+
+        yield Trailer(self, "trailer", "trailer structure containing scan index and file checksum")
 
 
 # ------------------------------------------------------------
@@ -166,68 +160,128 @@ class Header(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield RawBytes(self, "buffer tail", 24, "detritus from a previous write?")
-        for index in range(25, 32+1):
+        yield UInt16(self, "magic number")
+        yield CString(self, "finnigan signature", "Finnigan signature (wide ASCIIZ string)", charset="UTF-16-LE") #, strip="\0")
+        yield UInt16(self, "unknown short")
+        yield UInt32(self, "unknown long[1]")
+        yield UInt32(self, "RunHeader addr", "skips over the following list")
+        yield ListOfLong(self, "unknown list")
+
+class RunHeader(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        yield RawBytes(self, "unknown string", 24, "detritus from a previous write?")
+        yield UInt32(self, "unknown long 1")
+        yield UInt32(self, "trailer addr")
+        for index in range(2, 7+1):
             yield UInt32(self, "unknown long[%s]" % index)
         yield TimestampUnix32(self, "start time[1]")
         yield TimestampUnix32(self, "end time[1]")
         yield TimestampUnix32(self, "start time[2]")
         yield TimestampUnix32(self, "end time[2]")
-        for index in range(33, 55+1):
-            yield UInt32(self, "unknown long[%s]" % index)
-        yield RawBytes(self, "another buffer tail", 72, "detritus from a previous write?")
+        yield RawBytes(self, "unknown area 1", 16)
+        yield UInt16(self, "unknown short 1")
+        yield UInt16(self, "unknown short 2")
+        yield RawBytes(self, "unknown area 2", 8)
+        yield UInt16(self, "unknown short 3")
+        yield RawBytes(self, "unknown area 3", 6)
+        yield UInt16(self, "unknown short 4")
+        yield UInt16(self, "unknown short 5")
+        yield RawBytes(self, "unknown area 4", 0x2c)
+        yield UInt32(self, "unknown long[%s]" % 8)
+        yield RawBytes(self, "unknown string or buffer", 76, "detritus from a previous write?")
         yield PascalStringWin32(self, "file path", "The full filesystem path to this file")
-        for index in range(56, 59+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+        yield RawBytes(self, "uknown area 5", 16)
         yield PascalStringWin32(self, "method file", "The filesystem path to method file")
         yield PascalStringWin32(self, "tune file", "The filesystem path to tune file")
-        for index in range(1, 19+1):
-            yield UInt16(self, "unknown short[%s]" % index)
-        for index in range(60, 72+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+        yield StructOne(self, "unknown structure")
 
-class Record(FieldSet):
+
+class Trailer(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        for index in range(1, 7+1):
-            yield UInt32(self, "unknown long[%s]" % index)
+        yield UInt32(self, "unknown long", "possibly a null list, shuch as error log")
+        for index in range(0, 9+1):
+            yield UInt32(self, "scan index[%s]" % index)
+        for index in range(1, 2+1):
+            yield UInt16(self, "short[%s]" % index)
+        yield UInt32(self, "checksum", "CRC32 digest")
+
+class Spectrum(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        yield SpectrumHeader(self, "header")
+        yield RawBytes(self, "uknown area 1", 16)
+        for index in range(1, 2+1):
+            yield UInt32(self, "unknown index[%s]" % index)
         yield TimestampUnix32(self, "start")
         yield TimestampUnix32(self, "end")
-        for index in range(8, 17+1):
+        yield UInt32(self, "unknown long[%s]" % 1)
+        yield RawBytes(self, "uknown area 2", 16)
+        for index in range(2, 6+1):
             yield UInt32(self, "unknown long[%s]" % index)
-        yield Float64(self, "unknown double[1]")
+        yield Float64(self, "unknown double")
+        yield StructTwo(self, "unknown 52-byte structure")
 
-        for index in range(1, 26+1):
+        yield Struct100(self, "unknown 100-byte structure[1]")
+        for index in range(1, 4+1):
             yield UInt16(self, "short[%s]" % index)
-        for index in range(1, 5+1):
-            yield TwentyByteStruct(self, "twenty-byte struct[%s]" % index)
-
-        for index in range(27, 30+1):
+        yield Struct100(self, "unknown 100-byte structure[2]")
+        for index in range(5, 6+1):
             yield UInt16(self, "short[%s]" % index)
-        for index in range(6, 10+1):
-            yield TwentyByteStruct(self, "twenty-byte struct[%s]" % index)
-
-        for index in range(31, 32+1):
+        yield Struct100(self, "unknown 100-byte structure[3]")
+        for index in range(7, 10+1):
             yield UInt16(self, "short[%s]" % index)
-        for index in range(11, 15+1):
-            yield TwentyByteStruct(self, "twenty-byte struct[%s]" % index)
-
-        for index in range(33, 36+1):
-            yield UInt16(self, "short[%s]" % index)
-        for index in range(16, 20+1):
-            yield TwentyByteStruct(self, "twenty-byte struct[%s]" % index)
-
-        for index in range(37, 40+1):
+        yield Struct100(self, "unknown 100-byte structure[4]")
+        for index in range(11, 14+1):
             yield UInt16(self, "short[%s]" % index)
 
-        for index in range(18, 30+1):
+class SpectrumHeader(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        for index in range(0, 8+1):
+            yield UInt32(self, "unknown long[%s]" % index)
+        yield UInt32(self, "scan number")
+        for index in range(10, 13+1):
             yield UInt32(self, "unknown long[%s]" % index)
 
 class TwentyByteStruct(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        for index in range(1, 20+1):
-            yield UInt8(self, "byte[%s]" % index)
+        for index in range(1, 10+1):
+            yield UInt16(self, "byte[%s]" % index)
+
+class ListOfLong(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        yield UInt32(self, "count");
+        for index in range(1, self["count"].value + 1):
+            yield UInt32(self, "unknown long[%s]" % index)
+
+class StructOne(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        for index in range(1, 19+1):
+            yield UInt16(self, "unknown short[%s]" % index)
+
+class StructTwo(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        for index in range(1, 26+1):
+            yield UInt16(self, "unknown short[%s]" % index)
+
+class Struct100(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        for index in range(1, 5+1):
+            yield TwentyByteStruct(self, "twenty-byte struct[%s]" % index)
 
