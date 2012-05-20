@@ -1,4 +1,5 @@
 bin/mzxml-unpack
+bin/mzxml-scan
 bin/uf-casinfo
 bin/uf-error
 bin/uf-header
@@ -7,10 +8,12 @@ bin/uf-instrument
 bin/uf-log
 bin/uf-meth
 bin/uf-mzxml
+bin/uf-mzml
 bin/uf-params
 bin/uf-rfi
 bin/uf-runheader
 bin/uf-scan
+bin/uf-scan-light
 bin/uf-segments
 bin/uf-seqrow
 bin/uf-trailer
