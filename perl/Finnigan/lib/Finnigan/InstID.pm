@@ -13,21 +13,35 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-                "unknown data"       => ['C8',     'RawBytes'],
                 "unknown long[1]"    => ['V',      'UInt32'],
+                "unknown long[2]"    => ['V',      'UInt32'],
+                "unknown long[3]"    => ['V',      'UInt32'],
                 "model[1]"           => ['varstr', 'PascalStringWin32'],
                 "model[2]"           => ['varstr', 'PascalStringWin32'],
+  ];
+
+  my $self = Finnigan::Decoder->read($stream, $fields);
+
+  bless $self, $class;
+
+  my $insert = [
+                "model[3]"             => ['varstr', 'PascalStringWin32'],
+  ];
+  if ( $self->{data}->{"unknown long[3]"}->{value} > 0 ) {
+    $self->SUPER::decode($stream, $insert);
+  }
+
+  my $tail = [
                 "serial number"      => ['varstr', 'PascalStringWin32'],
                 "software version"   => ['varstr', 'PascalStringWin32'],
                 "tag[1]"             => ['varstr', 'PascalStringWin32'],
                 "tag[2]"             => ['varstr', 'PascalStringWin32'],
                 "tag[3]"             => ['varstr', 'PascalStringWin32'],
                 "tag[4]"             => ['varstr', 'PascalStringWin32'],
-         ];
+  ];
 
-  my $self = Finnigan::Decoder->read($stream, $fields);
-
-  return bless $self, $class;
+  $self->SUPER::decode($stream, $tail);
+  return $self;
 }
 
 sub model {
@@ -35,11 +49,17 @@ sub model {
 }
 
 sub serial_number {
-  shift->{data}->{"serial number"}->{value};
+  my $self = shift;
+  my $value = $self->{data}->{"serial number"}->{value};
+  $value = 'NULL' unless $value gt '';
+  return $value
 }
 
 sub software_version {
-  shift->{data}->{"software version"}->{value};
+  my $self = shift;
+  my $value = $self->{data}->{"software version"}->{value};
+  $value = 'NULL' unless $value gt '';
+  return $value;
 }
 
 sub stringify {
