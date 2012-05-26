@@ -1,6 +1,6 @@
 bin/mzxml-unpack
 bin/mzxml-scan
-bin/uf-casinfo
+bin/uf-asinfo
 bin/uf-error
 bin/uf-header
 bin/uf-index

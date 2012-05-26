@@ -84,11 +84,11 @@ else {
 __END__
 =head1 NAME
 
-uf-casinfo - decode the ASInfo structure in a Finnigan raw file
+uf-asinfo - decode the ASInfo structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
-uf-casinfo [options] file
+uf-asinfo [options] file
 
  Options:
    --help            brief help message
@@ -141,7 +141,7 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-casinfo> dumps the ASInfo structure, or its component ASInfoPreamble.
+B<uf-asinfo> dumps the ASInfo structure, or its component ASInfoPreamble.
 
 It will return an earror message if its input is not a Finnigan raw
 file.
@@ -158,11 +158,11 @@ Finnigan::ASInfo
 
 =item Show the location and size of the preamble and the text following it, with absolute addresses:
 
-  uf-casinfo sample.raw
+  uf-asinfo sample.raw
 
 =item Dump the contents of the preamble with relative addresses:
 
-  uf-casinfo --preamble --relative sample.raw
+  uf-asinfo --preamble --relative sample.raw
 
 =back
 
