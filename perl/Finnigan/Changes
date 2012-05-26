@@ -6,6 +6,7 @@ Revision history for Perl extension Finnigan.
           contains more than one data stream, the one with a non-zero scan
           events' address will be read, and the other one ignored. That leaves
           the UV sensor data unaccessible.
+        - renamed CASInfo -> ASInfo; respectively, uf-casinfo -> uf-asinfo
 
 0.0206 Fri May 12 17:28:16 BST 2012
         - added support for v.60 (Orbitrap Velos)
