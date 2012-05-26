@@ -37,7 +37,7 @@ binmode INPUT;
 my $file_header = Finnigan::FileHeader->decode(\*INPUT);
 my $VERSION = $file_header->version;
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
-my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $cas_info = Finnigan::ASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
 

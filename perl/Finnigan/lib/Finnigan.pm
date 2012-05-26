@@ -209,9 +209,9 @@ Perl expects a string. For example,
 
 =item L<Finnigan::AuditTag> (sample audit tag)
 
-=item L<Finnigan::CASInfo> (autosampler info)
+=item L<Finnigan::ASInfo> (autosampler info)
 
-=item L<Finnigan::CASInfoPreamble> (numerical autosampler parameters)
+=item L<Finnigan::ASInfoPreamble> (numerical autosampler parameters)
 
 =item L<Finnigan::Decoder> (the base class for all Finnigan decoders)
 
@@ -303,7 +303,7 @@ read the C<SeqRow> structure (Sequence Table Row)
 
 =item L<uf-casinfo>
 
-read the C<CASInfo> structure (autosampler info)
+read the C<ASInfo> structure (autosampler info)
 
 =item L<uf-rfi>
 

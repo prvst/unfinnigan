@@ -21,8 +21,8 @@ bin/uf-tune
 Changes
 lib/Finnigan.pm
 lib/Finnigan/AuditTag.pm
-lib/Finnigan/CASInfo.pm
-lib/Finnigan/CASInfoPreamble.pm
+lib/Finnigan/ASInfo.pm
+lib/Finnigan/ASInfoPreamble.pm
 lib/Finnigan/Decoder.pm
 lib/Finnigan/Error.pm
 lib/Finnigan/FileHeader.pm
