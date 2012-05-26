@@ -202,7 +202,7 @@ class Finnigan(Parser):
                     yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
 
                 yield ScanIndex(self, "scan index", "A set of ScanIndexEntry records")
-                
+
 
                 trailer_scan_event_addr = self["run header/scan trailer addr"].value
                 if trailer_scan_event_addr > self.current_size/8:
@@ -232,11 +232,15 @@ class Finnigan(Parser):
                     yield StrangeIndexRecord(self, "ix[%s]" % nscans, "IndexRecord %s" % nscans)
 
             if VERSION[-1] < 66:
-                yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
-                yield StatusLog(self, "status log", "Status log")
-            # elif VERSION[-1] == 66:
-            # else:
-            #     exit("unknown file version: %s" % VERSION[-1])
+                if self["raw file info/preamble/controller_n[1]"].value > 1:
+                    print >> sys.stderr, "the layout of multiple data streams (chromatogram + MS spectra) is not fully understood"
+                else:
+                    yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
+                    yield StatusLog(self, "status log", "Status log")
+            elif VERSION[-1] == 66:
+                print >> sys.stderr, "the layout of v. 66 is not fully understood"
+            else:
+                 exit("unknown file version: %s" % VERSION[-1])
 
         # Read rest of the file
         if self.current_size < self._size:
@@ -373,7 +377,7 @@ class GenericRecord(FieldSet):
     def __init__(self, parent, header, name, description=None):
         FieldSet.__init__(self, parent, name, description)
         self.header = header
- 
+
     def createFields(self):
         for item in self.header:
             if isinstance(item, GenericDataDescriptor):
@@ -584,7 +588,7 @@ class RunHeader(FieldSet):
                 for index in range(3, 4+1):
                     yield UInt32(self, "unknown long[%s]" % index)
                 yield UInt64(self, "scan index addr", "Absolute seek address of ScanIndex (ScanIndexEntry stream)")
-                yield UInt64(self, "data addr", "Absolute seek address of scan data")
+                yield UInt64(self, "data addr", "Absolute seek address of (the next) data stream (not the same is in RawFileInfo preamble)")
                 yield UInt64(self, "inst log addr", "Absolute seek address of the first StatusLogRecord in Instrument Status Log (past the StatusLog header)")
                 yield UInt64(self, "error log addr", "Absolute seek address of ErrorLog")
                 yield UInt64(self, "unknown addr[1]")
@@ -662,8 +666,8 @@ class SeqRow(FieldSet):
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
                 exit("unknown file version: %s" % VERSION[-1])
-            
- 
+
+
 
 class InjectionData(FieldSet):
     endian = LITTLE_ENDIAN
@@ -727,14 +731,18 @@ class RawFileInfoPreamble(FieldSet):
         if VERSION[-1] >= 57 and VERSION[-1] < 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "data addr", "Absolute address of scan data")
-            for index in range(3, 6 + 1):
+            yield UInt32(self, "controller_n[1]")
+            yield UInt32(self, "controller_n[2]")
+            for index in range(5, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
             yield RawBytes(self, "padding", 804 - 12 * 4, "padding?") # 804 is the fixed size of RawFileInfoPreamble prior to v.64
         if VERSION[-1] >= 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "former data addr", "not used in the 64-bit version")
-            for index in range(3, 6 + 1):
+            yield UInt32(self, "controller_n[1]")
+            yield UInt32(self, "controller_n[2]")
+            for index in range(5, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "former run header addr", "not used in the 64-bit version")
             yield RawBytes(self, "unknown area[1]", 804 - 11 * 4, "padding?")
@@ -742,10 +750,13 @@ class RawFileInfoPreamble(FieldSet):
             for index in range(7, 8 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt64(self, "run header addr", "Absolute address of RunHeader")
-            if VERSION[-1] == 64:
-                yield RawBytes(self, "unknown area[2]", 1008, "padding?")
+            if VERSION[-1] >= 64:
+                for index in range(9, 10 + 1):
+                    yield UInt32(self, "unknown long[%s]" % index)
+                yield UInt64(self, "run header addr[2]", "Absolute address of the next RunHeader")
+                yield RawBytes(self, "unknown area[2]", 992, "padding?")
             if VERSION[-1] == 66:
-                yield RawBytes(self, "unknown area[2]", 1008 + 16, "padding?")
+                yield RawBytes(self, "unknown area[3]", 16, "more padding?")
 
 class MethodFile(FieldSet):
     endian = LITTLE_ENDIAN
@@ -776,20 +787,23 @@ class IcisStatusLog(FieldSet):
 
     def createFields(self):
          yield UInt32(self, "n", "Number of IcisStatusLog records")
-        
+
 
 class InstID(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield RawBytes(self, "unknown data", 8)
         yield UInt32(self, "unknown long[1]")
+        yield UInt32(self, "unknown long[2]")
+        yield UInt32(self, "unknown long[3]")
         for index in range(1, 2 + 1):
             yield PascalStringWin32(self, "model[%s]" % index, "Why two model tags?")
         yield PascalStringWin32(self, "serial number")
         yield PascalStringWin32(self, "software version")
         for index in range(1, 4 + 1):
             yield PascalStringWin32(self, "tag[%s]" % index, "Some text")
+        if self["unknown long[3]"].value > 0:
+            yield PascalStringWin32(self, "tag[%s]" % 5, "Some text")
 
 
 class Instfile(FieldSet):
@@ -817,7 +831,7 @@ class InstConfig(FieldSet):
         yield PascalStringWin32(self, "analyzer", "Unknown Pascal string")
         for index in "123456789abcdefgh":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
-            
+
 class InstrumentLog(FieldSet):
     endian = LITTLE_ENDIAN
 
@@ -825,17 +839,19 @@ class InstrumentLog(FieldSet):
         yield GenericDataHeader(self, "header", "Generic Data Header")
 
         nrecords = self["/run header/sample info/inst log length"].value
-        if ABBREVIATE_LISTS and nrecords > 100:
-            yield StatusLogRecord(self, self["header"], "log[1]", "LogRecord 1")
-            yield StatusLogRecord(self, self["header"], "log[2]", "LogRecord 1")
-            record_sz = self["log[1]"].size/8
-            yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
-            yield StatusLogRecord(self, self["header"], "log[%s]" % nrecords, "LogRecord %s" % nrecords)
-        else:
-            for n in range(1, nrecords + 1):
-                yield StatusLogRecord(self, self["header"], "log[%s]" % n, "LogRecord %s" % n)
-                print >> sys.stderr, "\rread %s of %s instrument log records ... " % (n, nrecords),
-            print >> sys.stderr, "done"
+        print >> sys.stderr, "%s instrument log records ... " % nrecords
+        if nrecords > 0:
+            if ABBREVIATE_LISTS and nrecords > 100:
+                yield StatusLogRecord(self, self["header"], "log[1]", "LogRecord 1")
+                yield StatusLogRecord(self, self["header"], "log[2]", "LogRecord 1")
+                record_sz = self["log[1]"].size/8
+                yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
+                yield StatusLogRecord(self, self["header"], "log[%s]" % nrecords, "LogRecord %s" % nrecords)
+            else:
+                for n in range(1, nrecords + 1):
+                    yield StatusLogRecord(self, self["header"], "log[%s]" % n, "LogRecord %s" % n)
+                    print >> sys.stderr, "\rread %s of %s instrument log records ... " % (n, nrecords),
+                print >> sys.stderr, "done"
 
 class StatusLogRecord(GenericRecord):
     endian = LITTLE_ENDIAN
@@ -1192,10 +1208,10 @@ class ScanEvent(FieldSet):
                 yield UInt32(self, "np", "The number of precursor ions")
                 for i in range(1,  self["np"].value + 1):
                     yield Reaction(self, "reaction[%s]" % i, "Reaction")
-    
+
                 yield UInt32(self, "unknown long[1]", "Unknown long")
                 yield FractionCollector(self, "fraction collector", "Fraction Collector")
-    
+
                 yield UInt32(self, "unknown long[3]", "Unknown long")
                 yield UInt32(self, "unknown long[4]", "Unknown long")
                 yield UInt32(self, "unknown long[5]", "Unknown long")
@@ -1253,7 +1269,7 @@ class ScanIndex(FieldSet):
     def createFields(self):
         info = self["/run header/sample info"]
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
-        if 0 and ABBREVIATE_LISTS and nrecords > 100:
+        if ABBREVIATE_LISTS and nrecords > 100:
             yield ScanIndexEntry(self, "scan header[1]", "ScanIndexEntry 1")
             yield ScanIndexEntry(self, "scan header[2]", "ScanIndexEntry 2")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size

@@ -29,8 +29,8 @@ sub decode {
   $specific_fields{57} = [
                           "unknown_long[2]"   => ['V',    'UInt32'],
                           "data addr"         => ['V',    'UInt32'],
-                          "unknown_long[3]"   => ['V',    'UInt32'],
-                          "unknown_long[4]"   => ['V',    'UInt32'],
+                          "controller_n[1]"   => ['V',    'UInt32'],
+                          "controller_n[2]"   => ['V',    'UInt32'],
                           "unknown_long[5]"   => ['V',    'UInt32'],
                           "unknown_long[6]"   => ['V',    'UInt32'],
                           "run header addr"   => ['V',    'UInt32'],
@@ -42,24 +42,27 @@ sub decode {
   $specific_fields{63} = $specific_fields{57};
 
   $specific_fields{64} = [
-                          "unknown_long[2]"                => ['V',     'UInt32'],
-                          "32-bit data addr (unused)"      => ['V',     'UInt32'],
-                          "unknown_long[3]"                => ['V',     'UInt32'],
-                          "unknown_long[4]"                => ['V',     'UInt32'],
-                          "unknown_long[5]"                => ['V',     'UInt32'],
-                          "unknown_long[6]"                => ['V',     'UInt32'],
-                          "32-b run header addr (unused)"  => ['V',     'UInt32'],
-                          "unknown_area[1]"                => ['C760',  'RawBytes'],
-                          "data addr"                      => ['Q<',    'UInt64'],
-                          "unknown_long[7]"                => ['V',     'UInt32'],
-                          "unknown_long[8]"                => ['V',     'UInt32'],
-                          "run header addr"                => ['Q<',    'UInt64'],
-                          "unknown_area[2]"                => ['C1008', 'RawBytes'],
+                          "unknown_long[2]"                  => ['V',     'UInt32'],
+                          "32-bit data addr (unused)"        => ['V',     'UInt32'],
+                          "controller_n[1]"                  => ['V',     'UInt32'],
+                          "controller_n[2]"                  => ['V',     'UInt32'],
+                          "unknown_long[5]"                  => ['V',     'UInt32'],
+                          "unknown_long[6]"                  => ['V',     'UInt32'],
+                          "32-bit run header addr (unused)"  => ['V',     'UInt32'],
+                          "unknown_area[1]"                  => ['C760',  'RawBytes'],
+                          "data addr"                        => ['Q<',    'UInt64'],
+                          "unknown_long[7]"                  => ['V',     'UInt32'],
+                          "unknown_long[8]"                  => ['V',     'UInt32'],
+                          "run header addr"                  => ['Q<',    'UInt64'],
+                          "unknown_long[9]"                  => ['V',     'UInt32'],
+                          "unknown_long[10]"                 => ['V',     'UInt32'],
+                          "run header addr[2]"               => ['Q<',    'UInt64'],
+                          "unknown_area[2]"                  => ['C992', 'RawBytes'],
                          ];
 
   if ($version == 66) {
     $specific_fields{66} = $specific_fields{64};
-    $specific_fields{66}->[-1]->[0] = 'C1024'; # unknown_area[2] has been extended
+    $specific_fields{66}->[-1]->[0] = 'C1008'; # unknown_area[2] has been extended
   }
 
   die "don't know how to parse version $version" unless $specific_fields{$version};
@@ -83,9 +86,9 @@ sub timestamp {
                   . ":"
                     . $self->{data}->{minute}->{value}
                       . ":"
-                        . $self->{data}->{second}->{value} 
+                        . $self->{data}->{second}->{value}
                           . "."
-                            . $self->{data}->{millisecond}->{value} 
+                            . $self->{data}->{millisecond}->{value}
                               ;
 }
 
@@ -103,7 +106,21 @@ sub xmlTimestamp {
 }
 
 sub run_header_addr {
-  shift->{data}->{"run header addr"}->{value};
+  my ($self, $index) = @_;
+  if (not defined $index or $index == 0) {
+    return shift->{data}->{"run header addr"}->{value};
+  }
+  elsif ($index == 1) {
+    return shift->{data}->{"run header addr[2]"}->{value};
+  }
+  else {
+    die "don't know how to find RunHeader " . $index;
+  }
+}
+
+sub controller {
+  my $self = shift;
+  [$self->{data}->{"controller_n[1]"}->{value}, $self->{data}->{"controller_n[2]"}->{value}];
 }
 
 sub data_addr {
@@ -112,12 +129,16 @@ sub data_addr {
 
 sub stringify {
   my $self = shift;
+  my $rh2 = "";
+  $rh2 .= ", " . $self->run_header_addr(1) if $self->{data}->{"controller_n[1]"}->{value} > 1;
   return $self->timestamp
       . "; "
         . "data addr: " . $self->data_addr
           . "; "
-            . "RunHeader addr: " . $self->run_header_addr
-              ;
+            . "countroller: [" . $self->{data}->{"controller_n[1]"}->{value} .  ", " . $self->{data}->{"controller_n[1]"}->{value} . "]"
+              . "; "
+                . "RunHeader addr: " . $self->run_header_addr . $rh2
+                  ;
 }
 
 1;
@@ -167,9 +188,19 @@ Get the timestamp in text form, in the format adopted in mzML: YYYY-MM-DDThh:mm:
 
 Get the pointer to the first ScanDataPacket
 
+=item controller
+
+Return the pair of "virtual cnontroller" numbers; this is the structure indicating
+how many data streams are in the file. It is not clear which one of the two
+numbers it returns is the number of controllers and which is the number of
+types. In all samples surveyed, these numbers were equal.
+
 =item run_header_addr
 
 Get the pointer to RunHeader (which contains further pointers)
+
+The argument (presently 1 or 2) indicates which RunHeader address to get (when
+there are more than one.
 
 =item stringify
 

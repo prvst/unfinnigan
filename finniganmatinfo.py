@@ -145,8 +145,8 @@ class FinniganMatInfo(Parser):
         return True
 
     def createFields(self):
-        yield CString(self, "finnigan signature", "Finnigan signature (wide ASCIIZ string)", charset="UTF-16-LE") #, strip="\0")
-        yield RawBytes(self, "zero[1]", 54, "padding")
+        #yield CString(self, "finnigan signature", "Finnigan signature (wide ASCIIZ string)", charset="UTF-16-LE") #, strip="\0")
+        yield String(self, "finnigan signature", 120, "Finnigan signature (wide ASCIIZ string)", charset="UTF-16-LE", truncate="\0")
         for index in range(2, 4+1):
             yield UInt32(self, "unknown long[%s]" % index)
         yield TimestampUnix32(self, "time[1]")
