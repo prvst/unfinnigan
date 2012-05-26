@@ -1,6 +1,13 @@
 Revision history for Perl extension Finnigan.
 
-0.0206 Fri May 12 17:28:16 BST 2011
+0.0207 Sat May 26 23:35:11 BST 2012
+        - fixed a null profile bug in Finnigan::Scan
+        - added a tentatvie support for multiple RunHeaders. If the file
+          contains more than one data stream, the one with a non-zero scan
+          events' address will be read, and the other one ignored. That leaves
+          the UV sensor data unaccessible.
+
+0.0206 Fri May 12 17:28:16 BST 2012
         - added support for v.60 (Orbitrap Velos)
         - added precursor intensity search to Finnigan::Scan::CentroidList
         - proper handling of empty scans

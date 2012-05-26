@@ -2,7 +2,7 @@ package Finnigan::Profile;
 
 use strict;
 use warnings FATAL => qw( all );
-our $VERSION = 0.0206;
+our $VERSION = 0.0207;
 
 use Carp;
 use Finnigan;
