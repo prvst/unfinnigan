@@ -1,4 +1,4 @@
-package Finnigan::CASInfoPreamble;
+package Finnigan::ASInfoPreamble;
 
 use strict;
 use warnings FATAL => qw( all );
@@ -30,17 +30,17 @@ __END__
 
 =head1 NAME
 
-Finnigan::CASInfoPreamble -- a decoder for CASInfoPreamble, a numeric autosampler descriptor
+Finnigan::ASInfoPreamble -- a decoder for ASInfoPreamble, a numeric autosampler descriptor
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $object = Finnigan::CASInfoPreamble->decode(\*INPUT);
+  my $object = Finnigan::ASInfoPreamble->decode(\*INPUT);
   $object->dump;
 
 =head1 DESCRIPTION
 
-CASInfoPreamble is a fixed-length structure with some unknown data about the autosampler. It is a component of [CASInfo], which consists of this numeric descriptor and a text string following it.
+ASInfoPreamble is a fixed-length structure with some unknown data about the autosampler. It is a component of [ASInfo], which consists of this numeric descriptor and a text string following it.
 
 =head2 METHODS
 
@@ -54,7 +54,7 @@ The constructor method
 
 =head1 SEE ALSO
 
-Finnigan::CASInfo
+Finnigan::ASInfo
 
 =head1 AUTHOR
 

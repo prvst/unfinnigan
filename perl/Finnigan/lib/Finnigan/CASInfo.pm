@@ -1,4 +1,4 @@
-package Finnigan::CASInfo;
+package Finnigan::ASInfo;
 
 use strict;
 use warnings FATAL => qw( all );
@@ -11,7 +11,7 @@ sub decode {
   my ($class, $stream) = @_;
 
   my $fields = [
-                preamble =>  ['object', 'Finnigan::CASInfoPreamble'],
+                preamble =>  ['object', 'Finnigan::ASInfoPreamble'],
                 text     =>  ['varstr', 'PascalStringWin32'],
                ];
 
@@ -30,18 +30,18 @@ __END__
 
 =head1 NAME
 
-Finnigan::CASInfo -- a decoder for autosampler data
+Finnigan::ASInfo -- a decoder for autosampler data
 
 =head1 SYNOPSIS
 
   use Finnigan;
-  my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+  my $cas_info = Finnigan::ASInfo->decode(\*INPUT);
   $cas_info->dump;
 
 =head1 DESCRIPTION
 
-CASInfo is a structure with uncertain purpose that contains a binary
-preamble with autosampler co-ordinates (CASInfoPreamble), followed by
+ASInfo is a structure with uncertain purpose that contains a binary
+preamble with autosampler co-ordinates (ASInfoPreamble), followed by
 a text string. The text string is apparently a comment; in one
 instance where it was non-null, it contained this text: C<384 Well Plate>.
 
@@ -55,13 +55,13 @@ The constructor method
 
 =item preamble
 
-Get the Finnigan::CASInfoPreamble object
+Get the Finnigan::ASInfoPreamble object
 
 =back
 
 =head1 SEE ALSO
 
-Finnigan::CASInfoPreamble
+Finnigan::ASInfoPreamble
 
 L<uf-casinfo>
 

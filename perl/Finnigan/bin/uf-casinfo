@@ -45,7 +45,7 @@ binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
-my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $cas_info = Finnigan::ASInfo->decode(\*INPUT);
 
 if ( $option_size ) {
   if ( $option_preamble ) {
@@ -84,7 +84,7 @@ else {
 __END__
 =head1 NAME
 
-uf-casinfo - decode the CASInfo structure in a Finnigan raw file
+uf-casinfo - decode the ASInfo structure in a Finnigan raw file
 
 =head1 SYNOPSIS
 
@@ -96,7 +96,7 @@ uf-casinfo [options] file
    --html            format as HTML
    --wiki            format as a wiki table
    --size            tell object size
-   --preamble        dump the content of CASInfoPreamble instead of CASInfo itself
+   --preamble        dump the content of ASInfoPreamble instead of ASInfo itself
    --relative        show relative addresses
 
 =head1 OPTIONS
@@ -130,7 +130,7 @@ Show structure size in bytes.
 
 =item B<--preamble>
 
-Dump the contents of CASInfoPreamble, instead of the parent object.
+Dump the contents of ASInfoPreamble, instead of the parent object.
 
 =item B<--relative>
 
@@ -141,7 +141,7 @@ absolute seek address.
 
 =head1 DESCRIPTION
 
-B<uf-casinfo> dumps the CASInfo structure, or its component CASInfoPreamble.
+B<uf-casinfo> dumps the ASInfo structure, or its component ASInfoPreamble.
 
 It will return an earror message if its input is not a Finnigan raw
 file.
@@ -150,7 +150,7 @@ By default, it dumps the object in a tabular format.
 
 =head1 SEE ALSO
 
-Finnigan::CASInfo
+Finnigan::ASInfo
 
 =head1 EXAMPLES
 

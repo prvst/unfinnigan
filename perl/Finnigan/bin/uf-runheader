@@ -48,7 +48,7 @@ binmode INPUT;
 
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $header->version);
-my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+my $cas_info = Finnigan::ASInfo->decode(\*INPUT);
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
 
 for my $rh_number (1 .. $rfi->preamble->controller->[0]) { # it may be [1] instead

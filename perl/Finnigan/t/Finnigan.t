@@ -41,12 +41,12 @@ is( $seq_row->injection->size, 64, "InjectionData->size" );
 is( $seq_row->injection->n, 1, "InjectionData->n" );
 # untested in SeqRow::InjectionData: volume, injected volume, internal standard amount, dilution factor, the unknowns
 
-# CASInfo / CASInfoPreamble -- autosampler data
-my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
+# ASInfo / ASInfoPreamble -- autosampler data
+my $cas_info = Finnigan::ASInfo->decode(\*INPUT);
 is( $cas_info->size, 28, "CasInfo->size" );
 is( $cas_info->preamble->size, 24, "CasInfoPreamble->size" );
-# untested in CASInfo: text
-# untested in CASInfo::Preamble: number of wells; the unknowns
+# untested in ASInfo: text
+# untested in ASInfo::Preamble: number of wells; the unknowns
 
 # RawFileInfo / RawFileInfoPreamble -- the root index structure; interesting information is all in the preamble
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
