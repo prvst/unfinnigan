@@ -52,36 +52,39 @@ my $run_header_1;
 if ($run_header_1_addr) {
   seek INPUT, $run_header_1_addr, 0;
   $run_header_1 = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
-
-  if ( $run_header_0->ntrailer and $run_header_1->ntrailer ) {
-    die "Don't know which RunHeader to choose. Both have non-zero number of scan events: " . $run_header_0->ntrailer . " and " . $run_header_1->ntrailer;
-  }
-
-  if ( $run_header_0->ntrailer == 0 and $run_header_1->ntrailer == 0) {
-    die "Don't know where to look for scan data. There are two RunHeader objects, both indicating a zero number of scan events";
-  }
-
-  if ( $run_header_0->ntrailer == 0 and $run_header_1->ntrailer ) {
-    $run_header = $run_header_1;
-  }
-  if ( $run_header_0->ntrailer and $run_header_1->ntrailer == 0) {
-    $run_header = $run_header_0;
-  }
 }
-
-
-my $error_log_addr = $run_header->error_log_addr;
 
 # and now skip to the error log
+my $first_log_exists;
+my $error_log_addr = $run_header_0->error_log_addr;
 seek INPUT, $error_log_addr, 0;
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
-exit 0 unless $error_log_length;
-
-foreach my $i ( 0 .. $error_log_length - 1) {
-  my $e = Finnigan::Error->decode(\*INPUT);
-  say STDERR $e->time . "\t" . $e->message;
+if ( $error_log_length ) {
+  if ( $run_header_1_addr ) {
+   $first_log_exists++;
+    say "------------------------ Error log 1 ---------------------------";
+  }
+  foreach my $i ( 0 .. $error_log_length - 1) {
+    my $e = Finnigan::Error->decode(\*INPUT);
+    say STDERR $e->time . "\t" . $e->message;
+  }
 }
 
+# try the second error log if it exists
+if ( $run_header_1_addr ) {
+  $error_log_addr = $run_header_1->error_log_addr;
+  seek INPUT, $error_log_addr, 0;
+  my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+  if ( $error_log_length ) {
+    if ( $first_log_exists ) {
+      say "------------------------ Error log 2 ---------------------------";
+    }
+    foreach my $i ( 0 .. $error_log_length - 1) {
+      my $e = Finnigan::Error->decode(\*INPUT);
+      say STDERR $e->time . "\t" . $e->message;
+    }
+  }
+}
 __END__
 =head1 NAME
 
