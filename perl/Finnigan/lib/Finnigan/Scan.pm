@@ -321,7 +321,12 @@ sub header {
 }
 
 sub profile {
-  new Finnigan::Scan::Profile $_[0]->{"raw profile"}, $_[0]->{header}->{data}->{layout}->{value};
+  if ($_[0]->{"raw profile"}) {
+    return new Finnigan::Scan::Profile $_[0]->{"raw profile"}, $_[0]->{header}->{data}->{layout}->{value};
+  }
+  else {
+    return undef;
+  }
 }
 
 sub centroids {
