@@ -50,7 +50,7 @@ is( $cas_info->preamble->size, 24, "CasInfoPreamble->size" );
 
 # RawFileInfo / RawFileInfoPreamble -- the root index structure; interesting information is all in the preamble
 my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $header->version);
-is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; RunHeader addr: 777542", "RawFileInfo->stringify" );
+is( $rfi->stringify, "Thu Feb 25 2010 9:2:27.781; data addr: 24950; countroller: [1, 1]; RunHeader addr: 777542", "RawFileInfo->stringify" );
 is( $rfi->preamble->xmlTimestamp, '2010-02-25T09:02:28Z', "RawFileInfoPreamble->xmlTimestamp" );
 is( $rfi->size, 844, "RawFileInfo->size" );
 is( $rfi->preamble->size, 804, "RawFileInfoPreamble->size" );
@@ -97,7 +97,7 @@ like($text_node->data, qr/S\0e\0g\0m\0e\0n\0t\0 \0001\0 \0I\0n\0f\0o\0r\0m\0a\0t
 
 # This is where the sequence breaks. The file pointer is now near the start of
 # scan data, but any operation with the scan data involving conversion to M/z
-# will require a trip to the ScanEvent stream, whose address is stored in 
+# will require a trip to the ScanEvent stream, whose address is stored in
 # RunHeader, also downstream from the scan data.
 
 # fast-forward to RunHeader
@@ -137,7 +137,7 @@ my $inst_log_length = $sample_info->inst_log_length;
 is( $inst_log_length, 17, "SampleInfo->inst_log_length" );
 
 # -------------------------------------------------------------------------------
-# With all pointers now on hand, we could go ahead and read the ScanEvent stream 
+# With all pointers now on hand, we could go ahead and read the ScanEvent stream
 # and return to the data, but for consistency of testing, it is better to keep
 # trudging along in the same direction until the end of file is reached, then
 # return to the data. Smart programs will know which prats of the file are
@@ -241,7 +241,7 @@ is ($et->preamble->stringify, "ITMS + p ESI d Full ms2", "ScanEventTemplate->Sca
 
 #-------------------------------------------------------------------------
 #
-# This is where things become convoluted. The following GenericDataHeader 
+# This is where things become convoluted. The following GenericDataHeader
 # decodes the ScanParameters stream that sits at the end of the file.
 #
 # The next ojbect after this will be the tune file, followed by the
@@ -375,7 +375,7 @@ is( eof INPUT, 1, "should get EOF on the stream handle" );
 # ----------------------------------------------------------------------
 #
 #  Now back to the data stream
-# 
+#
 # ----------------------------------------------------------------------
 # the first ScanDataPacket
 seek INPUT, $data_addr, 0;
