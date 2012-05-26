@@ -63,7 +63,7 @@ Get the Finnigan::ASInfoPreamble object
 
 Finnigan::ASInfoPreamble
 
-L<uf-casinfo>
+L<uf-asinfo>
 
 =head1 AUTHOR
 

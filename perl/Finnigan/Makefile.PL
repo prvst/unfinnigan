@@ -23,7 +23,7 @@ WriteMakefile(
     EXE_FILES         => [
                           'bin/uf-header',
                           'bin/uf-seqrow',
-                          'bin/uf-casinfo',
+                          'bin/uf-asinfo',
                           'bin/uf-rfi',
                           'bin/uf-meth',
                           'bin/uf-scan',

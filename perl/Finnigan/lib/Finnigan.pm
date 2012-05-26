@@ -301,7 +301,7 @@ read the C<FileHeader> structure
 
 read the C<SeqRow> structure (Sequence Table Row)
 
-=item L<uf-casinfo>
+=item L<uf-asinfo>
 
 read the C<ASInfo> structure (autosampler info)
 
