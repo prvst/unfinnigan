@@ -35,15 +35,45 @@ open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
 my $file_header = Finnigan::FileHeader->decode(\*INPUT);
-my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $file_header->version);
+my $VERSION = $file_header->version;
+my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
 my $cas_info = Finnigan::CASInfo->decode(\*INPUT);
-my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $file_header->version);
+my $rfi = Finnigan::RawFileInfo->decode(\*INPUT, $VERSION);
 
-my $run_header_addr = $rfi->preamble->run_header_addr;
+
+my $run_header_0_addr = $rfi->preamble->run_header_addr(0);
+my $run_header_1_addr;
+if ( $rfi->preamble->run_header_addr(0) ) {
+  # There is more than one data stream; see which of the run headers to use
+  $run_header_1_addr = $rfi->preamble->run_header_addr(1);
+}
 
 # fast-forward to RunHeader
-seek INPUT, $run_header_addr, 0;
-my $run_header = Finnigan::RunHeader->decode(\*INPUT, $file_header->version);
+seek INPUT, $run_header_0_addr, 0;
+my $run_header_0 = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+my $run_header = $run_header_0;
+
+my $run_header_1;
+if ($run_header_1_addr) {
+  seek INPUT, $run_header_1_addr, 0;
+  $run_header_1 = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
+
+  if ( $run_header_0->ntrailer and $run_header_1->ntrailer ) {
+    die "Don't know which RunHeader to choose. Both have non-zero number of scan events: " . $run_header_0->ntrailer . " and " . $run_header_1->ntrailer;
+  }
+
+  if ( $run_header_0->ntrailer == 0 and $run_header_1->ntrailer == 0) {
+    die "Don't know where to look for scan data. There are two RunHeader objects, both indicating a zero number of scan events";
+  }
+
+  if ( $run_header_0->ntrailer == 0 and $run_header_1->ntrailer ) {
+    $run_header = $run_header_1;
+  }
+  if ( $run_header_0->ntrailer and $run_header_1->ntrailer == 0) {
+    $run_header = $run_header_0;
+  }
+}
+
 my $inst_log_addr = $run_header->inst_log_addr;
 my $inst_log_length = $run_header->sample_info->inst_log_length;
 
@@ -248,7 +278,7 @@ Finnigan::InstrumentLogRecord
 
 =item List all log records in the tabular form: <record number, time, label, value>
 
-  uf-log sample.raw 
+  uf-log sample.raw
 
 =item Print the fifth log record:
 
