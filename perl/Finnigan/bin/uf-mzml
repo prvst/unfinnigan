@@ -11,6 +11,7 @@ use Digest::SHA1;
 use File::Basename qw(basename);
 use Finnigan;
 use Getopt::Declare;
+use Cwd;
 use MIME::Base64;
 use Scalar::Util qw(looks_like_number);
 use Tie::IxHash;
@@ -244,7 +245,7 @@ my $args = new Getopt::Declare q{
   -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
   -c[entroids]				prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
-  -q[uiet]			        suppress the instrument error messages
+  -q[uiet]			        suppress instrument error messages
   -u[nencoded]				render the data unencoded (in decimal encoding)
   -s[tructure]				output just the XML structure of the file (without the data)
   <file>				input file [required]
@@ -530,6 +531,7 @@ tie my %sourceFileAttr, 'Tie::IxHash';
 my @path = split m{[\\/]}, $seq_row->file_name;
 my $name = pop @path;
 my $path = $seq_row->path || join "/", @path;
+#my $path = Cwd::getcwd;
 %sourceFileAttr = (
                    id => 'RAW1',
                    name => $name,
@@ -646,7 +648,12 @@ tie my %processingMethodCvAttr, 'Tie::IxHash';
                     value => ''
                    );
 
-
+tie my %parentFileAttr, 'Tie::IxHash';
+%parentFileAttr = (
+              fileName => "$path/$file",
+              fileType => 'RAWData',
+              fileSha1 => $digest,
+             );
 
 # Run -----------------------------------------------------------
 tie my %runAttr, 'Tie::IxHash';
@@ -933,6 +940,8 @@ foreach my $n ( $from .. $to ) {
                    defaultArrayLength => $scanData->{length}
                   );
 
+  # Creating a new generatator to get rid of the namespace attribute (to match
+  # the output of proteowizard).
   $x = XML::Generator->new(pretty => 2);
   $xml = $x->spectrum(
     \%spectrumAttr,
