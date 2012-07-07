@@ -51,7 +51,6 @@ sub print_bins {
 }
 
 sub bins {
-  say STDERR "args: @_";
   my ($self, $bookends) = @_;
   my @list;
   my $start = $self->{"first value"};
