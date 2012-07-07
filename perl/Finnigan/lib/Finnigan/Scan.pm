@@ -1,11 +1,11 @@
+# ----------------------------------------------------------------------------------------
+package Finnigan::Scan::Profile;
+our $VERSION = 0.0207;
+
 use feature qw/state say/;
 use 5.010;
 use strict;
 use warnings FATAL => qw( all );
-
-# ----------------------------------------------------------------------------------------
-package Finnigan::Scan::Profile;
-our $VERSION = 0.0207;
 
 my $MAX_DIST = 0.025; # kHz
 my $MAX_DIST_MZ = 0.001; # M/z
@@ -51,6 +51,7 @@ sub print_bins {
 }
 
 sub bins {
+  say STDERR "args: @_";
   my ($self, $bookends) = @_;
   my @list;
   my $start = $self->{"first value"};
@@ -273,8 +274,10 @@ sub find_chunk {
 package Finnigan::Scan;
 our $VERSION = 0.0207;
 
+use feature qw/state say/;
+use 5.010;
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
 
 use Finnigan;
 
@@ -338,6 +341,11 @@ sub centroids {
 package Finnigan::Scan::ProfileChunk;
 our $VERSION = 0.0207;
 
+use feature qw/state say/;
+use 5.010;
+use strict;
+use warnings FATAL => qw( all );
+
 sub new {
   my ($class, $buf, $offset, $layout) = @_;
   my $self = {};
@@ -360,6 +368,11 @@ sub new {
 #----------------------------------------------------------------------------------------
 package Finnigan::Scan::CentroidList;
 our $VERSION = 0.0207;
+
+use feature qw/state say/;
+use 5.010;
+use strict;
+use warnings FATAL => qw( all );
 
 sub new {
   my ($class, $buf) = @_;
@@ -597,11 +610,11 @@ Get the number of chunks in the profile
 
 =item set_converter($func_ref)
 
-Set the converter function (f → M/z)
+Set the converter function (f -> M/z)
 
 =item set_inverse_converter($func_ref)
 
-Set the inverse converter function (M/z → f)
+Set the inverse converter function (M/z -> f)
 
 =item bins
 
