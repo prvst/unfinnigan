@@ -6,6 +6,7 @@ use feature qw/state say/;
 use 5.010;
 
 use Getopt::Declare;
+use Cwd;
 use Finnigan;
 use File::Temp;
 use MIME::Base64;
@@ -26,6 +27,7 @@ my $args = new Getopt::Declare q{
   or exit(-1);
 
 my $file = $args->{"<file>"};
+my $path = Cwd::getcwd;
 -e $file or die "file '$file' does not exist";
 -f $file or die "'$file' is not a plain file";
 -s $file or die "'$file' has zero size";
@@ -238,9 +240,16 @@ tie my %msRunAttr, 'Tie::IxHash';
               endTime   => sprintf("PT%.4fS", 60 * $run_header->sample_info->end_time),
              );
 
+tie my %parentFileAttrOrig, 'Tie::IxHash';
+%parentFileAttrOrig = (
+              fileName => decode_string($seq_row->file_name),
+              fileType => 'RAWData',
+              fileSha1 => $digest,
+             );
+
 tie my %parentFileAttr, 'Tie::IxHash';
 %parentFileAttr = (
-              fileName => decode_string($seq_row->file_name),
+              fileName => "$path/$file",
               fileType => 'RAWData',
               fileSha1 => $digest,
              );
@@ -297,13 +306,15 @@ tie my %convSoftwareAttr, 'Tie::IxHash';
                      version => $Finnigan::VERSION,
                     );
 
+my @parentFile =
 my $xml = $x->mzXML(
   ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.2'],
   {
    'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
-   'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.1 http://sashimi.sourceforge.net/schema_revision/mzXML_3.2/mzXML_idx_3.2.xsd'
+   'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.2 http://sashimi.sourceforge.net/schema_revision/mzXML_3.2/mzXML_idx_3.2.xsd'
   },
   $x->msRun(\%msRunAttr,
+    $x->parentFile(\%parentFileAttrOrig),
     $x->parentFile(\%parentFileAttr),
     $x->msInstrument(
       $x->msManufacturer(\%msManufacturerAttr),
