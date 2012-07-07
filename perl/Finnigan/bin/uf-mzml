@@ -797,6 +797,9 @@ tie my %binaryDataArrayCvAttr6, 'Tie::IxHash';
                            unitName => 'minute'
                           );
 
+
+# Generate a complete XML file template without scans in it, leaving a cut
+# marker to help insert the scans later.
 my $spectrumIndex = 0;
 my $xml = $x->indexedmzML(
   ['http://psi.hupo.org/ms/mzml'],
@@ -909,6 +912,8 @@ my $xml = $x->indexedmzML(
   $x->fileChecksum('fileChecksumValue')
 ); # $x->indexedmzML
 
+
+# Split the file template into a head and a tail and write the head out.:w
 my ($head, $tail) = split '<cut>------------</cut>', "$xml";
 
 #my $decl = qq(<?xml version="1.0" encoding="UTF-8"?>\n);
@@ -940,8 +945,9 @@ foreach my $n ( $from .. $to ) {
                    defaultArrayLength => $scanData->{length}
                   );
 
-  # Creating a new generatator to get rid of the namespace attribute (to match
-  # the output of proteowizard).
+  # Creating a new generatator for each spectrum.  Note that the namespace
+  # attribute set in the file template generator is not used (matching the
+  # output of proteowizard).
   $x = XML::Generator->new(pretty => 2);
   $xml = $x->spectrum(
     \%spectrumAttr,
