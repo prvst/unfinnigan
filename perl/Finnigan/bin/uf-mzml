@@ -209,6 +209,18 @@ my %components = (
       ['detector', ['electron multiplier']]
     ],
   ],
+  'LTQ Orbitrap Velos' => [
+    [
+      ['source', ['nanoelectrospray', 'nanospray inlet']],
+      ['analyzer', ['orbitrap']],
+      ['detector', ['inductive detector']]
+    ],
+    [
+      ['source', ['nanoelectrospray', 'nanospray inlet']],
+      ['analyzer', ['radial ejection linear ion trap']],
+      ['detector', ['electron multiplier']]
+    ],
+  ],
   'LTQ Orbitrap XL' => [
     [
       ['source', ['electrospray ionization', 'electrospray inlet']],
