@@ -58,7 +58,7 @@ sub decode {
   else {
     die "don't know how to interpret the set of " . $self->nparam . " conversion parameters";
   }
-  
+
   my @common_tail = (
                      "unknown long[2]"    => ['V',      'UInt32'],
                      "unknown long[3]"    => ['V',      'UInt32'],
@@ -317,11 +317,11 @@ Get the value of the coefficient E (Orbitrap only)
 
 =item converter
 
-Returns the pointer to the function for the forward conversion f → M/z
+Returns the pointer to the function for the forward conversion f -> M/z
 
 =item inverse_converter
 
-Returns the pointer to the function for the inverse conversion M/z → f
+Returns the pointer to the function for the inverse conversion M/z -> f
 
 =item stringify
 

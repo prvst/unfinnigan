@@ -2,7 +2,7 @@ package Finnigan;
 
 use 5.010000;
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
 use Module::Find qw/findsubmod/;
 
 our $VERSION = '0.0207';

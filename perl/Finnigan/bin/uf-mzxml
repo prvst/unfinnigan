@@ -15,6 +15,7 @@ use Tie::IxHash;
 use XML::Generator;
 use Digest::SHA1;
 
+my $NBINS = 4;
 
 my $args = new Getopt::Declare q{
   [strict]
@@ -495,10 +496,17 @@ sub read_scan {
       # if there are no called peaks, treat the profile as a set of peaks
       my $bins;
       if ( $profile->nchunks > 1) {
-        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+        # The full-featured Finnigan::Profile::bins() has an option for filling
+        # the gaps between the peoks with zeroes.
+        # $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+
+        # The more light-weight Finnigan::Profile::bins() has instead an option
+        # for adding the "bookends" -- short series of zero bins on either
+        # side of the peak -- and it does not have the range option.
+        $bins = $profile->bins($NBINS); # this call implicitly uses the forward converter
       }
       else { # the profile is stored as one huge set of bins
-        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+        $bins = $profile->bins; # this call implicitly uses the forward converter
         require Data::Dumper;
         print Dumper($bins);
       }
@@ -519,10 +527,17 @@ sub read_scan {
     if ( $profile ) {
       my $bins;
       if ( $profile->nchunks > 1) {
-        $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+        # The full-featured Finnigan::Profile::bins() has an option for filling
+        # the gaps between the peoks with zeroes.
+        # $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+
+        # The more light-weight Finnigan::Profile::bins() has instead an option
+        # for adding the "bookends" -- short series of zero bins on either
+        # side of the peak -- and it does not have the range option.
+        $bins = $profile->bins($NBINS); # this call implicitly uses the forward converter
       }
       else {
-        $bins = $profile->bins($range); # this call implicitly uses the forward converter
+        $bins = $profile->bins; # this call implicitly uses the forward converter
       }
       $peakCount = scalar @$bins;
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";

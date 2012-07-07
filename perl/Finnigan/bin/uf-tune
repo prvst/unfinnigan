@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
@@ -263,7 +263,7 @@ L<uf-params>
 
 =item List all tune file entries in the tabular form: <label, value>
 
-  uf-tune sample.raw 
+  uf-tune sample.raw
 
 =item Dump the tune file contents in wiki format with total size and relative addresses:
 

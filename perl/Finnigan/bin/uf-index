@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
@@ -206,13 +206,13 @@ uf-index [options] file
   -a[ll]                        process all existing index entries
   -n[unmber] <n>                get one index entry number <n>
   -range <from> .. <to>         extract all entries with numbers between <from> and <to>
-  -d[ump]                       dump all data in each index entry 
-  -s[ize]                       print object size 
-  -h[tml]                       dump as html 
-  -w[iki]                       dump in wiki table format 
-  -r[elative]                   show relative addersess in dump 
+  -d[ump]                       dump all data in each index entry
+  -s[ize]                       print object size
+  -h[tml]                       dump as html
+  -w[iki]                       dump in wiki table format
+  -r[elative]                   show relative addersess in dump
   -f[ormat] <type>              format the unknown long as 'bin', 'hex', or 'ms' (for MS level)
-  <file>                        input file 
+  <file>                        input file
 
 =head1 OPTIONS
 
@@ -282,7 +282,7 @@ Finnigan::ScanIndexEntry
 
 =item Print all index entries in the file in a tabular form:
 
-  uf-index sample.raw 
+  uf-index sample.raw
 
 =item Print the first five records:
 
@@ -294,7 +294,7 @@ Finnigan::ScanIndexEntry
 
 =item Dump the fifth index entry with relative addresses and shows its size:
 
-  uf-index -rdsn 5 ~/shared/test/sample4.raw 
+  uf-index -rdsn 5 ~/shared/test/sample4.raw
 
 =back
 

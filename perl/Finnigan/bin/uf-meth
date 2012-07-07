@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-use warnings;
+use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
@@ -190,7 +190,7 @@ Print a brief help message and exit.
 =item B<-e[xtract]>
 
 extract the entire OLE2 container (Microsoft Compound
-File) 
+File)
 
 =item B<-l[ist]>
 
@@ -268,14 +268,14 @@ Example output (name translation table):
 
 Example output:
 
-  LTQ 
+  LTQ
     Data (2560 bytes)
     Text (11742 bytes)
     Header (1396 bytes)
-  Micro AS 
+  Micro AS
     Data (641 bytes)
     Text (1164 bytes)
-  Surveyor MS Pump 
+  Surveyor MS Pump
     Data (228 bytes)
     Text (1176 bytes)
     Comments (4 bytes)
