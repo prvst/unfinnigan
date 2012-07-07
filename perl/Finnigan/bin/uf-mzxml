@@ -5,14 +5,14 @@ use warnings FATAL => qw( all );
 use feature qw/state say/;
 use 5.010;
 
-use Digest::SHA1;
-use File::Temp;
-use Finnigan;
 use Getopt::Declare;
+use Finnigan;
+use File::Temp;
 use MIME::Base64;
 use Storable qw(freeze thaw);
 use Tie::IxHash;
 use XML::Generator;
+use Digest::SHA1;
 
 
 my $args = new Getopt::Declare q{
@@ -37,6 +37,14 @@ $Finnigan::activationMethod = lc $args->{-a}{"<symbol>"} if exists $args->{-a};
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
 
+my $sha1 = new Digest::SHA1;
+$sha1->addfile(\*INPUT);
+my $digest = $sha1->hexdigest;
+
+# reset the digest generator to work with our output
+$sha1 = new Digest::SHA1;
+
+seek INPUT, 0, 0; # rewind
 my $header = Finnigan::FileHeader->decode(\*INPUT);
 my $VERSION = $header->version;
 my $seq_row = Finnigan::SeqRow->decode(\*INPUT, $VERSION);
@@ -234,7 +242,7 @@ tie my %parentFileAttr, 'Tie::IxHash';
 %parentFileAttr = (
               fileName => decode_string($seq_row->file_name),
               fileType => 'RAWData',
-              fileSha1 => '0',
+              fileSha1 => $digest,
              );
 
 tie my %msManufacturerAttr, 'Tie::IxHash';
@@ -290,10 +298,10 @@ tie my %convSoftwareAttr, 'Tie::IxHash';
                     );
 
 my $xml = $x->mzXML(
-  ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.1'],
+  ['http://sashimi.sourceforge.net/schema_revision/mzXML_3.2'],
   {
    'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
-   'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.1 http://sashimi.sourceforge.net/schema_revision/mzXML_3.1/mzXML_idx_3.1.xsd'
+   'xsi:schemaLocation' => 'http://sashimi.sourceforge.net/schema_revision/mzXML_3.1 http://sashimi.sourceforge.net/schema_revision/mzXML_3.2/mzXML_idx_3.2.xsd'
   },
   $x->msRun(\%msRunAttr,
     $x->parentFile(\%parentFileAttr),
@@ -505,7 +513,7 @@ sub read_scan {
       else {
         $bins = $profile->bins($range); # this call implicitly uses the forward converter
       }
-      $peakCount = scalar @$bins;      
+      $peakCount = scalar @$bins;
       say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
       my $pos = tell $scandata_fh;
       print $scandata_fh freeze $bins;
