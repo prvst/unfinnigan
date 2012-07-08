@@ -13,9 +13,10 @@ use Finnigan;
 use Getopt::Declare;
 use Cwd;
 use MIME::Base64;
-use File::Temp;
 use Tie::IxHash;
 use XML::Generator;
+
+my $NBINS = 4;
 
 my %indent_table = (
   2 => 1,
@@ -27,16 +28,6 @@ my %indent_table = (
  11 => 3,
  17 => 3,
 );
-
-
-
-sub indent {
-  my $val = length(shift);
-  my $newVal = $indent_table{$val};
-  return $newVal ? $newVal : $val;
-}
-
-my $NBINS = 4;
 
 my $args = new Getopt::Declare q{
   [strict]
@@ -183,7 +174,6 @@ foreach my $i ( 0 .. $trailer_length - 1) {
   last if $n == $to;
 }
 
-# say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
 # ---------------------------------------------------------------------
 # Now read the ScanParameters stream. Its records have variable size
@@ -238,7 +228,6 @@ foreach my $i ( $first_scan - 1 .. $last_scan - 1) {
   last if $n == $to;
 }
 
-# say STDERR "memory used: " . get_stat_info()->{vsize}/1024/1024 . " Mb";
 
 #------------------------------------------------------------------------------------------
 # This is a reasonably good point to start generating the output. We
@@ -351,69 +340,16 @@ my $xml = $x->mzXML(
     ),
     $x->cut('------------'),
   ),
-  $x->index({name => 'scan'})
-#    map {
-#      my $n = $_;
-#      # say STDERR "in outer map ($n)";
-#      my ( $attr ) = read_scan($n, $args, \%scan_index, \%scan_event);
-#      tie my %peakAttr, 'Tie::IxHash';
-#      %peakAttr = (
-#        precision       => 32,
-#        byteOrder       => "network",
-#        contentType     => "m/z-int",
-#        compressionType => "none",
-#        compressedLen   => 0,
-#      );
-#      $x->scan(
-#        $attr,
-#        $x->peaks(\%peakAttr, "=== cut ==="),
-#        map {
-#          my $n = $_;
-#          my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
-#
-#          # say STDERR "  in inner map ($n)";
-#          my ( $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event);
-#
-#          tie my %precursorAttr, 'Tie::IxHash';
-#          if ( $isMS2 ) {
-#            %precursorAttr = (
-#              precursorIntensity  => sprintf("%.2f",$precursor_peak->{intensity}),
-#              precursorCharge     => $param->{charge_state}->{$n-1},
-#              activationMethod    => uc $Finnigan::activationMethod,
-#            );
-#            delete $precursorAttr{precursorCharge} unless $param->{charge_state}->{$n-1};
-#          }
-#
-#          tie my %peaksAttr, 'Tie::IxHash';
-#          %peaksAttr = (
-#            precision       => 32,
-#            byteOrder       => "network",
-#            contentType     => "m/z-int",
-#            compressionType => "none",
-#            compressedLen   => 0,
-#          );
-#          if ( $isMS2 ) {
-#            $x->scan(
-#              $attr,
-#              $x->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
-#              $x->peaks(\%peaksAttr, "=== cut ===")
-#            )
-#          }
-#          else { # for MS1 scans like SIM or zoom scans
-#            $x->scan(
-#              $attr,
-#              $x->peaks(\%peaksAttr, "=== cut ===")
-#            )
-#          }
-#        } dependent_scans(\%scan_event, $n)
-#      );
-#    } grep { not $scan_event{$_ - 1}->preamble->dependent } $from .. $to
+  $x->index({name => 'scan'},
+    $x->scanOffset
+  ),
+  $x->indexOffset('Index List Offset'),
+  $x->sha1('fileChecksumValue')
 );
 
-#my @xml_chunk = split "=== cut ===", "$xml";
 
 # Split the file template into a head and a tail and write the head out.:w
-my ($head, $tail) = split '<cut>------------</cut>', "$xml";
+my ($head, $tail) = split "<cut>------------</cut>\n", "$xml";
 
 #my $decl = qq(<?xml version="1.0" encoding="UTF-8"?>\n);
 my $decl = qq(<?xml version="1.0" encoding="ISO-8859-1"?>\n);
@@ -426,8 +362,7 @@ $head =~ s/\n\s+$/\n/s;
 print $head;
 $sha1->add($head);
 
-my @xml_spectrum_offset;
-my @xml_spectrum_id;
+my %xml_scan_offset;
 
 foreach ($from .. $to) {
   next if $scan_event{$_ - 1}->preamble->dependent;
@@ -438,7 +373,7 @@ foreach ($from .. $to) {
   # output of proteowizard).
   $x = XML::Generator->new(pretty => 2);
 
-  say STDERR "in outer map ($parentScanNumber)";
+  # say STDERR "in outer map ($parentScanNumber)";
   my ( $peaks, $attr ) = read_scan($parentScanNumber, $args, \%scan_index, \%scan_event);
 
   my $buf;
@@ -456,15 +391,14 @@ foreach ($from .. $to) {
   );
   $xml = $x->scan(
     $attr,
-    #$x->peaks(\%peakAttr, encode_base64($buf, "")),
-    $x->peaks(\%peakAttr, ""),
+    $x->peaks(\%peakAttr, $buf ? encode_base64($buf, "") : ''),
+    #$x->peaks(\%peakAttr, ""),
     map {
       my $n = $_;
       my $isMS2 = ($scan_event{$n-1}->preamble->ms_power == 2);
 
-      say STDERR "  in inner map ($n)";
+      # say STDERR "  in inner map ($n)";
       my ( $peaks, $attr, $precursor_peak ) = read_scan($n, $args, \%scan_index, \%scan_event);
-      say STDERR Dumper($attr);
 
       my $buf;
       foreach my $peak ( @$peaks ) {
@@ -485,8 +419,8 @@ foreach ($from .. $to) {
         $x->scan(
           $attr,
           $x->precursorMz(\%precursorAttr, $precursor_peak->{Mz}),
-          #$x->peaks(\%peakAttr, encode_base64($buf, "")),
-          $x->peaks(\%peakAttr, ""),
+          $x->peaks(\%peakAttr, $buf ? encode_base64($buf, "") : ''),
+          #$x->peaks(\%peakAttr, ""),
         )
       }
       else { # for MS1 scans like SIM or zoom scans
@@ -502,228 +436,204 @@ foreach ($from .. $to) {
   $xml =~ s/\n( +)/"\n" . (' ' x (2 + indent($1)))/seg;
   $xml =~ s%\n</scan>%\n  </scan>%s;
   $xml = "  $xml\n";
+
+  # find all occurences of the scan start tag and take note of offests
+  my $offset = 0;
+  my $n = $parentScanNumber;
+  my $token = '<scan num=';
+  my $pos = index($xml, $token, $offset);
+
+  my $file_offset = tell STDOUT;
+  while ($pos != -1) {
+    $file_offset += $pos;
+    $xml_scan_offset{$n} = $file_offset;
+
+    $offset = $pos + length($token) + 1;
+    $pos = index($xml, $token, $offset);
+    $n++;
+  }
+
   $sha1->add($xml);
   print $xml;
+} # for each parent scan
+
+my $current_pos = tell STDOUT;
+my $index_offset = $current_pos + index($tail, '<index ');
+
+my $buf = '';
+foreach my $i (sort { $a <=> $b } keys %xml_scan_offset ) {
+  my $n = $i + 1;
+  $buf .= qq(   <offset id="$n">$xml_scan_offset{$i}</offset>\n);
 }
 
-# my %xml_scan_offset;
-# foreach my $n ( $from .. $to ) {
-#   my $i = $n - 1;
-#   my $chunk_no = $n - $from;
-#
-#   my $rec;
-#   my ($pos, $bytes_to_read) = @{$scan_data{$i}};
-#   seek $scandata_fh, $pos, 0;
-#   my $nbytes = read $scandata_fh, $rec, $bytes_to_read;
-#   $nbytes == $bytes_to_read
-#     or die "could not read all $bytes_to_read bytes of the saved scan data at $pos";
-#   my $peaks = thaw $rec;
-#
-#   my $buf;
-#   foreach my $peak ( @$peaks ) {
-#     $buf .= pack("NN", unpack("VV", pack("ff", @$peak)));
-#   }
-#   print $xml_chunk[$chunk_no];
-#   $xml_scan_offset{$i} = tell STDOUT;
-#   if ( $buf ) {
-#     print encode_base64($buf, "");
-#   }
-#   else {
-#     say STDERR "no data in scan $n";
-#   }
-# }
-# substr($xml_chunk[-1], -length("</mzXML>\n")) = "";
-# say $xml_chunk[-1];
+my $offsets = join "\n  ", map {
+  qq(<offset id="$_">$xml_scan_offset{$_}</offset>)
+} $from .. $to;
 
-my $index_offset = tell STDOUT;
-say qq( <index name="scan" >);
-# foreach my $i (sort { $a <=> $b } keys %xml_scan_offset ) {
-#   my $n = $i + 1;
-#   say qq(   <offset id="$n">$xml_scan_offset{$i}</offset>);
-# }
-say " </index>";
-say " <indexOffset>$index_offset</indexOffset>";
-say " <sha1></sha1>";
-say "</mzXML>";
+$tail =~ s{<scanOffset />}{$offsets};
+$tail =~ s{Index List Offset}{$index_offset};
 
-say "---- tail ---";
-say $tail;
+my ($tail_head, $tail_tail) = split 'fileChecksumValue', $tail;
+$sha1->add($tail_head);
+print $tail_head;
+
+say $sha1->hexdigest . $tail_tail;
+
+# ------------------------ end of main program --------------------------
+
 
 sub min($$) { $_[$_[0] > $_[1]] }
 
 sub decode_string {
-my $buf = shift;
-$buf =~ s/\x00//g;
-return $buf;
+  my $buf = shift;
+  $buf =~ s/\x00//g;
+  return $buf;
 }
 
 sub dependent_scans {
-my ($scan_event, $scan_no) = @_;
-my @list = ();
-return unless $scan_event->{$scan_no - 1};
-my $ms_power = $scan_event->{$scan_no - 1}->preamble->ms_power;
-return unless $ms_power == 1; # assume ms2 scans have no further dependents
-for ( my $i = $scan_no; 1; $i++ ) {
-  last unless $scan_event{$i};
-  last unless $scan_event->{$i}->preamble->dependent;
-  push @list, $i + 1;
-}
-return @list;
+  my ($scan_event, $scan_no) = @_;
+  my @list = ();
+  return unless $scan_event->{$scan_no - 1};
+  my $ms_power = $scan_event->{$scan_no - 1}->preamble->ms_power;
+  return unless $ms_power == 1; # assume ms2 scans have no further dependents
+  for ( my $i = $scan_no; 1; $i++ ) {
+    last unless $scan_event{$i};
+    last unless $scan_event->{$i}->preamble->dependent;
+    push @list, $i + 1;
+  }
+  return @list;
 }
 
 sub read_scan {
-my ($n, $args, $scan_index, $scan_event) = @_;
-my $i = $n-1;
+  my ($n, $args, $scan_index, $scan_event) = @_;
+  my $i = $n-1;
 
-seek INPUT, $data_addr + $scan_index->{$i}->{offset}, 0;
+  seek INPUT, $data_addr + $scan_index->{$i}->{offset}, 0;
 
-my $scan = Finnigan::Scan->decode( \*INPUT );
-my $ph = $scan->header;
-my $profile;
-$profile = $scan->profile if $ph->profile_size;
-if ( $profile ) {
-  $profile->set_converter($scan_event->{$i}->converter);
-  $profile->set_inverse_converter($scan_event->{$i}->inverse_converter);
-}
-my $peaks = $scan->centroids if $ph->peak_list_size;
-my $peakList;
-my $ms_power = $scan_event->{$i}->preamble->ms_power;
-my $dependent = $scan_event->{$i}->preamble->dependent;
-if ( not $dependent ) {
-  $parent_scan_data = $profile ? $profile : $peaks;
-  $parent_scan_data->{type} = $profile ? 'profile' : 'centroid';
-  $parent_scan_data->{"scan number"} = $n;
-}
-
-my $peakCount;
-if ( exists $args->{-c} ) {
-  $peakCount = $peaks->count;
-  if ( $peakCount ) {
-    $peakList = $peaks->list;
-  }
-  elsif ( $profile ) {
-    # if there are no called peaks, treat the profile as a set of peaks
-    my $bins;
-    if ( $profile->nchunks > 1) {
-      # The full-featured Finnigan::Profile::bins() has an option for filling
-      # the gaps between the peoks with zeroes.
-      # $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
-
-      # The more light-weight Finnigan::Profile::bins() has instead an option
-      # for adding the "bookends" -- short series of zero bins on either
-      # side of the peak -- and it does not have the range option.
-      $bins = $profile->bins($NBINS); # this call implicitly uses the forward converter
-    }
-    else { # the profile is stored as one huge set of bins
-      $bins = $profile->bins; # this call implicitly uses the forward converter
-      require Data::Dumper;
-      print Dumper($bins);
-    }
-    $peakCount = scalar @$bins;
-    say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
-    $peakList = $bins;
-  }
-  else {
-    my $scan_no = $i + 1;
-    $peakList = [];
-  }
-}
-else {
-  say STDERR "reading the profile...";
-  # simply read the profile and ignore the centroids
+  my $scan = Finnigan::Scan->decode( \*INPUT );
+  my $ph = $scan->header;
+  my $profile;
+  $profile = $scan->profile if $ph->profile_size;
   if ( $profile ) {
-    my $bins;
-    if ( $profile->nchunks > 1) {
-      # The full-featured Finnigan::Profile::bins() has an option for filling
-      # the gaps between the peoks with zeroes.
-      # $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+    $profile->set_converter($scan_event->{$i}->converter);
+    $profile->set_inverse_converter($scan_event->{$i}->inverse_converter);
+  }
+  my $peaks = $scan->centroids if $ph->peak_list_size;
+  my $peakList;
+  my $ms_power = $scan_event->{$i}->preamble->ms_power;
+  my $dependent = $scan_event->{$i}->preamble->dependent;
+  if ( not $dependent ) {
+    $parent_scan_data = $profile ? $profile : $peaks;
+    $parent_scan_data->{type} = $profile ? 'profile' : 'centroid';
+    $parent_scan_data->{"scan number"} = $n;
+  }
 
-      # The more light-weight Finnigan::Profile::bins() has instead an option
-      # for adding the "bookends" -- short series of zero bins on either
-      # side of the peak -- and it does not have the range option.
-      $bins = $profile->bins($NBINS); # this call implicitly uses the forward converter
+  my $peakCount = 0;
+  if ( exists $args->{-c} ) {
+    if ($peaks) {
+      $peakCount = $peaks->count;
+      if ( $peakCount ) {
+        $peakList = $peaks->list;
+      }
+    }
+    elsif ( $profile ) {
+      # if there are no called peaks, treat the profile as a set of peaks
+      my $bins;
+      if ( $profile->nchunks > 1) {
+        # The full-featured Finnigan::Profile::bins() has an option for filling
+        # the gaps between the peoks with zeroes.
+        # $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+
+        # The more light-weight Finnigan::Profile::bins() has instead an option
+        # for adding the "bookends" -- short series of zero bins on either
+        # side of the peak -- and it does not have the range option.
+        $bins = $profile->bins($NBINS); # this call implicitly uses the forward converter
+      }
+      else { # the profile is stored as one huge set of bins
+        $bins = $profile->bins; # this call implicitly uses the forward converter
+      }
+      $peakCount = scalar @$bins;
+      say STDERR "profile ($peakCount) $scan_event->{$i} at $i";
+      $peakList = $bins;
     }
     else {
-      $bins = $profile->bins; # this call implicitly uses the forward converter
+      my $scan_no = $i + 1;
+      $peakList = [];
     }
-    $peakCount = scalar @$bins;
-    say STDERR "freezing profile ($peakCount) $scan_event->{$i} at $i";
-    $peakList = $bins;
   }
   else {
-    say STDERR "No profile in scan $n? Try to extract centroids by adding the -c option";
-    exit -1;
+    # simply read the profile and ignore the centroids
+    if ( $profile ) {
+      my $bins;
+      if ( $profile->nchunks > 1) {
+        # The full-featured Finnigan::Profile::bins() has an option for filling
+        # the gaps between the peoks with zeroes.
+        # $bins = $profile->bins($range, "add empty bins"); # this call implicitly uses the forward converter
+
+        # The more light-weight Finnigan::Profile::bins() has instead an option
+        # for adding the "bookends" -- short series of zero bins on either
+        # side of the peak -- and it does not have the range option.
+        $bins = $profile->bins($NBINS); # this call implicitly uses the forward converter
+      }
+      else {
+        $bins = $profile->bins; # this call implicitly uses the forward converter
+      }
+      $peakCount = scalar @$bins;
+      say STDERR "profile ($peakCount) $scan_event->{$i} at $i";
+      $peakList = $bins;
+    }
+    else {
+      say STDERR "No profile in scan $n? Try to extract centroids by adding the -c option";
+      exit -1;
+    }
+  }
+
+  my %polarity_symbol = (
+    0 => "-",
+    1 => "+",
+    2 => "any",
+  );
+
+  tie my %scanAttr, 'Tie::IxHash';
+  %scanAttr = (
+    num           => $n,
+    msLevel       => $ms_power,
+    peaksCount    => $peakCount,
+    polarity      => $polarity_symbol{$scan_event->{$i}->preamble->polarity},
+    scanType      => $scan_event->{$i}->preamble->scan_type(decode => 1),
+    filterLine    => "$scan_event->{$i}",
+    retentionTime => sprintf("PT%.4fS", 60 * $scan_index->{$i}->{"start time"}),
+    lowMz         => $scan_index->{$i}->{"low mz"},
+    highMz        => $scan_index->{$i}->{"high mz"},
+    basePeakMz    => $scan_index->{$i}->{"base mz"},
+    basePeakIntensity => $scan_index->{$i}->{"base intensity"},
+    totIonCurrent => $scan_index->{$i}->{"total current"},
+  );
+  if ( $ms_power == 2 ) {
+    $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
+    my $prec_mz = $scan_event{$i}->reaction->precursor;
+    my $intensity = 0;
+    $parent_scan_data->{"dependent scan number"} = $n;
+    $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
+    return (
+      $peakList,
+      \%scanAttr,
+      {
+        Mz => $prec_mz,
+        intensity => $intensity
+      }
+    );
+  }
+  else {
+    return ($peakList, \%scanAttr);
   }
 }
-my %polarity_symbol = (
-                       0 => "-",
-                       1 => "+",
-                       2 => "any",
-                      );
-
-tie my %scanAttr, 'Tie::IxHash';
-%scanAttr = (
-             num           => $n,
-             msLevel       => $ms_power,
-             peaksCount    => $peakCount,
-             polarity      => $polarity_symbol{$scan_event->{$i}->preamble->polarity},
-             scanType      => $scan_event->{$i}->preamble->scan_type(decode => 1),
-             filterLine    => "$scan_event->{$i}",
-             retentionTime => sprintf("PT%.4fS", 60 * $scan_index->{$i}->{"start time"}),
-             lowMz         => $scan_index->{$i}->{"low mz"},
-             highMz        => $scan_index->{$i}->{"high mz"},
-             basePeakMz    => $scan_index->{$i}->{"base mz"},
-             basePeakIntensity => $scan_index->{$i}->{"base intensity"},
-             totIonCurrent => $scan_index->{$i}->{"total current"},
-            );
-if ( $ms_power == 2 ) {
-  $scanAttr{collisionEnergy} = $scan_event{$i}->reaction->energy;
-  my $prec_mz = $scan_event{$i}->reaction->precursor;
-  my $intensity = 0;
-  $parent_scan_data->{"dependent scan number"} = $n;
-  $intensity = $parent_scan_data->find_peak_intensity($prec_mz);
-  return (
-    $peakList,
-    \%scanAttr, {
-      Mz => $prec_mz,
-      intensity => $intensity
-    }
-  );
-}
-else {
-  return ($peakList, \%scanAttr);
-}
-}
 
 
-sub get_stat_info {  ## this will only work in Linux
-my $ref = {};
-
-### open and read the main stat file
-if( ! open(_INFO,"</proc/$$/stat") ){
-  die "Couldn't open /proc/$$/stat [$!]";
-}
-my @info = split(/\s+/,<_INFO>);
-close(_INFO);
-
-### these are all the props (skip some)
-# pid(0) comm(1) state ppid pgrp session tty
-# tpgid(7) flags minflt cminflt majflt cmajflt
-# utime(13) stime cutime cstime counter
-# priority(18) timeout itrealvalue starttime vsize rss
-# rlim(24) startcode endcode startstack kstkesp kstkeip
-# signal(30) blocked sigignore sigcatch wchan
-###
-
-### get the important ones
-$ref = {utime  => $info[13] / 100,
-        stime  => $info[14] / 100,
-        cutime => $info[15] / 100,
-        cstime => $info[16] / 100,
-        vsize  => $info[22],
-        rss    => $info[23] * 4};
-
-return $ref;
+sub indent {
+  my $val = length(shift);
+  my $newVal = $indent_table{$val};
+  return $newVal ? $newVal : $val;
 }
 
 
