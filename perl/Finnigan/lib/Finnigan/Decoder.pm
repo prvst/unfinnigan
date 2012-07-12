@@ -3,6 +3,7 @@ package Finnigan::Decoder;
 use 5.010000;
 use strict;
 use warnings FATAL => qw( all );
+use Carp;
 our $VERSION = 0.0207;
 
 use Encode qw//;
@@ -65,14 +66,14 @@ sub iterate_scalar {
         my $bytes_to_read = 4;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
-          or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
+          or confess "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
         my $nchars = unpack "V", $rec;
 
         # read the 2-byte characters
         $bytes_to_read = 2*$nchars;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
-          or die "could not read all $nchars 2-byte characters of $name at $current_addr";
+          or confess "could not read all $nchars 2-byte characters of $name at $current_addr";
         $nbytes += 4; # total string length
 
         $size += $nbytes;
@@ -91,7 +92,7 @@ sub iterate_scalar {
       foreach $i ( 1 .. $count ) {
         $nbytes = CORE::read $stream, $rec, $template_length;
         $nbytes == $template_length
-          or die "could not read all $template_length bytes of $name at $current_addr";
+          or confess "could not read all $template_length bytes of $name at $current_addr";
 
         $size += $nbytes;
         $current_addr += $nbytes;
@@ -103,7 +104,7 @@ sub iterate_scalar {
       foreach $i ( 1 .. $count ) {
         $nbytes = CORE::read $stream, $rec, $template_length;
         $nbytes == $template_length
-          or die "could not read all $template_length bytes of $name at $current_addr";
+          or confess "could not read all $template_length bytes of $name at $current_addr";
 
         $size += $nbytes;
         $current_addr += $nbytes;
@@ -166,14 +167,14 @@ sub decode {
         my $bytes_to_read = 4;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
-          or die "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
+          or confess "could not read all $bytes_to_read bytes of the prefix counter in $name at $current_addr";
         my $nchars = unpack "V", $rec;
 
         # read the 2-byte characters
         $bytes_to_read = 2*$nchars;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
-          or die "could not read all $nchars 2-byte characters of $name at $current_addr";
+          or confess "could not read all $nchars 2-byte characters of $name at $current_addr";
         $rec =~ s/\xb0/\*/; # remove the degree sign
         #print(STDERR (ord > 127 ? sprintf("<%02X>", ord) : $_)) for(split //, $rec); print STDERR "\n";
         $value = Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec));
@@ -188,14 +189,14 @@ sub decode {
         (undef, my $bytes_to_read) = split ":", $type;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
-          or die "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
+          or confess "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
         $value = unpack "Z*", $rec;
       }
       elsif ( substr($type, 0, 9) eq 'UTF-16-LE' ) {
         (undef, my $bytes_to_read) = split ":", $type;
         $nbytes = CORE::read $stream, $rec, $bytes_to_read;
         $nbytes == $bytes_to_read
-          or die "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
+          or confess "could not read all $bytes_to_read bytes of the string in $name at $current_addr";
         ($value) = split /\0/, Encode::decode('UTF-16LE', (pack "C*", unpack "U0C*", $rec)); # decode and truncate at 0
       }
       elsif ( substr($type, 0, 9) eq 'UTF-16-BE' ) {
@@ -209,7 +210,7 @@ sub decode {
       my $bytes_to_read = 8;
       $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
-        or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+        or confess "could not read all $bytes_to_read bytes of $name at $current_addr";
       my ($w1, $w2) = unpack "VV", $rec;
       $value = scalar gmtime (($w2 * 4294967296 + $w1) / 10000000 - 11644473600); # Windows timestamp is 100s of ns since Jan 1 1601
     }
@@ -217,7 +218,7 @@ sub decode {
       my $bytes_to_read = length(pack($template,()));
       $nbytes = CORE::read $stream, $rec, $bytes_to_read;
       $nbytes == $bytes_to_read
-        or die "could not read all $bytes_to_read bytes of $name at $current_addr";
+        or confess "could not read all $bytes_to_read bytes of $name at $current_addr";
 
       if ( substr($template, 0, 3) eq 'U0C' ) {
         $value = pack "C*", unpack $template, $rec;

@@ -209,7 +209,7 @@ is( $nev, 4, "Number of scan event types in the first segment" );
 # read the first scan event template
 my $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
 is( join('', $et->preamble->list), "1121111011030000000000004000255255255255000020004222111000000000100000000000000022000000000000002000000000000000200000000000000002140000", "ScanEventTemplate->ScanEventPreamble->list (1)" );
-is( join(' ', $et->preamble->list('decode')), "1 1 undefined undefined positive profile MS1 Full 1 1 False ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 FTMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (1)" );
+is( join(' ', $et->preamble->list('decode')), "1 1 undefined undefined positive profile MS1 Full 1 1 False ESI 0 0 0 0 0 0 0 0 0 0 0 0 CID 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 FTMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (1)" );
 is( $et->preamble->corona('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->corona(decode) (1)" );
 is( $et->preamble->detector('decode'), "undefined", "ScanEventTemplate->ScanEventPreamble->detector(decode) (1)" );
 is( $et->preamble->polarity('decode'), "positive", "ScanEventTemplate->ScanEventPreamble->polarity(decode) (1)" );
@@ -228,15 +228,15 @@ ok( num_equal($et->fraction_collector->high, 2000), "ScanEventTemplate->Fraction
 is( $et->fraction_collector->stringify, "[400.00-2000.00]", "ScanEventTemplate->FractionCollector->stringify (1)" );
 # the second scan event template
 $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
-is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (2)" );
+is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 CID 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (2)" );
 is ($et->preamble->stringify, "ITMS + p ESI d Full ms2", "ScanEventTemplate->ScanEventPreamble->stringify (2)" );
 # the third scan event template
 $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
-is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (3)" );
+is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 CID 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (3)" );
 is ($et->preamble->stringify, "ITMS + p ESI d Full ms2", "ScanEventTemplate->ScanEventPreamble->stringify (3)" );
 # the fourth scan event template
 $et = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
-is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (3)" );
+is( join(' ', $et->preamble->list('decode')), "1 0 undefined undefined positive profile MS2 Full 1 1 True ESI 0 0 0 0 0 0 0 0 0 0 0 0 CID 0 0 0 255 255 255 255 Off 0 0 0 2 0 0 0 ITMS 2 2 2 1 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 4 0 0 0 0", "ScanEventTemplate->ScanEventPreamble->list(decode) (3)" );
 is ($et->preamble->stringify, "ITMS + p ESI d Full ms2", "ScanEventTemplate->ScanEventPreamble->stringify (3)" );
 
 #-------------------------------------------------------------------------
