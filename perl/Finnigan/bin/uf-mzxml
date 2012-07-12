@@ -31,7 +31,6 @@ my %indent_table = (
 
 my $args = new Getopt::Declare q{
   [strict]
-  -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
   -c[entroids]				prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
   -q[uiet]				suppress instrument error messages
@@ -48,8 +47,6 @@ my $path = Cwd::getcwd;
 my $basename = basename($file, qw/.raw .RAW/);
 
 # -----------------------------------------------------------------------------
-
-$Finnigan::activationMethod = lc $args->{-a}{"<symbol>"} if exists $args->{-a};
 
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
@@ -653,7 +650,6 @@ uf-mzxml [options] <file>
 
  Options:
 
-  -a[ctivationMethod] <symbol>     specify ion activation method [CID by default]
   -c[entroids]                     write peak centroids instead of scan profiles where possible
   -r[ange] <from> .. <to>          write only scans with numbers between <from> and <to>
   <file>                           input file
@@ -665,10 +661,6 @@ uf-mzxml [options] <file>
 =item B<-help>
 
 Prints a brief help message and exits.
-
-=item B<-a[ctivationMethod] <symbolE<gt>>
-
-Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzXML> attribute is set to 'CID' (Collision-Induced Dissociation). It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activationMethod> attribute of the C<precursorMz> element, and there is no constraint on what it can be.
 
 =item B<-c[entroids]>
 

@@ -246,7 +246,7 @@ sub converter {
     my $C = $self->{data}->{C}->{value};
     return sub {$A + $B/$_[0] + $C/$_[0]/$_[0]};  # $_[0] = frequency
   }
-  elsif ( $self->{data}->{nparam}->{value} == 7 ) {
+  elsif ( $self->{data}->{nparam}->{value} == 5 or $self->{data}->{nparam}->{value} == 7 ) {
     # Orbitrap
     my $A = $self->{data}->{A}->{value};
     my $B = $self->{data}->{B}->{value};

@@ -171,6 +171,11 @@ my %accession = (
   'electronvolt' => 'UO:0000266',
 );
 
+my %activationSymbol = (
+  cid => 'collision-induced dissociation',
+  hcd => 'high-energy collision-induced dissociation',
+);
+
 my %ms_unit = (
   'peak intensity' => 'number of counts',
   'base peak intensity' => 'number of counts',
@@ -243,7 +248,6 @@ $components{'LTQ Orbitrap Velos'} = $components{'LTQ Orbitrap'};
 
 my $args = new Getopt::Declare q{
   [strict]
-  -a[ctivationMethod] <symbol>		specify ion activation method [CID by default]
   -c[entroids]				prefer peak centroids to scan profiles, if available
   -r[ange] <from:0+n> .. <to:0+n>	write only scans with numbers between <from> and <to>
   -q[uiet]			        suppress instrument error messages
@@ -261,8 +265,6 @@ my $file = $args->{"<file>"};
 my $basename = basename($file, qw/.raw .RAW/);
 
 # -----------------------------------------------------------------------------
-
-$Finnigan::activationMethod = lc $args->{-a}{"<symbol>"} if exists $args->{-a};
 
 open INPUT, "<$file" or die "can't open '$file': $!";
 binmode INPUT;
@@ -1326,7 +1328,7 @@ sub read_scan {
                            }
                          ],
                          activation_param => {
-                           ($Finnigan::activationMethod eq 'cid' ? 'collision-induced dissociation' : $Finnigan::activationMethod) => '',
+                           $activationSymbol{$Finnigan::activationMethod} => '',
                            'collision energy' => $reaction->energy,
                          }
                         };
@@ -1494,19 +1496,6 @@ uf-mzml [options] <file>
 
 Prints a brief help message and exits.
 
-=item B<-a[ctivationMethod] <symbolE<gt>>
-
-Since the native storage location of the data element corresponding to the activation method is unknown at this time, the required B<mzML> activation attribute is set to 'collision-induced dissociation' by default. It is a valid assumption in most Orbitrap experiments. The B<-a> option overrides the default value. The symbol specified on the command line is simply copied into the C<activation> element, provided it exists in the mzML controlled vocabulary. A small fragment of the vocabulary included in B<uf-mzml> consists of:
-
-  'collision-induced dissociation'
-  'surface-induced dissociation'
-  'electron capture dissociation'
-  'electron transfer dissociation'
-  'photodissociation'
-  'multiphoton dissociation'
-  'infrared multiphoton dissociation'
-
-
 =item B<-c[entroids]>
 
 Prefer centroids to raw profiles.
@@ -1563,9 +1552,5 @@ uf-trailer
  uf-mzxml -c -r 350 .. 352 20070522_NH_Orbi2_HelaEpo_05.RAW > sample.mzML
 
   (extract peak centroids from scans 350 through 352)
-
- uf-mzml -a "electron transfer dissociation" sample.raw > sample.mzML
-
-  (override the default dissociation method)
 
 =cut

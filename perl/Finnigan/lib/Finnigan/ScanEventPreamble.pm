@@ -789,6 +789,11 @@ types)
 Get the scan type (0:EI, 1:CI, 2:FABI, 3:ESI, 4:APCI, 5:NSI, 6:TSI,
 7:FDI, 8:MALDI, 9:GDI, 10:undefined)
 
+=item activation(bool)
+
+Get the activation method (1:HCD, 4:CID, the rest are unknown and even these
+may be misassigned)
+
 =item wideband(bool)
 
 Get the wideband flag (0:off, 1:on, 2:undefined).
