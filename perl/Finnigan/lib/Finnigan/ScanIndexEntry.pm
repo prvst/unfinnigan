@@ -40,9 +40,31 @@ my $fields64 = [
               "offset"                  => ['Q<', 'Uint64'],
              ];
 
+my $fields66 = [
+              "32-bit offset (defunct)" => ['V',  'UInt32'],
+              "index"                   => ['V',  'UInt32'],
+              "scan event"              => ['v',  'UInt16'],
+              "scan segment"            => ['v',  'UInt16'],
+              "next"                    => ['V',  'UInt32'],
+              "unknown long"            => ['V',  'UInt32'],
+              "data size"               => ['V',  'UInt32'],
+              "start time"              => ['d<', 'Float64'],
+              "total current"           => ['d<', 'Float64'],
+              "base intensity"          => ['d<', 'Float64'],
+              "base mz"                 => ['d<', 'Float64'],
+              "low mz"                  => ['d<', 'Float64'],
+              "high mz"                 => ['d<', 'Float64'],
+              "offset"                  => ['Q<', 'Uint64'],
+              "unknown long[1]"         => ['V',  'UInt32'],
+              "unknown long[2]"         => ['V',  'UInt32'],
+             ];
+
 sub decode {
   if ($_[2] == 64) {
     return bless Finnigan::Decoder->read($_[1], $fields64), $_[0];
+  }
+  if ($_[2] == 66) {
+    return bless Finnigan::Decoder->read($_[1], $fields66), $_[0];
   }
   else {
     return bless Finnigan::Decoder->read($_[1], $fields), $_[0];
@@ -71,6 +93,14 @@ sub next {
 
 sub unknown {
   shift->{data}->{"unknown long"}->{value};
+}
+
+sub unknown1 {
+  shift->{data}->{"unknown long[1]"}->{value};
+}
+
+sub unknown2 {
+  shift->{data}->{"unknown long[2]"}->{value};
 }
 
 sub data_size {
@@ -113,7 +143,7 @@ Finnigan::ScanIndexEntry -- a decoder for ScanIndexEntry, a linked list element 
 
   use Finnigan;
   my $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
-  say $entry->offset; # returns an offset from the start of scan data stream 
+  say $entry->offset; # returns an offset from the start of scan data stream
   say $entry->data_size;
   $entry->dump;
 
@@ -205,9 +235,17 @@ Get the high end of the scan range
 
 =item unknown
 
-Get the only unknown UInt32 stored in the index entry. Its value (or
-some bits in it) seem to correspond to the type of scan, but its
+Get the only unknown UInt32 stored in the index entry (prior to v.66). Its
+value (or some bits in it) seem to correspond to the type of scan, but its
 interpretation is uncertain.
+
+=item unknown1
+
+Unknown value that first appears in v.66
+
+=item unknown2
+
+Unknown value that first appears in v.66
 
 =back
 

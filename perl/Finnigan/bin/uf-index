@@ -159,7 +159,12 @@ else {
       my $size = 72; # this may be wrong!
       seek INPUT, $scan_index_addr + ($from - $first_scan)*$size, 0;
     }
-    say join "\t", qw/Index Next ScanSegment ScanEvent Offset DataSize Unknown StartTime LowMz HighMz BaseIntensity BaseMz TotalCurrent/;
+    if ($VERSION == 66) {
+      say join "\t", qw/Index Next ScanSegment ScanEvent Offset DataSize Unknown StartTime LowMz HighMz BaseIntensity BaseMz TotalCurrent Unknown1 Unknown2/;
+    }
+    else {
+      say join "\t", qw/Index Next ScanSegment ScanEvent Offset DataSize Unknown StartTime LowMz HighMz BaseIntensity BaseMz TotalCurrent/;
+    }
     foreach my $index ($from - 1 .. $to - 1) {
       print_as_table_row(Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION));
     }
@@ -169,21 +174,37 @@ else {
 sub print_as_table_row {
   my $index_entry = shift;
   my $unknown = $index_entry->unknown;
+  my $unknown1;
+  my $unknown2;
+  if ($VERSION == 66) {
+    $unknown1 = $index_entry->unknown1;
+    $unknown2 = $index_entry->unknown2;
+  }
   if ( exists $args->{-f} ) {
     if ( $args->{-f}->{'<type>'} eq 'bin' ) {
       $unknown = sprintf "%b", $unknown;
+      if ($VERSION == 66) {
+        $unknown1 = sprintf "%b", $unknown1;
+        $unknown2 = sprintf "%b", $unknown2;
+      }
     }
     elsif ( $args->{-f}->{'<type>'} eq 'hex' ) {
       $unknown = sprintf "0x%08x", $unknown;
+      if ($VERSION == 66) {
+        $unknown1 = sprintf "0x%08x", $unknown1;
+        $unknown2 = sprintf "0x%08x", $unknown2;
+      }
     }
     elsif ( $args->{-f}->{'<type>'} eq 'ms' ) {
       $unknown = {21 => 'MS1', 18 => 'MS2', 19 => 'MS2*'}->{$unknown} || '?';
     }
     else {
-      die "unkonwn format: " . $args->{-f}->{'<type>'};
+      die "unknown format: " . $args->{-f}->{'<type>'};
     }
   }
-  say $index_entry->index . "\t"
+
+  my $row =
+  $index_entry->index . "\t"
     . $index_entry->next . "\t"
       . $index_entry->scan_segment . "\t"
         . $index_entry->scan_event . "\t"
@@ -196,6 +217,11 @@ sub print_as_table_row {
                       . $index_entry->base_intensity . "\t"
                         . $index_entry->base_mz . "\t"
                           . $index_entry->total_current
+  ;
+  if ($VERSION == 66) {
+    $row .= "\t$unknown1\t$unknown2";
+  }
+  say $row;
 }
 
 __END__
