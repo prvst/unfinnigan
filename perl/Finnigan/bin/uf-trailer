@@ -164,8 +164,10 @@ $nbytes == $bytes_to_read
   or die "could not read all $bytes_to_read bytes of the trailer scan events count at $trailer_addr";
 my $trailer_length = unpack 'V', $rec;
 
-# determine the range to read
+# In v.66 this value is zero.
+$trailer_length = $run_header->sample_info->last_scan - $run_header->sample_info->first_scan + 1 unless $trailer_length;
 
+# determine the range to read
 my @ix = sort {$a <=> $b} keys %index;
 my $from = $ix[0];
 my $to = $ix[-1];

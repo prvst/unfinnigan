@@ -112,6 +112,11 @@ IONIZATION = {
     10: "undefined"
 }
 
+ACTIVATION = {
+    1: "HCD"
+    4: "CID",
+}
+
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
 
 def dump(src, length=8):
@@ -1080,9 +1085,11 @@ class ScanEventPreamble(FieldSet):
             yield UInt8(self, "unknown byte[4]")
             yield Enum(UInt8(self, "dependent"), BOOL)
             yield Enum(UInt8(self, "ionization"), IONIZATION)
-            yield RawBytes(self, "unknown data[1]", 20)
-            yield Enum(UInt8(self, "wideband"), ON_OFF)
+            yield RawBytes(self, "unknown data[1]", 12)
+            yield Enum(UInt8(self, "activation"), ACTIVATION)
             yield RawBytes(self, "unknown data[2]", 7)
+            yield Enum(UInt8(self, "wideband"), ON_OFF)
+            yield RawBytes(self, "unknown data[3]", 7)
             yield Enum(UInt8(self, "analyzer"), ANALYZER)
 
             if VERSION[-1] <= 60:
@@ -1208,7 +1215,7 @@ class ScanEvent(FieldSet):
                 yield UInt32(self, "unknown long[9]", "Unknown long")
                 yield UInt32(self, "unknown long[a]", "Unknown long")
                 yield FractionCollector(self, "fraction collector[2]", "Fraction Collector")
-                yield UInt32(self, "nparam", "The nuber of double-precision parameters following this")
+                yield UInt32(self, "nparam", "The number of double-precision parameters following this")
                 for index in range(1, self["nparam"].value + 1 - 2):
                     key = "unknown double[%s]" % (index + 1)
                     label = "Unknown double";
@@ -1237,7 +1244,7 @@ class ScanEvent(FieldSet):
                 yield UInt32(self, "unknown long[9]", "Unknown long")
                 yield UInt32(self, "unknown long[a]", "Unknown long")
                 yield FractionCollector(self, "fraction collector[2]", "Fraction Collector")
-                yield UInt32(self, "nparam", "The nuber of double-precision parameters following this")
+                yield UInt32(self, "nparam", "The number of double-precision parameters following this")
                 for index in range(1, self["nparam"].value + 1):
                     key = "unknown double[%s]" % index
                     label = "Unknown double";

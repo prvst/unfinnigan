@@ -155,6 +155,7 @@ my %accession = (
   'charge state' => 'MS:1000041',
   'peak intensity' => 'MS:1000042',
   'collision-induced dissociation' => 'MS:1000133',
+  'high-energy collision-induced dissociation' => 'MS:1000422',
   'surface-induced dissociation' => 'MS:1000439',
   'electron capture dissociation' => 'MS:1000250',
   'electron transfer dissociation' => 'MS:1000598',
@@ -1297,6 +1298,7 @@ sub read_scan {
 
     my @activation_param_keys = (
                                 'collision-induced dissociation',
+                                'high-energy collision-induced dissociation',
                                 'surface-induced dissociation',
                                 'electron capture dissociation',
                                 'electron transfer dissociation',
