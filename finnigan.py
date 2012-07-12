@@ -189,11 +189,14 @@ class Finnigan(Parser):
             yield RunHeader(self, "run header", "The directory structure for the entire file")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
-            yield ErrorLog(self, "error log", "Error Log File")
+            if VERSION[-1] < 66:
+                yield ErrorLog(self, "error log", "Error Log File")
 
             if VERSION[-1] == 66:
-                yield ErrorLogRecord(self, "log record[1]", "Apparently an error record; access rule and number unknown")
-                yield ErrorLogRecord(self, "log record[2]", "Apparently an error record; access rule and number unknown")
+                yield UInt32(self, "unknown long", "This seemed to contain the error long length prior to v.66 (maybe not)")
+                nrecords = self["/run header/sample info/error log length"].value # this is a conjecture
+                for n in range(1, nrecords + 1):
+                    yield ErrorLogRecord(self, "error log record[%s]" % n)
                 yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
                 yield GenericDataHeader(self, "scan header", "The header for scan parameters stream")
                 yield GenericDataHeader(self, "tune file header", "TuneFile Header")
@@ -208,7 +211,7 @@ class Finnigan(Parser):
                 if trailer_scan_event_addr > self.current_size/8:
                     yield RawBytes(self, "unknown stream", trailer_scan_event_addr - self.current_size/8, "Looks like human-readable warnings mixed with some data")
 
-                yield UInt32(self, "n_scanevents", "This supposed to be the number of trailer scan events")
+                yield UInt32(self, "n_scanevents", "This was supposed to be the number of trailer scan events (it was prior to v.66)")
 
                 for n in range(1, min(nscans, 215) + 1):
                     yield ScanEvent(self, "scan event[%s]" % n)
@@ -221,7 +224,11 @@ class Finnigan(Parser):
                 yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
                 yield UnknownStreamOfDoubles(self, "unkonwn stream of doubles")
-                yield RawBytes(self, "unknown structure", 7814, "references to tem files and a few doubles")
+                #yield RawBytes(self, "unknown structure", 7814, "references to temp files and a few doubles")
+                yield RunHeader(self, "second RunHeader");
+                yield InstID(self, "second InstID");
+                for index in range(1, 3+1):
+                    yield UInt32(self, "unknown short[%s]" % index)
                 if ABBREVIATE_LISTS and nscans > 100:
                     yield StrangeIndexRecord(self, "ix[1]", "IndexRecord 1")
                     yield StrangeIndexRecord(self, "ix[2]", "IndexRecord 2")
@@ -230,6 +237,13 @@ class Finnigan(Parser):
                     record_sz = self["ix[1]"].size/8
                     yield RawBytes(self, ". . .", (nscans - 5) * record_sz, "records skipped for speed")
                     yield StrangeIndexRecord(self, "ix[%s]" % nscans, "IndexRecord %s" % nscans)
+                else:
+                    info = self["/run header/sample info"]
+                    nrecords = info["last scan number"].value - info["first scan number"].value + 1
+                    for index in range(1, nrecords+1):
+                        yield StrangeIndexRecord(self, "ix[%s]" % index, "IndexRecord %s" % index)
+
+
 
             if VERSION[-1] < 66:
                 if self["raw file info/preamble/controller_n[1]"].value > 1:
@@ -269,7 +283,9 @@ class Finnigan(Parser):
 
 class UnknownStreamOfDoubles(FieldSet):
     def createFields(self):
-        for index in range(1, 52396+1):
+        info = self["/run header/sample info"]
+        nrecords = info["last scan number"].value - info["first scan number"].value + 1
+        for index in range(1, nrecords * 2 + 1):
             yield Float64(self, "unknown double[%s]" % index)
 
 class StrangeIndexRecord(FieldSet):
@@ -610,7 +626,7 @@ class SampleInfo(FieldSet):
         yield UInt32(self, "first scan number", "The number of the first scan in the file")
         yield UInt32(self, "last scan number", "The number of the last scan in the file")
         yield UInt32(self, "inst log length", "The number of instrument status samples logged")
-        yield UInt32(self, "unknown long[3]")
+        yield UInt32(self, "error log length")
         yield UInt32(self, "unknown long[4]")
         if VERSION[-1] < 64:
             yield UInt32(self, "scan index addr", "Absolute seek address of ScanIndex (ScanIndexEntry stream)")
