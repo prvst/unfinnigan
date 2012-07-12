@@ -84,6 +84,11 @@ my %SYMBOL = (
                              9 => "GDI",
                              10 => "undefined"
                             },
+
+              activation => {
+                             1 => "HCD",
+                             4 => "CID",
+                            },
              );
 
 my %TYPE = (
@@ -95,6 +100,7 @@ my %TYPE = (
             "scan type"         => "scan type",
             "dependent"         => "bool",
             "ionization"        => "ionization",
+            "activation"        => "activation",
             "wideband"          => "on/off",
             "analyzer"          => "analyzer",
            );
@@ -124,7 +130,7 @@ my @common_fields = (
                      "unknown byte[21]"  => ['C',    'UInt8'],
                      "unknown byte[22]"  => ['C',    'UInt8'],
                      "unknown byte[23]"  => ['C',    'UInt8'],
-                     "unknown byte[24]"  => ['C',    'UInt8'],
+                     "activation"        => ['C',    'UInt8'],
                      "unknown byte[25]"  => ['C',    'UInt8'],
                      "unknown byte[26]"  => ['C',    'UInt8'],
                      "unknown byte[27]"  => ['C',    'UInt8'],
@@ -365,6 +371,103 @@ $specific_fields{63} = [
                        ];
 
 $specific_fields{64} = $specific_fields{63};
+#$specific_fields{66} = $specific_fields{63};
+$specific_fields{66} = [
+                        "unknown byte[41]"  => ['C',    'UInt8'],
+                        "unknown byte[42]"  => ['C',    'UInt8'],
+                        "unknown byte[43]"  => ['C',    'UInt8'],
+                        "unknown byte[44]"  => ['C',    'UInt8'],
+                        "unknown byte[45]"  => ['C',    'UInt8'],
+                        "unknown byte[46]"  => ['C',    'UInt8'],
+                        "unknown byte[47]"  => ['C',    'UInt8'],
+                        "unknown byte[48]"  => ['C',    'UInt8'],
+                        "unknown byte[49]"  => ['C',    'UInt8'],
+                        "unknown byte[50]"  => ['C',    'UInt8'],
+                        "unknown byte[51]"  => ['C',    'UInt8'],
+                        "unknown byte[52]"  => ['C',    'UInt8'],
+                        "unknown byte[53]"  => ['C',    'UInt8'],
+                        "unknown byte[54]"  => ['C',    'UInt8'],
+                        "unknown byte[55]"  => ['C',    'UInt8'],
+                        "unknown byte[56]"  => ['C',    'UInt8'],
+                        "unknown byte[57]"  => ['C',    'UInt8'],
+                        "unknown byte[58]"  => ['C',    'UInt8'],
+                        "unknown byte[59]"  => ['C',    'UInt8'],
+                        "unknown byte[60]"  => ['C',    'UInt8'],
+                        "unknown byte[61]"  => ['C',    'UInt8'],
+                        "unknown byte[62]"  => ['C',    'UInt8'],
+                        "unknown byte[63]"  => ['C',    'UInt8'],
+                        "unknown byte[64]"  => ['C',    'UInt8'],
+                        "unknown byte[65]"  => ['C',    'UInt8'],
+                        "unknown byte[66]"  => ['C',    'UInt8'],
+                        "unknown byte[67]"  => ['C',    'UInt8'],
+                        "unknown byte[68]"  => ['C',    'UInt8'],
+                        "unknown byte[69]"  => ['C',    'UInt8'],
+                        "unknown byte[70]"  => ['C',    'UInt8'],
+                        "unknown byte[71]"  => ['C',    'UInt8'],
+                        "unknown byte[72]"  => ['C',    'UInt8'],
+                        "unknown byte[73]"  => ['C',    'UInt8'],
+                        "unknown byte[74]"  => ['C',    'UInt8'],
+                        "unknown byte[75]"  => ['C',    'UInt8'],
+                        "unknown byte[76]"  => ['C',    'UInt8'],
+                        "unknown byte[77]"  => ['C',    'UInt8'],
+                        "unknown byte[78]"  => ['C',    'UInt8'],
+                        "unknown byte[79]"  => ['C',    'UInt8'],
+
+                        "unknown byte[80]"  => ['C',    'UInt8'],
+                        "unknown byte[81]"  => ['C',    'UInt8'],
+                        "unknown byte[82]"  => ['C',    'UInt8'],
+                        "unknown byte[83]"  => ['C',    'UInt8'],
+                        "unknown byte[84]"  => ['C',    'UInt8'],
+                        "unknown byte[85]"  => ['C',    'UInt8'],
+                        "unknown byte[86]"  => ['C',    'UInt8'],
+                        "unknown byte[87]"  => ['C',    'UInt8'],
+                        "unknown byte[88]"  => ['C',    'UInt8'],
+                        "unknown byte[89]"  => ['C',    'UInt8'],
+                        "unknown byte[90]"  => ['C',    'UInt8'],
+                        "unknown byte[91]"  => ['C',    'UInt8'],
+                        "unknown byte[92]"  => ['C',    'UInt8'],
+                        "unknown byte[93]"  => ['C',    'UInt8'],
+                        "unknown byte[94]"  => ['C',    'UInt8'],
+                        "unknown byte[95]"  => ['C',    'UInt8'],
+                        "unknown byte[96]"  => ['C',    'UInt8'],
+                        "unknown byte[97]"  => ['C',    'UInt8'],
+                        "unknown byte[98]"  => ['C',    'UInt8'],
+                        "unknown byte[99]"  => ['C',    'UInt8'],
+                        "unknown byte[100]" => ['C',    'UInt8'],
+                        "unknown byte[101]" => ['C',    'UInt8'],
+                        "unknown byte[102]" => ['C',    'UInt8'],
+                        "unknown byte[103]" => ['C',    'UInt8'],
+                        "unknown byte[104]" => ['C',    'UInt8'],
+                        "unknown byte[105]" => ['C',    'UInt8'],
+                        "unknown byte[106]" => ['C',    'UInt8'],
+                        "unknown byte[107]" => ['C',    'UInt8'],
+                        "unknown byte[108]" => ['C',    'UInt8'],
+                        "unknown byte[109]" => ['C',    'UInt8'],
+                        "unknown byte[110]" => ['C',    'UInt8'],
+                        "unknown byte[111]" => ['C',    'UInt8'],
+                        "unknown byte[112]" => ['C',    'UInt8'],
+                        "unknown byte[113]" => ['C',    'UInt8'],
+                        "unknown byte[114]" => ['C',    'UInt8'],
+                        "unknown byte[115]" => ['C',    'UInt8'],
+                        "unknown byte[116]" => ['C',    'UInt8'],
+                        "unknown byte[117]" => ['C',    'UInt8'],
+                        "unknown byte[118]" => ['C',    'UInt8'],
+                        "unknown byte[119]" => ['C',    'UInt8'],
+
+                        "unknown byte[120]" => ['C',    'UInt8'],
+                        "unknown byte[121]" => ['C',    'UInt8'],
+                        "unknown byte[122]" => ['C',    'UInt8'],
+                        "unknown byte[123]" => ['C',    'UInt8'],
+                        "unknown byte[124]" => ['C',    'UInt8'],
+                        "unknown byte[125]" => ['C',    'UInt8'],
+                        "unknown byte[126]" => ['C',    'UInt8'],
+                        "unknown byte[127]" => ['C',    'UInt8'],
+
+                        "unknown byte[128]" => ['C',    'UInt8'],
+                        "unknown byte[129]" => ['C',    'UInt8'],
+                        "unknown byte[130]" => ['C',    'UInt8'],
+                        "unknown byte[131]" => ['C',    'UInt8'],
+                       ];
 
 # stringify symbols
 my %polarity_symbol = (
@@ -413,6 +516,8 @@ my %name = (
 
             10 => "dependent",
             11 => "ionization",
+
+            24 => "activation",
 
             32 => "wideband",
             40 => "analyzer",
@@ -531,6 +636,18 @@ sub ionization {
   }
 }
 
+sub activation {
+  my $key = "activation";
+  if ( $_[1] ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+        : $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    $_[0]->{data}->{$key}->{value};
+  }
+}
+
 sub wideband {
   my $key = "wideband";
   if ( $_[1] ) {
@@ -559,7 +676,7 @@ sub stringify {
   my $self = shift;
 
   # consider adding {s;e} and "lock" to output, e.g.:
-  #   FTMS {1;1}  + p ESI Full lock ms [60.00-1200.00]" 
+  #   FTMS {1;1}  + p ESI Full lock ms [60.00-1200.00]"
   $self->analyzer(decode => 1)
     . " " . $polarity_symbol{$self->polarity}
       . " " . $scan_mode_symbol{$self->scan_mode}

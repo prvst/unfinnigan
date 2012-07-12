@@ -12,60 +12,158 @@ use overload ('""' => 'stringify');
 sub decode {
   my ($class, $stream, $version) = @_;
 
-  my @common_head = (
-                     "preamble" => ['object',  'Finnigan::ScanEventPreamble'],
-                     "np"       => ['V',       'UInt32'],
-                    );
+  if ($version < 66) {
+    my @common_head = (
+      "preamble" => ['object',  'Finnigan::ScanEventPreamble'],
+      "np"       => ['V',       'UInt32'],
+    );
 
-  my $self = Finnigan::Decoder->read($stream, \@common_head, $version);
-  bless $self, $class;
+    my $self = Finnigan::Decoder->read($stream, \@common_head, $version);
+    bless $self, $class;
 
-  if ( $self->np ) {
-    $self->iterate_object($stream, $self->np, reaction => 'Finnigan::Reaction');
-  }
+    $Finnigan::activationMethod = lc $self->preamble->activation('decode');
 
-  my @common_middle = (
-                       "unknown long[1]"    => ['V',      'UInt32'],
-                       "fraction collector" => ['object', 'Finnigan::FractionCollector'],
-                       "nparam"             => ['V',      'UInt32'],
-                      );
-  $self->SUPER::decode($stream, \@common_middle, $version);
+    if ( $self->np ) {
+      $self->iterate_object($stream, $self->np, reaction => 'Finnigan::Reaction');
+    }
 
-  if ( $self->nparam == 0 ) {
-    # do nothing
-  }
-  elsif ( $self->nparam == 4 ) {
-    my $fields = [
-                  "unknown double"  => ['d<', 'Float64'],
-                  "A"               => ['d<', 'Float64'],
-                  "B"               => ['d<', 'Float64'],
-                  "C"               => ['d<', 'Float64'],
-                 ];
-    $self->SUPER::decode($stream, $fields);
-  }
-  elsif ( $self->nparam == 7 ) {
-    my $fields = [
-                  "unknown double"  => ['d<', 'Float64'],
-                  "I"               => ['d<', 'Float64'],
-                  "A"               => ['d<', 'Float64'],
-                  "B"               => ['d<', 'Float64'],
-                  "C"               => ['d<', 'Float64'],
-                  "D"               => ['d<', 'Float64'],
-                  "E"               => ['d<', 'Float64'],
-                 ];
-    $self->SUPER::decode($stream, $fields);
-  }
+    my @common_middle = (
+      "unknown long[1]"    => ['V',      'UInt32'],
+      "fraction collector" => ['object', 'Finnigan::FractionCollector'],
+      "nparam"             => ['V',      'UInt32'],
+    );
+    $self->SUPER::decode($stream, \@common_middle, $version);
+
+    if ( $self->nparam == 0 ) {
+      # do nothing
+    }
+    elsif ( $self->nparam == 4 ) {
+      my $fields = [
+        "unknown double"  => ['d<', 'Float64'],
+        "A"               => ['d<', 'Float64'],
+        "B"               => ['d<', 'Float64'],
+        "C"               => ['d<', 'Float64'],
+      ];
+      $self->SUPER::decode($stream, $fields);
+    }
+    elsif ( $self->nparam == 7 ) {
+      my $fields = [
+        "unknown double"  => ['d<', 'Float64'],
+        "I"               => ['d<', 'Float64'],
+        "A"               => ['d<', 'Float64'],
+        "B"               => ['d<', 'Float64'],
+        "C"               => ['d<', 'Float64'],
+        "D"               => ['d<', 'Float64'],
+        "E"               => ['d<', 'Float64'],
+      ];
+      $self->SUPER::decode($stream, $fields);
+    }
+    else {
+      die "don't know how to interpret the set of " . $self->nparam . " conversion parameters";
+    }
+
+    my @common_tail = (
+      "unknown long[2]"    => ['V',      'UInt32'],
+      "unknown long[3]"    => ['V',      'UInt32'],
+    );
+    $self->SUPER::decode($stream, \@common_tail, $version);
+    return $self;
+  } # versions proior to v.66
+
+  elsif ($version == 66) {
+    my @head = (
+      "preamble"        => ['object',  'Finnigan::ScanEventPreamble'],
+      "unknown long[0]" => ['V',       'UInt32'],
+      "unknown long[1]" => ['V',       'UInt32'],
+    );
+
+    my $self = Finnigan::Decoder->read($stream, \@head, $version);
+    bless $self, $class;
+
+    $Finnigan::activationMethod = lc $self->preamble->activation('decode');
+
+    if ( $self->preamble->dependent ) {
+      # It may be an incorrect assumption that "unknow long[1]" counts
+      # precursors
+      $self->iterate_object($stream, $self->{data}->{"unknown long[1]"}->{value}, reaction => 'Finnigan::Reaction');
+
+      my $fields = [
+        "unknown double[0]"  => ['d<', 'Float64'],
+        "unknown double[1]"  => ['d<', 'Float64'],
+        "unknown long[2]"    => ['V',      'UInt32'],
+        "unknown long[3]"    => ['V',      'UInt32'],
+        "unknown long[4]"    => ['V',      'UInt32'],
+        "fraction collector" => ['object', 'Finnigan::FractionCollector'],
+        "nparam"             => ['V',      'UInt32'],
+      ];
+      $self->SUPER::decode($stream, $fields, $version);
+
+      if ( $self->nparam == 0 ) {
+        # do nothing
+      }
+      elsif ( $self->nparam == 5 ) {
+        $fields = [
+          "unknown double[2]"  => ['d<', 'Float64'],
+          "unknown double[3]"  => ['d<', 'Float64'],
+          "A"                  => ['d<', 'Float64'],
+          "B"                  => ['d<', 'Float64'],
+          "C"                  => ['d<', 'Float64'],
+        ];
+        $self->SUPER::decode($stream, $fields);
+      }
+      else {
+        die "don't know how to interpret the set of " . $self->nparam . " conversion parameters";
+      }
+    } # Dependent (MS2)
+    else {
+      my $fields = [
+        "fraction collector[0]" => ['object', 'Finnigan::FractionCollector'],
+        "unknown long[2]"       => ['V',      'UInt32'],
+        "unknown long[3]"       => ['V',      'UInt32'],
+        "unknown long[4]"       => ['V',      'UInt32'],
+        "unknown long[5]"       => ['V',      'UInt32'],
+        "fraction collector"    => ['object', 'Finnigan::FractionCollector'],
+        "unknown long[6]"       => ['V',      'UInt32'],
+        "unknown long[7]"       => ['V',      'UInt32'],
+        "unknown long[8]"       => ['V',      'UInt32'],
+        "fraction collector[2]" => ['object', 'Finnigan::FractionCollector'],
+        "nparam"                => ['V',      'UInt32'],
+      ];
+      $self->SUPER::decode($stream, $fields, $version);
+
+      if ( $self->nparam == 0 ) {
+        # do nothing
+      }
+      elsif ( $self->nparam == 5 ) {
+        $fields = [
+          "unknown double[2]"  => ['d<', 'Float64'],
+          "unknown double[3]"  => ['d<', 'Float64'],
+          "A"                  => ['d<', 'Float64'],
+          "B"                  => ['d<', 'Float64'],
+          "C"                  => ['d<', 'Float64'],
+        ];
+        $self->SUPER::decode($stream, $fields);
+      }
+      else {
+        die "don't know how to interpret the set of " . $self->nparam . " conversion parameters";
+      }
+    } # Primary (MS1)
+
+    my @tail = (
+      "unknown long[a]"    => ['V',      'UInt32'],
+      "unknown long[b]"    => ['V',      'UInt32'],
+      "unknown long[c]"    => ['V',      'UInt32'],
+      "unknown long[d]"    => ['V',      'UInt32'],
+      "unknown long[e]"    => ['V',      'UInt32'],
+    );
+    $self->SUPER::decode($stream, \@tail, $version);
+
+    return $self;
+  } # v.66
+
   else {
-    die "don't know how to interpret the set of " . $self->nparam . " conversion parameters";
+    die "don't know how to decode ScanEvent in version $version";
   }
-
-  my @common_tail = (
-                     "unknown long[2]"    => ['V',      'UInt32'],
-                     "unknown long[3]"    => ['V',      'UInt32'],
-                    );
-  $self->SUPER::decode($stream, \@common_tail, $version);
-
-  return $self;
 }
 
 sub purge_unused_data {
@@ -83,7 +181,8 @@ sub purge_unused_data {
 
 sub np {
   # the number of precrusor ions
-  shift->{data}->{"np"}->{value};
+  my $self = shift;
+  $self->{data}->{"np"} ? $self->{data}->{"np"}->{value} : $self->{data}->{"unknown long[1]"}->{value};
 }
 
 sub preamble {
@@ -201,10 +300,16 @@ sub stringify {
   my $f = $self->fraction_collector;
   if ( $self->np ) {
     my $pr = $self->precursors;
-    my $r = join ", ", map {"$_"} @$pr;
-    return "$p $r $f";
+    my $r = join ", ", map {$_} @$pr;
+    if ($r) {
+      return "$p $r $f";
+    }
+    else {
+      return "$p $f";
+    }
   }
   else {
+    $f = '[bad]' unless $f;
     return "$p $f";
   }
 }

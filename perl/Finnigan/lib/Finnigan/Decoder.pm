@@ -126,7 +126,7 @@ sub iterate_scalar {
 
 sub decode {
   my ($self, $stream, $fields, $any_arg) = @_;
-  my ( $rec, $nbytes );  
+  my ( $rec, $nbytes );
 
   my $current_addr = tell $stream;
   $self->{addr} ||= $current_addr; # assign the address only if called
