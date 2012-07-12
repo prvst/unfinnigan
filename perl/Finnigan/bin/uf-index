@@ -83,7 +83,7 @@ my $scan_index_addr = $run_header->scan_index_addr;
 # fast-forward to ScanIndex
 seek INPUT, $scan_index_addr, 0;
 
-if ( exists $args->{-d} ) {
+if ( exists $args->{-n} ) {
   my $n = $args->{-n}{"<n>"};
   my $first_scan = $run_header->sample_info->first_scan;
   my $last_scan = $run_header->sample_info->last_scan;
@@ -96,18 +96,24 @@ if ( exists $args->{-d} ) {
     seek INPUT, $scan_index_addr + ($n - 1)*$size, 0;
     $entry = Finnigan::ScanIndexEntry->decode(\*INPUT, $VERSION);
   }
-  if ( exists $args->{-s} ) {
-    say "size: $size";
-  }
+  if ( exists $args->{-d} ) {
 
-  if ( exists $args->{-h} ) {
-    $entry->dump(style => 'html', relative => exists $args->{-r});
-  }
-  elsif ( exists $args->{-w} ) {
-    $entry->dump(style => 'wiki', relative => exists $args->{-r});
+    if ( exists $args->{-s} ) {
+      say "size: $size";
+    }
+
+    if ( exists $args->{-h} ) {
+      $entry->dump(style => 'html', relative => exists $args->{-r});
+    }
+    elsif ( exists $args->{-w} ) {
+      $entry->dump(style => 'wiki', relative => exists $args->{-r});
+    }
+    else {
+      $entry->dump(relative => exists $args->{-r});
+    }
   }
   else {
-    $entry->dump(relative => exists $args->{-r});
+    print_as_table_row($entry);
   }
 }
 else {
