@@ -127,6 +127,10 @@ my $nbytes = read INPUT, $rec, $bytes_to_read;
 $nbytes == $bytes_to_read
   or die "could not read all $bytes_to_read bytes of the trailer scan events count at $trailer_addr";
 my $trailer_length = unpack 'V', $rec;
+if ($trailer_length == 0) {
+  # print STDERR "warning: zero trailer length at file offset " . (tell(INPUT) - $nbytes) . "\n";
+  $trailer_length = $last_scan - $first_scan + 1;
+}
 
 # read all scan events preceding the desired one (they are variable-size structures)
 my $scan_event;
