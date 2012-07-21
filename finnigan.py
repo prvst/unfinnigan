@@ -113,8 +113,8 @@ IONIZATION = {
 }
 
 ACTIVATION = {
-    1: "HCD"
-    4: "CID",
+    1: "HCD",
+    4: "CID"
 }
 
 FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
