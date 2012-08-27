@@ -174,7 +174,7 @@ class Finnigan(Parser):
 
         elif VERSION[-1] >= 47 and VERSION[-1] <= 66:
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
-            yield CASInfo(self, "CAS info", "Autosampler data?")
+            yield ASInfo(self, "AS info", "Autosampler data?")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
             data_addr = self["raw file info/preamble/data addr"].value
             if self.absolute_address + self.current_size < data_addr * 8:
@@ -187,6 +187,8 @@ class Finnigan(Parser):
 
             print >> sys.stderr, "run header addr: %s" % run_header_addr
             print >> sys.stderr, "nscans: %s" % nscans
+
+            ## Data ##
             if VERSION[-1] == 47:
                 yield RawBytes(self, "data", run_header_addr - self.current_size/8, "data format unknown")
             else:
@@ -201,8 +203,6 @@ class Finnigan(Parser):
             yield RunHeader(self, "run header", "The directory structure for the entire file")
             yield InstID(self, "inst id", "Instrument ID")
             yield InstrumentLog(self, "inst log", "Instrument status log")
-            if VERSION[-1] < 66:
-                yield ErrorLog(self, "error log", "Error Log File")
 
             if VERSION[-1] == 66:
                 yield UInt32(self, "unknown long", "This seemed to contain the error long length prior to v.66 (maybe not)")
@@ -242,8 +242,11 @@ class Finnigan(Parser):
                 yield UInt32(self, "unknown long[%s]" % 'x', "Error log?")
                 yield UVScanIndex(self, "UV scan index", "UVScanIndex")
 
+                print >> sys.stderr, "the layout of v. 66 is not fully understood"
 
-            if VERSION[-1] < 66:
+            elif VERSION[-1] >=47 and VERSION[-1] < 66:
+                yield ErrorLog(self, "error log", "Error Log File")
+
                 # multiple controllers
                 if self["raw file info/preamble/controller_n[1]"].value > 1:
                     print >> sys.stderr, "the layout of multiple data streams (chromatogram + MS spectra) is not fully understood"
@@ -251,14 +254,24 @@ class Finnigan(Parser):
                     yield RunHeader(self, "second run header")
                     yield InstID(self, "second InstID")
                     yield InstrumentLog2(self, "inst log[2]", "Instrument status log")
+                    yield UInt32(self, "unknown long[%s]" % 'x', "Error log?")
 
-                else: # single controller
-                    yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
+                yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
+
+                if self["raw file info/preamble/controller_n[1]"].value > 1:
+                    # It may just accidentally be an incomplete log (withot the scan headers)
+                    # yield StatusLog(self, "status log", "Status log")
+                    #yield GenericDataHeader(self, "scan header", "Generic Data Header")
+                    yield GenericDataHeader(self, "tune file header", "Generic Data Header")
+                    nsegs = self["/second run header/nsegs"].value # this is a conjecture
+                    for n in range(1, nsegs + 1):
+                        yield TuneFile(self, self["tune file header"], "tune file[%s]" % n, "Tune File data")
+                    yield ScanIndex2(self, "scan index", "A set of ScanIndexEntry records")
+                else:
                     yield StatusLog(self, "status log", "Status log")
-            elif VERSION[-1] == 66:
-                print >> sys.stderr, "the layout of v. 66 is not fully understood"
-            else:
-                 exit("unknown file version: %s" % VERSION[-1])
+
+        else:
+             exit("unknown file version: %s" % VERSION[-1])
 
         # Read rest of the file
         if self.current_size < self._size:
@@ -659,13 +672,13 @@ class SeqRow(FieldSet):
 
             yield UInt32(self, "unknown long", "Unknown long in SeqRow")
 
-            if VERSION[-1] == 47:
+            if VERSION[-1] == 47 or VERSION[-1] == 57:
                 pass
-            elif VERSION[-1] >= 60:
+            elif VERSION[-1] >= 60 and VERSION[-1] <= 66:
                 for index in "efghijklmnopqrs":
                     yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
             else:
-                exit("unknown file version: %s" % VERSION[-1])
+                exit("unknown file version (2): %s" % VERSION[-1])
 
 
 
@@ -684,14 +697,14 @@ class InjectionData(FieldSet):
         yield Float64(self, "df", "Dilution Factor")
 
 
-class CASInfo(FieldSet):
+class ASInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield CASInfoPreamble(self, "preamble", "CASInfo preamble")
+        yield ASInfoPreamble(self, "preamble", "ASInfo preamble")
         yield PascalStringWin32(self, "text", "Unknown text")
 
-class CASInfoPreamble(FieldSet):
+class ASInfoPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
@@ -1047,7 +1060,17 @@ class ScanEventTemplate(FieldSet):
             yield ScanEventPreamble(self, "preamble", "MS Scan Event preamble")
             if VERSION[-1] >= 63:
                 yield RawBytes(self, "preamble extension", 8)
-            if VERSION[-1] < 57:
+            if VERSION[-1] <= 47:
+                yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
+                yield UInt32(self, "unknown long[1]", "Unknown long")
+                yield Float64(self, "unknown double[1]")
+                yield Float64(self, "unknown double[2]")
+                yield Float64(self, "unknown double[3]")
+                yield Float64(self, "unknown double[4]")
+                yield UInt32(self, "unknown long[2]", "Unknown long")
+                yield UInt32(self, "unknown long[3]", "Unknown long")
+                yield UInt32(self, "unknown long[4]", "Unknown long")
+            elif VERSION[-1] < 57:
                 yield MSDependentData(self, "ms dependent data", "MS Dependent Data")
                 yield UInt32(self, "unknown long[1]", "Unknown long")
                 yield MSReaction(self, "ms reaction", "MS Reaction")
@@ -1067,7 +1090,11 @@ class ScanEventPreamble(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        if VERSION[-1] < 57:
+        if VERSION[-1] <= 47:
+            yield RawBytes(self, "unknown data[1]", 16)
+            yield Float64(self, "unknown double[1]")
+            yield RawBytes(self, "unknown data[2]", 16)
+        elif VERSION[-1] < 57:
             yield RawBytes(self, "unknown data", 24)
             for index in "123":
                 yield Float64(self, "unknown double[%s]" % index, "Parameter %s" % index)
@@ -1092,9 +1119,9 @@ class ScanEventPreamble(FieldSet):
             yield Enum(UInt8(self, "analyzer"), ANALYZER)
 
             if VERSION[-1] <= 60:
-                yield RawBytes(self, "unknown data", 39)
+                yield RawBytes(self, "unknown data[4]", 39)
             else:
-                yield RawBytes(self, "unknown data", 79)
+                yield RawBytes(self, "unknown data[4]", 79)
                 # in v.63, 8 more bytes follow
 
 
@@ -1102,9 +1129,8 @@ class MSDependentData(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]", "Unknown long")
-        yield UInt32(self, "unknown long[2]", "Unknown long")
-        yield Float64(self, "unknown double", "Unknown parameter")
+        yield Float64(self, "unknown double[1]", "Unknown parameter")
+        yield Float64(self, "unknown double[2]", "Unknown parameter")
 
 class MSReaction(FieldSet):
     endian = LITTLE_ENDIAN
@@ -1286,12 +1312,30 @@ class SomeGenericRecord(GenericRecord):
          for item in GenericRecord.createFields(self):
              yield item
 
-# These two classes should probably be merged
+# The following three classes should probably be merged
 class ScanIndex(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
         info = self["/run header/sample info"]
+        nrecords = info["last scan number"].value - info["first scan number"].value + 1
+        if ABBREVIATE_LISTS and nrecords > 100:
+            yield ScanIndexEntry(self, "scan header[1]", "ScanIndexEntry 1")
+            yield ScanIndexEntry(self, "scan header[2]", "ScanIndexEntry 2")
+            record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
+            yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
+            yield ScanIndexEntry(self, "scan header[%s]" % nrecords, "ScanIndexEntry %s" % nrecords)
+        else:
+            for n in range(1, nrecords + 1):
+                yield ScanIndexEntry(self, "log[%s]" % n, "ScanIndexEntry %s" % n)
+                print >> sys.stderr, "\rread %s of %s index entries ... " % (n, nrecords),
+            print >> sys.stderr, "done"
+
+class ScanIndex2(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        info = self["/second run header/sample info"]
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
         if ABBREVIATE_LISTS and nrecords > 100:
             yield ScanIndexEntry(self, "scan header[1]", "ScanIndexEntry 1")
