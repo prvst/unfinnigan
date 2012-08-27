@@ -172,7 +172,7 @@ class Finnigan(Parser):
             for n in range(1, nrecords + 1):
                 yield LogRecord(self, "log[%s]" % n, "LogRecord %s" % n)
 
-        elif VERSION[-1] >= 57 and VERSION[-1] <= 66:
+        elif VERSION[-1] >= 47 and VERSION[-1] <= 66:
             yield SeqRow(self, "seq row", "SeqRow -- Sequence Table Row")
             yield CASInfo(self, "CAS info", "Autosampler data?")
             yield RawFileInfo(self, "raw file info", "Something called RawFileInfo -- the root pointer structure")
@@ -184,11 +184,17 @@ class Finnigan(Parser):
             [first_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0x8)*8, 4))
             [last_scan_number] = struct.unpack("I", self.stream.readBytes((run_header_addr + 0xC)*8, 4))
             nscans = last_scan_number - first_scan_number + 1
-            #for n in range(1, nscans + 1):
-            for n in range(1, min(nscans, 15) + 1):
-                yield Packet(self, "packet %s" % n)
-                print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
-            print >> sys.stderr, "done"
+
+            print >> sys.stderr, "run header addr: %s" % run_header_addr
+            print >> sys.stderr, "nscans: %s" % nscans
+            if VERSION[-1] == 47:
+                yield RawBytes(self, "data", run_header_addr - self.current_size/8, "data format unknown")
+            else:
+                # #for n in range(1, nscans + 1):
+                for n in range(1, min(nscans, 15) + 1):
+                    yield Packet(self, "packet %s" % n)
+                    print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
+                print >> sys.stderr, "done"
 
             if run_header_addr > self.current_size/8:
                 yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "Further data packets left unparsed to save memory")
@@ -233,28 +239,17 @@ class Finnigan(Parser):
                 #yield RawBytes(self, "unknown structure", 7814, "references to temp files and a few doubles")
                 yield RunHeader(self, "second RunHeader");
                 yield InstID(self, "second InstID");
-                for index in range(1, 3+1):
-                    yield UInt32(self, "unknown short[%s]" % index)
-                if ABBREVIATE_LISTS and nscans > 100:
-                    yield StrangeIndexRecord(self, "ix[1]", "IndexRecord 1")
-                    yield StrangeIndexRecord(self, "ix[2]", "IndexRecord 2")
-                    yield StrangeIndexRecord(self, "ix[3]", "IndexRecord 2")
-                    yield StrangeIndexRecord(self, "ix[4]", "IndexRecord 2")
-                    record_sz = self["ix[1]"].size/8
-                    yield RawBytes(self, ". . .", (nscans - 5) * record_sz, "records skipped for speed")
-                    yield StrangeIndexRecord(self, "ix[%s]" % nscans, "IndexRecord %s" % nscans)
-                else:
-                    info = self["/run header/sample info"]
-                    nrecords = info["last scan number"].value - info["first scan number"].value + 1
-                    for index in range(1, nrecords+1):
-                        yield StrangeIndexRecord(self, "ix[%s]" % index, "IndexRecord %s" % index)
-
+                yield UInt32(self, "unknown long[%s]" % 'x')
+                yield UVScanIndex(self, "UV scan index", "UVScanIndex")
 
 
             if VERSION[-1] < 66:
                 if self["raw file info/preamble/controller_n[1]"].value > 1:
                     print >> sys.stderr, "the layout of multiple data streams (chromatogram + MS spectra) is not fully understood"
-                else:
+                    yield UVScanIndex(self, "UV scan index", "UVScanIndex")
+
+
+                else: # single controller
                     yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
                     yield StatusLog(self, "status log", "Status log")
             elif VERSION[-1] == 66:
@@ -293,26 +288,6 @@ class UnknownStreamOfDoubles(FieldSet):
         nrecords = info["last scan number"].value - info["first scan number"].value + 1
         for index in range(1, nrecords * 2 + 1):
             yield Float64(self, "unknown double[%s]" % index)
-
-class StrangeIndexRecord(FieldSet):
-    def createFields(self):
-        yield UInt32(self, "index")
-        yield UInt32(self, "unknown[1]")
-        yield UInt32(self, "unknown[2]")
-        yield UInt32(self, "unknown[3]")
-        yield UInt32(self, "unknown[4]")
-        yield UInt32(self, "unknown[5]")
-        yield UInt32(self, "unknown[6]")
-        yield Float64(self, "retention time")
-        yield UInt32(self, "unknown[7]")
-        yield UInt32(self, "unknown[8]")
-        yield UInt32(self, "unknown[9]")
-        yield UInt32(self, "unknown[a]")
-        yield UInt32(self, "unknown[b]")
-        yield UInt32(self, "unknown[c]")
-        yield UInt32(self, "offset")
-        yield UInt32(self, "unknown[e]")
-        yield UInt32(self, "unknown[f]")
 
 
 class Packet(FieldSet):
@@ -575,7 +550,7 @@ class RunHeader(FieldSet):
 
     def createFields(self):
         yield SampleInfo(self, "sample info", "Besides holding file pointers, this structure identifies the sample and provides a comment area for it")
-        if VERSION[-1] < 57:
+        if VERSION[-1] < 47:
             yield PascalStringWin32(self, "orig file name", "The original file name as seen on the instrument controller")
             yield PascalStringWin32(self, "file name[1]", "Unknown file name")
             yield PascalStringWin32(self, "file name[2]", "Unknown file name")
@@ -674,14 +649,14 @@ class SeqRow(FieldSet):
         yield PascalStringWin32(self, "file name")
         yield PascalStringWin32(self, "path")
 
-        if VERSION[-1] >= 57:
+        if VERSION[-1] >= 47:
             yield PascalStringWin32(self, "vial")
             for index in "cd":
                 yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
 
             yield UInt32(self, "unknown long", "Unknown long in SeqRow")
 
-            if VERSION[-1] == 57:
+            if VERSION[-1] == 47:
                 pass
             elif VERSION[-1] >= 60:
                 for index in "efghijklmnopqrs":
@@ -724,7 +699,6 @@ class CASInfoPreamble(FieldSet):
         yield UInt32(self, "unknown long[5]")
         yield UInt32(self, "unknown long[6]")
 
-
 class RawFileInfo(FieldSet):
     endian = LITTLE_ENDIAN
 
@@ -750,7 +724,7 @@ class RawFileInfoPreamble(FieldSet):
         yield UInt16(self, "minute")
         yield UInt16(self, "second")
         yield UInt16(self, "millisecond")
-        if VERSION[-1] >= 57 and VERSION[-1] < 64:
+        if VERSION[-1] >= 47 and VERSION[-1] < 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "data addr", "Absolute address of scan data")
             yield UInt32(self, "controller_n[1]")
@@ -1288,6 +1262,7 @@ class SomeGenericRecord(GenericRecord):
          for item in GenericRecord.createFields(self):
              yield item
 
+# These two classes should probably be merged
 class ScanIndex(FieldSet):
     endian = LITTLE_ENDIAN
 
@@ -1305,6 +1280,28 @@ class ScanIndex(FieldSet):
                 yield ScanIndexEntry(self, "log[%s]" % n, "ScanIndexEntry %s" % n)
                 print >> sys.stderr, "\rread %s of %s index entries ... " % (n, nrecords),
             print >> sys.stderr, "done"
+
+class UVScanIndex(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        info = self["/run header/sample info"]
+        nrecords = info["last scan number"].value - info["first scan number"].value + 1
+        if ABBREVIATE_LISTS and nrecords > 100:
+            yield UVScanIndexEntry(self, "ix[1]", "UVScanIndexEntry 1")
+            yield UVScanIndexEntry(self, "ix[2]", "UVScanIndexEntry 2")
+            yield UVScanIndexEntry(self, "ix[3]", "UVScanIndexEntry 2")
+            yield UVScanIndexEntry(self, "ix[4]", "UVScanIndexEntry 2")
+            record_sz = self["ix[1]"].size/8
+            yield RawBytes(self, ". . .", (nrecords - 6) * record_sz, "records skipped for speed")
+            yield UVScanIndexEntry(self, "ix[%s]" % (nrecords - 1), "UVScanIndexEntry %s" % (nrecords - 1))
+            yield UVScanIndexEntry(self, "ix[%s]" % nrecords, "UVScanIndexEntry %s" % nrecords)
+        else:
+            info = self["/run header/sample info"]
+            nrecords = info["last scan number"].value - info["first scan number"].value + 1
+            for index in range(1, nrecords+1):
+                yield UVScanIndexEntry(self, "ix[%s]" % index,
+                "UVScanIndexEntry %s" % index)
 
 class ScanHeaderFile(FieldSet):
     endian = LITTLE_ENDIAN
@@ -1746,4 +1743,40 @@ class ScanIndexEntry(FieldSet):
             yield UInt32(self, "unknown[2]")
             yield UInt32(self, "unknown[3]")
             yield UInt32(self, "unknown[4]")
+
+class UVScanIndexEntry(FieldSet):
+    def createFields(self):
+        if VERSION[-1] <= 47:
+            yield UInt32(self, "offset")
+            yield UInt32(self, "index")
+            yield UInt32(self, "unknown[1]")
+            yield UInt32(self, "unknown[2]")
+            yield UInt32(self, "unknown[3]")
+            yield UInt32(self, "unknown[4]")
+            yield Float64(self, "unknown double")
+            yield Float64(self, "retention time")
+            yield UInt32(self, "unknown[7]")
+            yield UInt32(self, "unknown[8]")
+            yield UInt32(self, "unknown[9]")
+            yield UInt32(self, "unknown[a]")
+            yield UInt32(self, "unknown[b]")
+            yield UInt32(self, "unknown[c]")
+        else:
+            yield UInt32(self, "unknown[e]")
+            yield UInt32(self, "unknown[f]")
+            yield UInt32(self, "index")
+            yield UInt32(self, "unknown[1]")
+            yield UInt32(self, "unknown[2]")
+            yield UInt32(self, "unknown[3]")
+            yield UInt32(self, "unknown[4]")
+            yield Float64(self, "unknown double")
+            yield Float64(self, "retention time")
+            yield UInt32(self, "unknown[7]")
+            yield UInt32(self, "unknown[8]")
+            yield UInt32(self, "unknown[9]")
+            yield UInt32(self, "unknown[a]")
+            yield UInt32(self, "unknown[b]")
+            yield UInt32(self, "unknown[c]")
+            yield UInt32(self, "offset")
+
 
