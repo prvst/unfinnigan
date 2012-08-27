@@ -237,17 +237,20 @@ class Finnigan(Parser):
 
                 yield UnknownStreamOfDoubles(self, "unkonwn stream of doubles")
                 #yield RawBytes(self, "unknown structure", 7814, "references to temp files and a few doubles")
-                yield RunHeader(self, "second RunHeader")
+                yield RunHeader(self, "second run header")
                 yield InstID(self, "second InstID")
                 yield UInt32(self, "unknown long[%s]" % 'x', "Error log?")
                 yield UVScanIndex(self, "UV scan index", "UVScanIndex")
 
 
             if VERSION[-1] < 66:
+                # multiple controllers
                 if self["raw file info/preamble/controller_n[1]"].value > 1:
                     print >> sys.stderr, "the layout of multiple data streams (chromatogram + MS spectra) is not fully understood"
                     yield UVScanIndex(self, "UV scan index", "UVScanIndex")
-                    yield RunHeader(self, "second RunHeader")
+                    yield RunHeader(self, "second run header")
+                    yield InstID(self, "second InstID")
+                    yield InstrumentLog2(self, "inst log[2]", "Instrument status log")
 
                 else: # single controller
                     yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
@@ -835,6 +838,27 @@ class InstrumentLog(FieldSet):
         yield GenericDataHeader(self, "header", "Generic Data Header")
 
         nrecords = self["/run header/sample info/inst log length"].value
+        print >> sys.stderr, "%s instrument log records ... " % nrecords,
+        if nrecords > 0:
+            if ABBREVIATE_LISTS and nrecords > 100:
+                yield StatusLogRecord(self, self["header"], "log[1]", "LogRecord 1")
+                yield StatusLogRecord(self, self["header"], "log[2]", "LogRecord 1")
+                record_sz = self["log[1]"].size/8
+                yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
+                yield StatusLogRecord(self, self["header"], "log[%s]" % nrecords, "LogRecord %s" % nrecords)
+            else:
+                for n in range(1, nrecords + 1):
+                    yield StatusLogRecord(self, self["header"], "log[%s]" % n, "LogRecord %s" % n)
+                    print >> sys.stderr, "\rread %s of %s instrument log records ... " % (n, nrecords),
+            print >> sys.stderr, "done"
+
+class InstrumentLog2(FieldSet):
+    endian = LITTLE_ENDIAN
+
+    def createFields(self):
+        yield GenericDataHeader(self, "header", "Generic Data Header")
+
+        nrecords = self["/second run header/sample info/inst log length"].value
         print >> sys.stderr, "%s instrument log records ... " % nrecords,
         if nrecords > 0:
             if ABBREVIATE_LISTS and nrecords > 100:
