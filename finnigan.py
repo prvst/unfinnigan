@@ -188,6 +188,7 @@ class Finnigan(Parser):
             for n in range(1, min(nscans, 15) + 1):
                 yield Packet(self, "packet %s" % n)
                 print >> sys.stderr, "\rread %s of %s packets ... " % (n, nscans),
+            print >> sys.stderr, "done"
 
             if run_header_addr > self.current_size/8:
                 yield RawBytes(self, "unparsed packets", run_header_addr - self.current_size/8, "Further data packets left unparsed to save memory")
@@ -694,9 +695,9 @@ class InjectionData(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield UInt32(self, "unknown long[1]", "Unknown Long")
-        yield UInt32(self, "n", "Row Number")
-        yield UInt32(self, "unknown long[2]", "Unknown Long")
+        yield UInt32(self, "unknown long[1]", "Unknown Long; may be plate number?")
+        yield UInt32(self, "row", "Row Number")
+        yield UInt32(self, "column", "Column Number")
         yield String(self, "vial", 12, "Vial ID; assigned to InstConfig::MSSerialNum at the end of SeqRow parsing", charset="UTF-16-LE", truncate="\0")
         yield Float64(self, "inj volume", "Injection Volume (ul)")
         yield Float64(self, "weight", "Sample Weight")
@@ -860,7 +861,7 @@ class InstrumentLog(FieldSet):
         yield GenericDataHeader(self, "header", "Generic Data Header")
 
         nrecords = self["/run header/sample info/inst log length"].value
-        print >> sys.stderr, "%s instrument log records ... " % nrecords
+        print >> sys.stderr, "%s instrument log records ... " % nrecords,
         if nrecords > 0:
             if ABBREVIATE_LISTS and nrecords > 100:
                 yield StatusLogRecord(self, self["header"], "log[1]", "LogRecord 1")
@@ -872,7 +873,7 @@ class InstrumentLog(FieldSet):
                 for n in range(1, nrecords + 1):
                     yield StatusLogRecord(self, self["header"], "log[%s]" % n, "LogRecord %s" % n)
                     print >> sys.stderr, "\rread %s of %s instrument log records ... " % (n, nrecords),
-                print >> sys.stderr, "done"
+            print >> sys.stderr, "done"
 
 class StatusLogRecord(GenericRecord):
     endian = LITTLE_ENDIAN
@@ -1159,10 +1160,11 @@ class ScanEvent(FieldSet):
 
     def createFields(self):
         yield ScanEventPreamble(self, "preamble", "MS Scan Event preamble")
-        if VERSION[-1] >= 63 and VERSION[-1] < 66:
-            yield RawBytes(self, "preamble extension", 8)
-        else:
-            yield RawBytes(self, "preamble extension", 12)
+        if VERSION[-1] >= 63:
+            if VERSION[-1] < 66:
+                yield RawBytes(self, "preamble extension", 8)
+            else:
+                yield RawBytes(self, "preamble extension", 12)
 
         if VERSION[-1] < 66:
             yield UInt32(self, "np", "The number of precursor ions")
