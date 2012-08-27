@@ -51,7 +51,7 @@ ON_OFF = {
 DETECTOR = {
     0: "valid",
     1: "undefined",
-};
+}
 
 ANALYZER = {
     0: "ITMS",
@@ -67,7 +67,7 @@ POLARITY = {
     0: "negative",
     1: "positive",
     2: "undefined",
-};
+}
 
 SCAN_MODE = {
     0: "centroid",
@@ -237,9 +237,9 @@ class Finnigan(Parser):
 
                 yield UnknownStreamOfDoubles(self, "unkonwn stream of doubles")
                 #yield RawBytes(self, "unknown structure", 7814, "references to temp files and a few doubles")
-                yield RunHeader(self, "second RunHeader");
-                yield InstID(self, "second InstID");
-                yield UInt32(self, "unknown long[%s]" % 'x')
+                yield RunHeader(self, "second RunHeader")
+                yield InstID(self, "second InstID")
+                yield UInt32(self, "unknown long[%s]" % 'x', "Error log?")
                 yield UVScanIndex(self, "UV scan index", "UVScanIndex")
 
 
@@ -247,7 +247,7 @@ class Finnigan(Parser):
                 if self["raw file info/preamble/controller_n[1]"].value > 1:
                     print >> sys.stderr, "the layout of multiple data streams (chromatogram + MS spectra) is not fully understood"
                     yield UVScanIndex(self, "UV scan index", "UVScanIndex")
-
+                    yield RunHeader(self, "second RunHeader")
 
                 else: # single controller
                     yield ScanHierarchy(self, "scan hirerachy", "Scan segment and event hirerachy")
@@ -298,7 +298,7 @@ class Packet(FieldSet):
         if self["header/peak list size"].value:
             yield PeakList(self, "peak list", "Peak centroids")
         if self["header/descriptor list size"].value:
-            yield PeakDescriptorList(self, "peak descriptors");
+            yield PeakDescriptorList(self, "peak descriptors")
         if self["header/size of unknown stream"].value:
             yield UnknownStream(self, "unknown stream")
         if self["header/size of unknown triplet stream"].value:
@@ -1150,7 +1150,7 @@ class ScanEvent(FieldSet):
             yield UInt32(self, "nparam", "The number of double-precision parameters following this")
             for index in range(1, self["nparam"].value + 1):
                 key = "unknown double[%s]" % index
-                label = "Unknown double";
+                label = "Unknown double"
                 if (self["nparam"].value == 4): # LTQ-FT
                     if (index == 2):
                         label = "may be Conversion Parameter A"
@@ -1194,7 +1194,7 @@ class ScanEvent(FieldSet):
                 yield UInt32(self, "nparam", "The number of double-precision parameters following this")
                 for index in range(1, self["nparam"].value + 1 - 2):
                     key = "unknown double[%s]" % (index + 1)
-                    label = "Unknown double";
+                    label = "Unknown double"
                     yield Float64(self, key, label)
                 yield Float64(self, "param b")
                 yield Float64(self, "param c")
@@ -1223,7 +1223,7 @@ class ScanEvent(FieldSet):
                 yield UInt32(self, "nparam", "The number of double-precision parameters following this")
                 for index in range(1, self["nparam"].value + 1):
                     key = "unknown double[%s]" % index
-                    label = "Unknown double";
+                    label = "Unknown double"
                     yield Float64(self, key, label)
                 yield UInt32(self, "unknown long[h]", "Unknown long")
                 yield UInt32(self, "unknown long[i]", "Unknown long")
