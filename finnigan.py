@@ -190,6 +190,8 @@ class Finnigan(Parser):
 
             ## Data ##
             if VERSION[-1] == 47:
+                yield RawBytes(self, "scan 1", 3050, "packet %s" % 1)
+                yield RawBytes(self, "scan 2", 3050, "packet %s" % 2)
                 yield RawBytes(self, "data", run_header_addr - self.current_size/8, "data format unknown")
             else:
                 # #for n in range(1, nscans + 1):
@@ -556,9 +558,9 @@ class AuditTag(FieldSet):
     endian = LITTLE_ENDIAN
 
     def createFields(self):
-        yield TimestampWin64(self, "start", "Timestamp")
-        yield String(self, "tag[1]", 50, charset="UTF-16-LE", truncate="\0")
-        yield String(self, "tag[2]", 50, charset="UTF-16-LE", truncate="\0")
+        yield TimestampWin64(self, "time", "Timestamp")
+        yield String(self, "unknown tag", 50, charset="UTF-16-LE", truncate="\0")
+        yield String(self, "user", 50, charset="UTF-16-LE", truncate="\0")
         yield UInt32(self, "unknown long", "It seems like in some cases it is used to hold a CRC-32 sum")
 
 class RunHeader(FieldSet):
@@ -651,8 +653,9 @@ class SeqRow(FieldSet):
 
     def createFields(self):
         yield InjectionData(self, "injection", "Injection Parameters")
-        for index in "ab":
+        for index in "a":
             yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
+        yield PascalStringWin32(self, "name", "Sample Name")
         yield PascalStringWin32(self, "id", "Sample ID")
         yield PascalStringWin32(self, "comment")
         yield PascalStringWin32(self, "user label[1]", "Label heading is found in RawFileInfo")
@@ -666,7 +669,7 @@ class SeqRow(FieldSet):
         yield PascalStringWin32(self, "path")
 
         if VERSION[-1] >= 47:
-            yield PascalStringWin32(self, "vial")
+            yield PascalStringWin32(self, "position")
             for index in "cd":
                 yield PascalStringWin32(self, "unknown text[%s]" % index, "Unknown Pascal string")
 
@@ -1322,8 +1325,14 @@ class ScanIndex(FieldSet):
         if ABBREVIATE_LISTS and nrecords > 100:
             yield ScanIndexEntry(self, "scan header[1]", "ScanIndexEntry 1")
             yield ScanIndexEntry(self, "scan header[2]", "ScanIndexEntry 2")
+            yield ScanIndexEntry(self, "scan header[3]", "ScanIndexEntry 3")
+            yield ScanIndexEntry(self, "scan header[4]", "ScanIndexEntry 4")
+            yield ScanIndexEntry(self, "scan header[5]", "ScanIndexEntry 5")
+            yield ScanIndexEntry(self, "scan header[6]", "ScanIndexEntry 6")
+            yield ScanIndexEntry(self, "scan header[7]", "ScanIndexEntry 7")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
-            yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
+            yield RawBytes(self, ". . .", (nrecords - 9) * record_sz, "records skipped for speed")
+            yield ScanIndexEntry(self, "scan header[%s]" % (nrecords - 1), "ScanIndexEntry %s" % (nrecords - 1))
             yield ScanIndexEntry(self, "scan header[%s]" % nrecords, "ScanIndexEntry %s" % nrecords)
         else:
             for n in range(1, nrecords + 1):
@@ -1340,8 +1349,14 @@ class ScanIndex2(FieldSet):
         if ABBREVIATE_LISTS and nrecords > 100:
             yield ScanIndexEntry(self, "scan header[1]", "ScanIndexEntry 1")
             yield ScanIndexEntry(self, "scan header[2]", "ScanIndexEntry 2")
+            yield ScanIndexEntry(self, "scan header[3]", "ScanIndexEntry 3")
+            yield ScanIndexEntry(self, "scan header[4]", "ScanIndexEntry 4")
+            yield ScanIndexEntry(self, "scan header[5]", "ScanIndexEntry 5")
+            yield ScanIndexEntry(self, "scan header[6]", "ScanIndexEntry 6")
+            yield ScanIndexEntry(self, "scan header[7]", "ScanIndexEntry 7")
             record_sz = self["scan header[1]"].size/8  # must read the first one to know the size
-            yield RawBytes(self, ". . .", (nrecords - 3) * record_sz, "records skipped for speed")
+            yield RawBytes(self, ". . .", (nrecords - 9) * record_sz, "records skipped for speed")
+            yield ScanIndexEntry(self, "scan header[%s]" % (nrecords - 1), "ScanIndexEntry %s" % (nrecords - 1))
             yield ScanIndexEntry(self, "scan header[%s]" % nrecords, "ScanIndexEntry %s" % nrecords)
         else:
             for n in range(1, nrecords + 1):
