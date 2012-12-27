@@ -609,7 +609,9 @@ class RunHeader(FieldSet):
                 yield UInt64(self, "unknown addr[1]")
                 yield UInt64(self, "scan trailer addr", "Absolute seek address of the TrailerScanEvent stream")
                 yield UInt64(self, "scan params addr", "Absolute seek address of the ScanParameters (ScanHeader) stream")
-                yield UInt64(self, "unknown addr[2]")
+                #yield UInt64(self, "unknown addr[2]")
+                yield UInt32(self, "unknown long[5]")
+                yield UInt32(self, "unknown long[6]")
                 yield UInt64(self, "own addr", "RunHeader's own address")
                 for index in range(5, 28+1):
                     yield UInt32(self, "unknown long[%s]" % index)
