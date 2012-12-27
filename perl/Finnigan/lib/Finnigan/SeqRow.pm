@@ -29,12 +29,14 @@ sub decode {
 
   my %specific_fields;
   $specific_fields{8} = [],
-  $specific_fields{57} = [
+  $specific_fields{47} = [
                           "vial"             => ['varstr', 'PascalStringWin32'],
                           "unknown text[c]"  => ['varstr', 'PascalStringWin32'],
                           "unknown text[d]"  => ['varstr', 'PascalStringWin32'],
                           "unknown long"     => ['V',      'UInt32'],
                          ];
+
+  $specific_fields{57} = $specific_fields{47};
 
   $specific_fields{60} = [
                           "vial"             => ['varstr', 'PascalStringWin32'],
