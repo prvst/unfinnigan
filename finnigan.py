@@ -613,7 +613,7 @@ class RunHeader(FieldSet):
                 yield UInt32(self, "unknown long[5]")
                 yield UInt32(self, "unknown long[6]")
                 yield UInt64(self, "own addr", "RunHeader's own address")
-                for index in range(5, 28+1):
+                for index in range(7, 30+1):
                     yield UInt32(self, "unknown long[%s]" % index)
 
 

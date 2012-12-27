@@ -89,12 +89,10 @@ sub decode {
                           "unknown addr[1]"       => ['Q<',     'Uint64'],
                           "scan trailer addr"     => ['Q<',     'Uint64'],
                           "scan params addr"      => ['Q<',     'Uint64'],
-                          "unknown long[5]"       => ['Q<',     'Uint64'],
-                          "unknown long[6]"       => ['Q<',     'Uint64'],
+                          "unknown long[5]"       => ['V',      'Uint32'],
+                          "unknown long[6]"       => ['V',      'Uint32'],
                           "own addr"              => ['Q<',     'Uint64'],
 
-                          "unknown long[5]"       => ['V',      'UInt32'],
-                          "unknown long[6]"       => ['V',      'UInt32'],
                           "unknown long[7]"       => ['V',      'UInt32'],
                           "unknown long[8]"       => ['V',      'UInt32'],
                           "unknown long[9]"       => ['V',      'UInt32'],
@@ -117,6 +115,8 @@ sub decode {
                           "unknown long[26]"      => ['V',      'UInt32'],
                           "unknown long[27]"      => ['V',      'UInt32'],
                           "unknown long[28]"      => ['V',      'UInt32'],
+                          "unknown long[29]"       => ['V',      'UInt32'],
+                          "unknown long[30]"       => ['V',      'UInt32'],
                          ];
   $specific_fields{66} = $specific_fields{64};
 
