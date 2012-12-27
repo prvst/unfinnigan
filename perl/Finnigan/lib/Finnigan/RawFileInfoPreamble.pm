@@ -26,16 +26,21 @@ sub decode {
 
   my %specific_fields;
   $specific_fields{8} = [],
-  $specific_fields{57} = [
-                          "unknown_long[2]"   => ['V',    'UInt32'],
-                          "data addr"         => ['V',    'UInt32'],
-                          "controller_n[1]"   => ['V',    'UInt32'],
-                          "controller_n[2]"   => ['V',    'UInt32'],
-                          "unknown_long[5]"   => ['V',    'UInt32'],
-                          "unknown_long[6]"   => ['V',    'UInt32'],
-                          "run header addr"   => ['V',    'UInt32'],
-                          unknown_area        => ['C756', 'RawBytes'], # 804 - 12 * 4 (804 is the fixed size of RawFileInfoPreamble prior to v.64)
+  $specific_fields{47} = [
+                          "unknown_long[2]"    => ['V',    'UInt32'],
+                          "data addr"          => ['V',    'UInt32'],
+                          "controller_n[1]"    => ['V',    'UInt32'],
+                          "controller_n[2]"    => ['V',    'UInt32'],
+                          "unknown_long[5]"    => ['V',    'UInt32'],
+                          "unknown_long[6]"    => ['V',    'UInt32'],
+                          "run header addr"    => ['V',    'UInt32'],
+                          "unknown_long[7]"    => ['V',    'UInt32'],
+                          "unknown_long[8]"    => ['V',    'UInt32'],
+                          "run header addr[2]" => ['V',    'UInt32'],
+                          unknown_area         => ['C744', 'RawBytes'], # 804 - 15 * 4 (804 is the fixed size of RawFileInfoPreamble prior to v.64)
                          ];
+
+  $specific_fields{57} = $specific_fields{47};
 
   $specific_fields{60} = $specific_fields{57};
   $specific_fields{62} = $specific_fields{57};

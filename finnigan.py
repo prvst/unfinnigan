@@ -753,7 +753,10 @@ class RawFileInfoPreamble(FieldSet):
             for index in range(5, 6 + 1):
                 yield UInt32(self, "unknown long[%s]" % index)
             yield UInt32(self, "run header addr", "Absolute address of RunHeader")
-            yield RawBytes(self, "padding", 804 - 12 * 4, "padding?") # 804 is the fixed size of RawFileInfoPreamble prior to v.64
+            for index in range(7, 8 + 1):
+                yield UInt32(self, "unknown long[%s]" % index)
+            yield UInt32(self, "run header addr[2]", "Absolute address of the next RunHeader")
+            yield RawBytes(self, "padding", 804 - (15) * 4, "padding?") # 804 is the fixed size of RawFileInfoPreamble prior to v.64
         if VERSION[-1] >= 64:
             yield UInt32(self, "unknown long[2]")
             yield UInt32(self, "former data addr", "not used in the 64-bit version")
