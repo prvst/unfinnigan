@@ -12,18 +12,20 @@ use overload ('""' => 'stringify');
 my %SYMBOL = (
               bool => {
                        0 => "False",
-                       1 => "True"
+                       1 => "True",
+                       2 => "undefined"
                       },
 
               "on/off" => {
                            0 => "Off",
                            1 => "On",
                            2 => "undefined",
+                           6 => "unknown"
                           },
 
               detector => {
                            0 => "valid",
-                           1 => "undefined",
+                           1 => "undefined"
                           },
 
               analyzer => {
@@ -39,13 +41,13 @@ my %SYMBOL = (
               polarity => {
                            0 => "negative",
                            1 => "positive",
-                           2 => "undefined",
+                           2 => "undefined"
                           },
 
               "scan mode" => {
                               0 => "centroid",
                               1 => "profile",
-                              2 => "undefined",
+                              2 => "undefined"
                              },
 
               "scan type" => {
@@ -56,7 +58,7 @@ my %SYMBOL = (
                               4 => "CRM",
                               5 => "undefined",
                               6 => "Q1",
-                              7 => "Q3",
+                              7 => "Q3"
                              },
 
               "ms power" => {
@@ -68,7 +70,7 @@ my %SYMBOL = (
                              5 => "MS5",
                              6 => "MS6",
                              7 => "MS7",
-                             8 => "MS8",
+                             8 => "MS8"
                             },
 
               ionization => {
@@ -87,7 +89,7 @@ my %SYMBOL = (
 
               activation => {
                              1 => "HCD",
-                             4 => "CID",
+                             4 => "CID"
                             },
              );
 
@@ -102,7 +104,7 @@ my %TYPE = (
             "ionization"        => "ionization",
             "activation"        => "activation",
             "wideband"          => "on/off",
-            "analyzer"          => "analyzer",
+            "analyzer"          => "analyzer"
            );
 
 my @common_fields = (
@@ -467,6 +469,10 @@ $specific_fields{66} = [
                         "unknown byte[129]" => ['C',    'UInt8'],
                         "unknown byte[130]" => ['C',    'UInt8'],
                         "unknown byte[131]" => ['C',    'UInt8'],
+                        "unknown byte[132]" => ['C',    'UInt8'],
+                        "unknown byte[133]" => ['C',    'UInt8'],
+                        "unknown byte[134]" => ['C',    'UInt8'],
+                        "unknown byte[135]" => ['C',    'UInt8'],
                        ];
 
 # stringify symbols
@@ -485,12 +491,14 @@ my %scan_mode_symbol = (
 my %dependent_symbol = (
                         0 => "",
                         1 => " d",
+                        2 => " ?",
                        );
 
 my %wideband_symbol = (
                        0 => "",
                        1 => " w",
-                       2 => "",
+                       2 => " ?",
+                       6 => " !",
                       );
 
 my %ms_power_symbol = (
@@ -621,7 +629,15 @@ sub scan_type {
 }
 
 sub dependent {
-  $_[0]->{data}->{dependent}->{value};
+  my $key = "dependent";
+  if ( $_[1] ) {
+    return $TYPE{$key}
+      ? $SYMBOL{$TYPE{$key}}->{$_[0]->{data}->{$key}->{value}}
+        : $_[0]->{data}->{$key}->{value};
+  }
+  else {
+    $_[0]->{data}->{$key}->{value};
+  }
 }
 
 sub ionization {
@@ -677,7 +693,15 @@ sub stringify {
 
   # consider adding {s;e} and "lock" to output, e.g.:
   #   FTMS {1;1}  + p ESI Full lock ms [60.00-1200.00]"
-  $self->analyzer(decode => 1)
+
+  # print STDERR "analyzer: " . $self->analyzer . " -> " . $self->analyzer('decode') . "\n";
+  # print STDERR "polarity: " . $self->polarity . " -> " . $self->polarity('decode') . ", symbol: " . $polarity_symbol{$self->polarity} . "\n";
+  # print STDERR "scan mode: " . $self->scan_mode . " -> " . $self->scan_mode('decode') . ", symbol: " . $scan_mode_symbol{$self->scan_mode} . "\n";
+  # print STDERR "ionization: " . $self->ionization . " -> " . $self->ionization('decode') . "\n";
+  # print STDERR "dependent: " . $self->dependent . " -> " . $self->dependent('decode') . ", symbol: " . $dependent_symbol{$self->dependent} . "\n";
+  # print STDERR "wideband: " . $self->wideband . " -> " . $self->wideband('decode') . ", symbol: " . $wideband_symbol{$self->wideband} . "\n";
+  # print STDERR "scan_type: " . $self->scan_type . " -> " . $self->scan_type('decode') . "\n";
+  $self->analyzer('decode')
     . " " . $polarity_symbol{$self->polarity}
       . " " . $scan_mode_symbol{$self->scan_mode}
         . " " . $self->ionization('decode')

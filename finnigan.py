@@ -227,24 +227,24 @@ class Finnigan(Parser):
 
                 yield UInt32(self, "n_scanevents", "This was supposed to be the number of trailer scan events (it was prior to v.66)")
 
-                for n in range(1, min(nscans, 215) + 1):
+                for n in range(1, min(nscans, 1) + 1):
                     yield ScanEvent(self, "scan event[%s]" % n)
                     print >> sys.stderr, "\rread %s of %s  ... " % (n, nscans),
 
-                scan_params_addr = self["run header/scan params addr"].value
-                if scan_params_addr > self.current_size/8:
-                    yield RawBytes(self, "unparsed scan events", scan_params_addr - self.current_size/8, "Further ScanEvent structures left unparsed")
+                # scan_params_addr = self["run header/scan params addr"].value
+                # if scan_params_addr > self.current_size/8:
+                #     yield RawBytes(self, "unparsed scan events", scan_params_addr - self.current_size/8, "Further ScanEvent structures left unparsed")
 
-                yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
+                # yield ScanHeaderFile(self, "scan headers", "A stream of ScanHeader records")
 
-                yield UnknownStreamOfDoubles(self, "unkonwn stream of doubles")
-                #yield RawBytes(self, "unknown structure", 7814, "references to temp files and a few doubles")
-                yield RunHeader(self, "second run header")
-                yield InstID(self, "second InstID")
-                yield UInt32(self, "unknown long[%s]" % 'x', "Error log?")
-                yield UVScanIndex(self, "UV scan index", "UVScanIndex")
+                # yield UnknownStreamOfDoubles(self, "unkonwn stream of doubles")
+                # #yield RawBytes(self, "unknown structure", 7814, "references to temp files and a few doubles")
+                # yield RunHeader(self, "second run header")
+                # yield InstID(self, "second InstID")
+                # yield UInt32(self, "unknown long[%s]" % 'x', "Error log?")
+                # yield UVScanIndex(self, "UV scan index", "UVScanIndex")
 
-                print >> sys.stderr, "the layout of v. 66 is not fully understood"
+                # print >> sys.stderr, "the layout of v. 66 is not fully understood"
 
             elif VERSION[-1] >=47 and VERSION[-1] < 66:
                 yield ErrorLog(self, "error log", "Error Log File")
@@ -1092,7 +1092,13 @@ class ScanEventTemplate(FieldSet):
                 yield UInt32(self, "unknown long[4]", "Unknown long")
                 yield UInt32(self, "unknown long[5]", "Unknown long")
         else:
-            yield RawBytes(self, "uknown scan event-like structure", 160)
+            yield ScanEventPreamble(self, "preamble", "MS Scan Event preamble")
+            yield RawBytes(self, "preamble extension", 16)
+            yield UInt32(self, "presumed controller type")
+            yield UInt32(self, "presumed controller number")
+            yield FractionCollector(self, "fraction collector", "Fraction Collector")
+            if (self["/inst id/model[1]"].value == "Orbitrap Elite"):
+                yield RawBytes(self, "scan event template extension", 16)
 
 class ScanEventPreamble(FieldSet):
     endian = LITTLE_ENDIAN

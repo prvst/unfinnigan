@@ -49,6 +49,7 @@ if ( $rfi->preamble->run_header_addr(0) ) {
 seek INPUT, $run_header_0_addr, 0;
 my $run_header_0 = Finnigan::RunHeader->decode(\*INPUT, $VERSION);
 my $run_header = $run_header_0;
+my $inst_id  = Finnigan::InstID->decode( \*INPUT );
 
 my $run_header_1;
 if ($run_header_1_addr) {
@@ -71,10 +72,15 @@ if ($run_header_1_addr) {
   }
 }
 
-
-# skip to the error log and read through
+# Skip to the error log and read through
 seek INPUT, $run_header->error_log_addr, 0;
+
+# In all known samples before v.66, the error log length was written here (as well as in SampleInfo)
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+
+# In v.66, it is always set to 0, even when there are error messages. The value in SampleInfo seems to be more reliable.
+$error_log_length = $run_header->sample_info->error_log_length unless $error_log_length;
+
 foreach my $i ( 0 .. $error_log_length - 1) {
   Finnigan::Error->decode(\*INPUT);
 }
@@ -84,7 +90,7 @@ my $nsegs = Finnigan::Decoder->read(\*INPUT, ['nsegs' => ['V', 'UInt32']])->{dat
 foreach my $i ( 0 .. $nsegs - 1) {
   my $n = Finnigan::Decoder->read(\*INPUT, ['n' => ['V', 'UInt32']])->{data}->{n}->{value};
   foreach my $j ( 0 .. $n - 1) {
-    my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version);
+    my $e = Finnigan::ScanEventTemplate->decode(\*INPUT, $header->version, $inst_id->model);
     say "($i, $j)";
     $e->dump();
     say join " ", $e->preamble->list('decode');
