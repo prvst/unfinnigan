@@ -18,7 +18,7 @@ sub decode {
                 "first scan number"  => ['V',      'UInt32'],  #  4
                 "last scan number"   => ['V',      'UInt32'],  #  6
                 "inst log length"    => ['V',      'UInt32'],  #  8
-                "unknown long[3]"    => ['V',      'UInt32'],  # 10
+                "error log length"   => ['V',      'UInt32'],  # 10
                 "unknown long[4]"    => ['V',      'UInt32'],  # 12
                 "scan index addr"    => ['V',      'UInt32'],  # 14 * unused in 64-bit versions
                 "data addr"          => ['V',      'UInt32'],  # 16 *
@@ -51,6 +51,10 @@ sub last_scan {
 
 sub inst_log_length {
   shift->{data}->{"inst log length"}->{value};
+}
+
+sub error_log_length {
+  shift->{data}->{"error log length"}->{value};
 }
 
 sub max_ion_current {
@@ -140,6 +144,10 @@ Get the last scan number
 =item inst_log_length
 
 Get the number of instrument log records
+
+=item inst_log_length
+
+Get the number of error log records
 
 =item max_ion_current
 

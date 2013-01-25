@@ -10,18 +10,35 @@ use base 'Finnigan::Decoder';
 use overload ('""' => 'stringify');
 
 sub decode {
-  my ($class, $stream, $version) = @_;
+  my ($class, $stream, $version, $instrument) = @_;
 
-  my @fields = (
-                "preamble"                      => ['object',  'Finnigan::ScanEventPreamble'],
-                "presumed controller type"      => ['V',       'UInt32'],
-                "presumed controller number"    => ['V',       'UInt32'],
-                "fraction collector"            => ['object', 'Finnigan::FractionCollector'],
-                "unknown long[3]"               => ['V',       'UInt32'],
-                "unknown long[4]"               => ['V',       'UInt32'],
-                "unknown long[5]"               => ['V',       'UInt32'],
-               );
+  my @fields;
 
+  if ($version < 66) {
+    @fields = (
+      "preamble"                      => ['object',  'Finnigan::ScanEventPreamble'],
+      "presumed controller type"      => ['V',       'UInt32'],
+      "presumed controller number"    => ['V',       'UInt32'],
+      "fraction collector"            => ['object', 'Finnigan::FractionCollector'],
+      "unknown long[3]"               => ['V',       'UInt32'],
+      "unknown long[4]"               => ['V',       'UInt32'],
+      "unknown long[5]"               => ['V',       'UInt32'],
+    );
+  }
+  else {
+    @fields = (
+      "preamble"                      => ['object',  'Finnigan::ScanEventPreamble'],
+      "presumed controller type"      => ['V',       'UInt32'],
+      "presumed controller number"    => ['V',       'UInt32'],
+      "fraction collector"            => ['object', 'Finnigan::FractionCollector'],
+    );
+
+    push @fields, (
+      "event template extension"      => ['C16', 'RawBytes']
+    ) if ($instrument eq 'Orbitrap Elite');
+  }
+
+  die "don\'t know how to parse version $_[2]" if $_[2] > 66;
   my $self = Finnigan::Decoder->read($stream, \@fields, $version);
   bless $self, $class;
   return $self;
