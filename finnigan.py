@@ -1830,13 +1830,11 @@ class ScanIndexEntry(FieldSet):
         yield Float64(self, "base mz", "Base Peak M/z")
         yield Float64(self, "low mz")
         yield Float64(self, "high mz")
-        if VERSION[-1] == 64:
+        if VERSION[-1] >= 64:
             yield UInt64(self, "offset", "Offset of this scan's data from the start of the scan data stream")
-        if VERSION[-1] == 66:
+        if VERSION[-1] > 64:
             yield UInt32(self, "unknown[1]")
             yield UInt32(self, "unknown[2]")
-            yield UInt32(self, "unknown[3]")
-            yield UInt32(self, "unknown[4]")
 
 class UVScanIndexEntry(FieldSet):
     def createFields(self):
