@@ -58,7 +58,13 @@ if ($run_header_1_addr) {
 my $first_log_exists;
 my $error_log_addr = $run_header_0->error_log_addr;
 seek INPUT, $error_log_addr, 0;
+
+# In all known samples before v.66, the error log length was written here (as well as in SampleInfo)
 my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+
+# In v.66, it is always set to 0, even when there are error messages. The value in SampleInfo seems to be more reliable.
+$error_log_length = $run_header_0->sample_info->error_log_length unless $error_log_length;
+
 if ( $error_log_length ) {
   if ( $run_header_1_addr ) {
    $first_log_exists++;
@@ -74,7 +80,12 @@ if ( $error_log_length ) {
 if ( $run_header_1_addr ) {
   $error_log_addr = $run_header_1->error_log_addr;
   seek INPUT, $error_log_addr, 0;
+
   my $error_log_length = Finnigan::Decoder->read(\*INPUT, ['length' => ['V', 'UInt32']])->{data}->{length}->{value};
+
+  # In v.66, it is always set to 0, even when there are error messages. The value in SampleInfo seems to be more reliable.
+  $error_log_length = $run_header_1->sample_info->error_log_length unless $error_log_length;
+
   if ( $error_log_length ) {
     if ( $first_log_exists ) {
       say "------------------------ Error log 2 ---------------------------";
