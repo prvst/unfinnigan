@@ -145,7 +145,7 @@ Get the last scan number
 
 Get the number of instrument log records
 
-=item inst_log_length
+=item error_log_length
 
 Get the number of error log records
 
