@@ -701,7 +701,7 @@ sub stringify {
   # print STDERR "dependent: " . $self->dependent . " -> " . $self->dependent('decode') . ", symbol: " . $dependent_symbol{$self->dependent} . "\n";
   # print STDERR "wideband: " . $self->wideband . " -> " . $self->wideband('decode') . ", symbol: " . $wideband_symbol{$self->wideband} . "\n";
   # print STDERR "scan_type: " . $self->scan_type . " -> " . $self->scan_type('decode') . "\n";
-  $self->analyzer('decode')
+  ($self->analyzer('decode') eq 'undefined' ? '' : $self->analyzer('decode'))
     . " " . $polarity_symbol{$self->polarity}
       . " " . $scan_mode_symbol{$self->scan_mode}
         . " " . $self->ionization('decode')
