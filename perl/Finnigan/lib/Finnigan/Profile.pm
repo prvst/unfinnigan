@@ -9,16 +9,37 @@ use Finnigan;
 use base 'Finnigan::Decoder';
 
 my $preamble = [
-                "first value" => ['d<', 'Float64'],
-                "step"        => ['d<', 'Float64'],
-                "peak count"  => ['V',  'UInt32'],
-                "nbins"       => ['V',  'UInt32'],
-               ];
+  "first value" => ['d<', 'Float64'],
+  "step"        => ['d<', 'Float64'],
+  "peak count"  => ['V',  'UInt32'],
+  "nbins"       => ['V',  'UInt32'],
+];
+
+my $zero = [
+  "zero" => ['V',  'UInt32']
+];
 
 
 sub decode {
-  my $self = bless Finnigan::Decoder->read($_[1], $preamble), $_[0];
-  return $self->iterate_object($_[1], $self->{data}->{"peak count"}->{value}, chunks => 'Finnigan::ProfileChunk', $_[2]); # the last arg is layout
+  my $self;
+
+  if (ref($_[1]) eq 'Finnigan::PacketHeader') {
+    return bless Finnigan::Decoder->read($_[0], $zero), 'Finnigan::Profile';
+  }
+
+  if ($_[2]) {
+    $self = bless Finnigan::Decoder->read($_[1], $preamble), $_[0];
+    return $self->iterate_object($_[1], $self->{data}->{"peak count"}->{value}, chunks => 'Finnigan::ProfileChunk', $_[2]); # the last arg is layout
+  }
+}
+
+sub zero {
+  if (shift->{data}->{zero}->{value} == 0) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
 }
 
 sub nchunks { # in place of the erroneous "peak_count"
@@ -236,7 +257,7 @@ Finnigan::Profile -- a full-featured decoder for Finnigan scan profiles
 
   use Finnigan;
 
-  say $entry->offset; # returns an offset from the start of scan data stream 
+  say $entry->offset; # returns an offset from the start of scan data stream
   say $entry->data_size;
   $entry->dump;
   my $profile = Finnigan::Profile->decode( \*INPUT, $packet_header->layout );
@@ -300,6 +321,10 @@ optionally filling the gaps with zeroes.
 =head2 METHODS
 
 =over 4
+
+=item zero
+
+Return true if the profile starts with a zero (meaning it has no header)
 
 =item decode($stream, $layout)
 
