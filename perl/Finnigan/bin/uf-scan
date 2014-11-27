@@ -140,6 +140,8 @@ my $peaks;
 if ($ph->type == 14) {
   # It is a tentative assumption that this word in scan index indicates
   # profile type.
+  my $range = [$ph->low_mz, $ph->high_mz];
+
   seek INPUT, $data_addr + $ph->data_offset, 0;
   $profile = Finnigan::Profile::decode(\*INPUT, $ph) if $ph->profile_size;
   if (not $profile->zero) {
@@ -149,6 +151,14 @@ if ($ph->type == 14) {
   if ( exists $args->{-d} ) {
     $profile->dump();
   }
+
+  if (exists $args->{-plot}) {
+    if ( exists $args->{-mz} ) {
+     $range = [$args->{-mz}{"<low>"}, $args->{-mz}{"<high>"}];
+    }
+    say qq{profile_input <- "f\ts};
+  }
+
 
   my $step = $ph->bin_size;
   my $mz = $ph->low_mz;
@@ -164,9 +174,18 @@ if ($ph->type == 14) {
       say "$pos\t1\tUint8\tunknown\t" .  sprintf("0x%2x", $d)
     }
     else {
-      say "$mz\t$value";
+      say "$mz\t$value" if $mz >= $range->[0] and $mz <= $range->[1];
       $mz += $step;
     }
+  }
+  if (exists $args->{-plot}) {
+    my $peaks_exist = $ph->peak_list_size ? "centroids are present" : "no centroids";
+    say q{"};
+    say <<END;
+p <- read.table(textConnection(profile_input), header=TRUE)
+postscript(file="", command="cat", paper="special", onefile=F, horizontal=F, width=8, height=6, pointsize=15)
+plot(p, type="h", main="converted profile ($peaks_exist)", xlab=expression(M/z), ylab="abundance")
+END
   }
 }
 else {
