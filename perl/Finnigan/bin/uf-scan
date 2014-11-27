@@ -132,20 +132,58 @@ foreach my $i ( 1 .. $trailer_length) {
 
 # start of the scan data (packet header)
 seek INPUT, $data_addr + $scan_index->{offset}, 0;
-my $ph = Finnigan::PacketHeader->decode(\*INPUT);
+my $ph = Finnigan::PacketHeader->decode(\*INPUT, $scan_index->{'unknown long'});
 
 my $profile;
-$profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
-
 my $peaks;
-$peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
+
+if ($ph->type == 14) {
+  # It is a tentative assumption that this word in scan index indicates
+  # profile type.
+  seek INPUT, $data_addr + $ph->data_offset, 0;
+  $profile = Finnigan::Profile::decode(\*INPUT, $ph) if $ph->profile_size;
+  if (not $profile->zero) {
+    print STDERR "converted profiles must start with a zero\n";
+    exit -1;
+  }
+  if ( exists $args->{-d} ) {
+    $profile->dump();
+  }
+
+  my $step = $ph->bin_size;
+  my $mz = $ph->low_mz;
+  for ( my $i = 0; $i < $ph->profile_size - 4; $i += 4) {
+    my $pos = tell INPUT;
+    my $nbytes = read INPUT, $rec, 4;
+    $nbytes == 4 or die "could not read a complete chunk of 4 bytes at " .  sprintf("%08x", $pos);
+    my ( $a, $b, $c, $d ) = unpack "CCCC", $rec;
+    my $value = $a + ($b  + $c * 256) * 256;
+    if (exists $args->{-d} ) {
+      say "$pos\t3\tUint24\tabundance\t$value";
+      $pos += 3;
+      say "$pos\t1\tUint8\tunknown\t" .  sprintf("0x%2x", $d)
+    }
+    else {
+      say "$mz\t$value";
+      $mz += $step;
+    }
+  }
+}
+else {
+  $profile = Finnigan::Profile->decode(\*INPUT, $ph->layout) if $ph->profile_size;
+  $peaks = Finnigan::Peaks->decode(\*INPUT) if $ph->peak_list_size;
+}
+
 
 # dump the header
 if ( exists $args->{-d} ) {
+  say '---------------------------------------------';
   $ph->dump();
 }
 
-# least the centroids
+exit;
+
+# list the centroids
 if ( exists $args->{-l} ) {
   if ( $peaks ) {
     if ( exists $args->{-e} ) {
