@@ -1,0 +1,1 @@
+This is Windows 64-bit timestamp type, decoded in perl with [DateTime::Format::WindowsFileTime](http://search.cpan.org/~jgarvin/DateTime-Format-WindowsFileTime-0.02/)

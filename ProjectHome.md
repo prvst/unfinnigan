@@ -1,0 +1,11 @@
+Mass spectrometers by Thermo can encode raw specta (and even the time-domain transients) using the Finnigan "raw" file format, but they are seldom configured to do so. Most of the time, the programs used to control this family of instruments cook data in one way or another. But it is good to have unencumbered access to everything there is in those files, whether cooked or not. The reason is twofold.
+
+  * One, it is important to understand the entire process leading from the physical sample to the calibrated mass spectra, which is presently obscured by the proprietary software used to run the instruments. It is reasonable to believe that the instrument vendor has taken all possible precautions to make the data processing valid and accurate, but science cannot rely on trust. I want to see what is happening to my data with my own eyes.
+
+  * The second reason is the interoperability of software. I want to be able to use my own tools to process my data, and I can't be bothered to install Windows or any other proprietary software just in order to make the data visible.
+
+So this project, which I am sure will be regarded by some as malicious reverse-engineering, is primarily driven by curiosity, meticulousness, and laziness, rather than malice or contempt.
+
+The project is currently in what I call _observation stage_. I have examined enough data files to understand their composition and to extract the data I need in my present work. I have not yet built a parser that can reliably extract all data from all possible Finnigan file versions, recorded by every existing instrument in every possible scan mode. I do not think I can ever achieve all that by myself. The code I have created may fail to read the particular version of the file you have. But I believe that an accurate description of my observations and of the method I used to achieve my specific goals may help you achieve yours in mere days or hours, and if you add your observations to mine, we can soon have a reliable and versatile tool.
+
+At the present stage, treat it as a testable description of the file format, supplemented with a bunch of tools that can be used to examine data files and their components.

@@ -1,0 +1,1 @@
+The Hachoir type used to consume uninterpreted data (whose type and meaning are uknown)
